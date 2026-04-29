@@ -39,6 +39,8 @@ function CashBoxesContent() {
   const isCurrent = year === now.getFullYear() && month === now.getMonth();
 
   const [guideId, setGuideId] = useState<string | null>(null);
+  const [openingChange, setOpeningChange] = useState(0);
+  const [openingExpenses, setOpeningExpenses] = useState(0);
   const [totals, setTotals] = useState<Totals>({
     collected: 0,
     changeGiven: 0,
@@ -71,6 +73,15 @@ function CashBoxesContent() {
     const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    // Guide opening balances (יתרות פתיחה — הכסף שהמדריך נכנס איתו למערכת)
+    const { data: guideRow } = await supabase
+      .from('guides')
+      .select('opening_change_balance, opening_expenses_balance')
+      .eq('id', id)
+      .single();
+    setOpeningChange(guideRow?.opening_change_balance || 0);
+    setOpeningExpenses(guideRow?.opening_expenses_balance || 0);
 
     // Tours + bookings (for classic collected + change_given)
     const { data: tours } = await supabase
@@ -136,8 +147,8 @@ function CashBoxesContent() {
 
   // Formulas — self-reinforcement is INTERNAL (main box decreases when reinforcing)
   // Main = all cash collected + change_given - transferred to Portugo - refills to envelopes - salary withdrawn at month-close
-  // Change envelope = refills - change given
-  // Expenses envelope = refills - expenses
+  // Change envelope = יתרת פתיחה + refills - change given
+  // Expenses envelope = יתרת פתיחה + refills - expenses
   const mainBalance =
     totals.collected +
     totals.changeGiven -
@@ -145,8 +156,8 @@ function CashBoxesContent() {
     totals.cashRefill -
     totals.expensesRefill -
     totals.salaryWithdrawn;
-  const changeBalance = totals.cashRefill - totals.changeGiven;
-  const expensesBalance = totals.expensesRefill - totals.expenses;
+  const changeBalance = openingChange + totals.cashRefill - totals.changeGiven;
+  const expensesBalance = openingExpenses + totals.expensesRefill - totals.expenses;
   const needsChangeRefill = totals.changeGiven > 0 && changeBalance < 51;
 
   const refillAmt = parseFloat(refillAmount) || 0;

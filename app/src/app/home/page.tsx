@@ -16,6 +16,8 @@ type Summary = {
   cash_refill: number;         // self-refill from main → change envelope
   expenses_refill: number;     // self-refill from main → expenses envelope
   salary_withdrawn: number;    // salary the guide withdrew from the main box at month-close
+  opening_change: number;      // יתרת פתיחה במעטפת עודף
+  opening_expenses: number;    // יתרת פתיחה במעטפת הוצאות
   external: { description: string; amount: number; date: string }[];
   expenses: number;
   transfers: number;
@@ -61,6 +63,7 @@ function HomeContent() {
   const [summary, setSummary] = useState<Summary>({
     tours: 0, people: 0, collected: 0,
     change_given: 0, cash_refill: 0, expenses_refill: 0, salary_withdrawn: 0,
+    opening_change: 0, opening_expenses: 0,
     external: [],
     expenses: 0, transfers: 0,
     salary: EMPTY_SALARY,
@@ -93,7 +96,7 @@ function HomeContent() {
       const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
       const [guideRes, toursRes, actRes, expRes, trRes] = await Promise.all([
-        supabase.from('guides').select('name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person').eq('id', id).single(),
+        supabase.from('guides').select('name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
         supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
           .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
         supabase.from('activities').select('amount, activity_type, activity_date, notes')
@@ -104,7 +107,7 @@ function HomeContent() {
           .eq('guide_id', id).gte('transfer_date', start).lte('transfer_date', end),
       ]);
 
-      const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'> | null) || null;
+      const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'> | null) || null;
 
       let totalPeople = 0;
       let totalCollected = 0;
@@ -182,6 +185,8 @@ function HomeContent() {
         cash_refill: cashRefill,
         expenses_refill: expensesRefill,
         salary_withdrawn: salaryWithdrawn,
+        opening_change: guide?.opening_change_balance || 0,
+        opening_expenses: guide?.opening_expenses_balance || 0,
         external: externalActivities,
         expenses: expensesTotal,
         transfers: transfersTotal,
@@ -338,8 +343,8 @@ function HomeContent() {
               {(() => {
                 const s = summary.salary;
                 const mainBalance = s.total_cash_collected + summary.change_given - summary.transfers - summary.cash_refill - summary.expenses_refill - summary.salary_withdrawn;
-                const changeBalance = summary.cash_refill - summary.change_given;
-                const expensesBalance = summary.expenses_refill - summary.expenses;
+                const changeBalance = summary.opening_change + summary.cash_refill - summary.change_given;
+                const expensesBalance = summary.opening_expenses + summary.expenses_refill - summary.expenses;
                 return (
                   <>
                     {/* KPIs — tours, people */}

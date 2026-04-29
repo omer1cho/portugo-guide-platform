@@ -32,6 +32,10 @@ export type Guide = {
   is_admin: boolean;
   /** ההפרשה לפורטוגו לראש משלם בסיורי קלאסי. ותיקים: 10€, מדריכים חדשים מאמצע 2026: 11€ */
   classic_transfer_per_person: number;
+  /** יתרת פתיחה במעטפת עודף — הכסף שהמדריך נכנס איתו למערכת. ברירת מחדל 0. */
+  opening_change_balance?: number;
+  /** יתרת פתיחה במעטפת הוצאות — הכסף שהמדריך נכנס איתו למערכת. ברירת מחדל 0. */
+  opening_expenses_balance?: number;
 };
 
 export type Tour = {

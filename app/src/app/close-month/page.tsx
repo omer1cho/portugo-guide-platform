@@ -48,7 +48,7 @@ function CloseMonthContent() {
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     const [guideRes, toursRes, actRes, expRes, trRes] = await Promise.all([
-      supabase.from('guides').select('id, name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person').eq('id', id).single(),
+      supabase.from('guides').select('id, name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
       supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
         .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
       supabase.from('activities').select('amount, activity_type, activity_date, notes')
@@ -59,8 +59,10 @@ function CloseMonthContent() {
         .eq('guide_id', id).gte('transfer_date', start).lte('transfer_date', end),
     ]);
 
-    const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'>) || null;
+    const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'>) || null;
     setGuide(g);
+    const openingChange = g?.opening_change_balance || 0;
+    const openingExpenses = g?.opening_expenses_balance || 0;
 
     type RawTour = {
       tour_date: string;
@@ -121,8 +123,8 @@ function CloseMonthContent() {
 
     setCash({
       mainBalance: s.total_cash_collected + changeGiven - transfersTotal - cashRefill - expensesRefill - salaryWithdrawn,
-      changeBalance: cashRefill - changeGiven,
-      expensesBalance: expensesRefill - expensesTotal,
+      changeBalance: openingChange + cashRefill - changeGiven,
+      expensesBalance: openingExpenses + expensesRefill - expensesTotal,
       salaryWithdrawn,
     });
     setLoading(false);
