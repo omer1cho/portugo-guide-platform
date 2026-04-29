@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase, type Guide } from '@/lib/supabase';
 
 export default function AdminGuideSwitcher() {
@@ -86,36 +87,50 @@ export default function AdminGuideSwitcher() {
   const adminIsViewingSelf = currentGuide === undefined && adminEmail;
 
   return (
-    <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm">
-      {adminIsViewingSelf ? (
-        <div className="flex items-center gap-2">
-          <span className="text-purple-900 font-semibold">👁️ צופה בתור:</span>
-          <select
-            value=""
-            onChange={(e) => handleSwitch(e.target.value)}
-            className="flex-1 bg-white border border-purple-300 rounded-md px-2 py-1.5 text-purple-900"
-          >
-            <option value="">בחר.י מדריך לצפות בנתונים שלו</option>
-            {guides.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name} ({g.city === 'lisbon' ? 'ליסבון' : 'פורטו'})
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : isViewingOther && currentGuide ? (
-        <div className="flex items-center gap-2">
-          <span className="text-purple-900 font-semibold flex-1">
-            👁️ את.ה רואה את הנתונים של <span className="font-bold">{currentGuide.name}</span>
-          </span>
-          <button
-            onClick={handleBackToSelf}
-            className="bg-purple-700 hover:bg-purple-800 active:scale-98 transition-all text-white rounded-md px-3 py-1.5 text-xs font-semibold"
-          >
-            חזרה לעצמי
-          </button>
-        </div>
-      ) : null}
+    <div className="space-y-2">
+      {/* פס אדמין מסטר — קישור לדשבורד הניהולי */}
+      <div className="bg-green-800 text-white rounded-xl p-3 text-sm flex items-center justify-between gap-2">
+        <span className="font-semibold">🏠 לוח הבקרה של פורטוגו</span>
+        <Link
+          href="/admin"
+          className="bg-white text-green-800 hover:bg-green-50 active:scale-98 transition-all rounded-md px-3 py-1.5 text-xs font-semibold"
+        >
+          פתחי דשבורד ←
+        </Link>
+      </div>
+
+      {/* פס "צפה בתור..." */}
+      <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm">
+        {adminIsViewingSelf ? (
+          <div className="flex items-center gap-2">
+            <span className="text-purple-900 font-semibold">👁️ צופה בתור:</span>
+            <select
+              value=""
+              onChange={(e) => handleSwitch(e.target.value)}
+              className="flex-1 bg-white border border-purple-300 rounded-md px-2 py-1.5 text-purple-900"
+            >
+              <option value="">בחר.י מדריך לצפות בנתונים שלו</option>
+              {guides.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name} ({g.city === 'lisbon' ? 'ליסבון' : 'פורטו'})
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : isViewingOther && currentGuide ? (
+          <div className="flex items-center gap-2">
+            <span className="text-purple-900 font-semibold flex-1">
+              👁️ את.ה רואה את הנתונים של <span className="font-bold">{currentGuide.name}</span>
+            </span>
+            <button
+              onClick={handleBackToSelf}
+              className="bg-purple-700 hover:bg-purple-800 active:scale-98 transition-all text-white rounded-md px-3 py-1.5 text-xs font-semibold"
+            >
+              חזרה לעצמי
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
