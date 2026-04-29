@@ -4,19 +4,26 @@
  * /auth/callback
  *
  * המקום שאליו Supabase מנתב אחרי לחיצה על Magic Link מהמייל.
- * מה שקורה כאן:
- *   1. Supabase Auth מזהה את הקוד מה-URL ומייצר session אוטומטית
- *   2. אנחנו טוענים את רשומת המדריך לפי המייל המאומת
- *   3. שומרים פרטי המדריך ב-localStorage כדי שכל הדפים הקיימים יעבדו כרגיל
- *   4. מנותבים ל-/home (או חזרה ל-/ עם הודעה אם לא נמצא)
+ *
+ * תומך בשתי זרימות OAuth:
+ *   1. PKCE (ברירת מחדל ב-Supabase v2): URL כולל ?code=... — אנחנו קוראים
+ *      ל-exchangeCodeForSession מפורש כדי להמיר את הקוד לסשן.
+ *   2. Implicit (ישן): URL כולל #access_token=... — ה-SDK מטפל אוטומטית.
+ *
+ * אחרי שהסשן נוצר:
+ *   - טוענים את רשומת המדריך לפי המייל
+ *   - שומרים ב-localStorage לטובת הדפים הקיימים
+ *   - מנותבים ל-/home
  */
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -24,11 +31,26 @@ export default function AuthCallbackPage() {
     let cancelled = false;
 
     (async () => {
-      // נחכה רגע ש-Supabase יעבד את הקוד מה-URL hash
-      // (ה-SDK עושה את זה אוטומטית בטעינה)
+      // ─── שלב 1: ודא שיש לנו session פעיל ───
+      // PKCE flow: יש ?code=... ב-URL → לקרוא ל-exchangeCodeForSession
+      const code = searchParams.get('code');
+      if (code) {
+        const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (exchangeErr) {
+          // אם ה-PKCE נכשל (למשל הקוד פג תוקף או נצרך כבר), נציג שגיאה
+          setStatus('error');
+          setErrorMsg('הקישור פג תוקף או כבר היה בשימוש. נסי לבקש קישור חדש.');
+          return;
+        }
+      }
+
+      // ─── שלב 2: קבלת ה-session ───
+      // Implicit flow: ה-SDK כבר טיפל ב-tokens מה-hash אוטומטית.
+      // PKCE flow: ה-exchange שלמעלה הצליח, ה-session כבר ב-localStorage.
       let session = (await supabase.auth.getSession()).data.session;
 
-      // אם אין סשן, ננסה שוב כמה פעמים — ה-SDK עשוי להיות באמצע עיבוד
+      // שמירה של עד שנייה וחצי במקרה שה-SDK עדיין מעבד את ה-hash
       for (let i = 0; i < 5 && !session; i++) {
         await new Promise((r) => setTimeout(r, 300));
         session = (await supabase.auth.getSession()).data.session;
@@ -42,7 +64,7 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      // טעינת רשומת המדריך לפי המייל
+      // ─── שלב 3: טעינת רשומת המדריך + שמירה ב-localStorage ───
       const { data: guide, error: guideErr } = await supabase
         .from('guides')
         .select('id, name, city, is_admin')
@@ -64,13 +86,14 @@ export default function AuthCallbackPage() {
         localStorage.setItem('portugo_is_admin', guide.is_admin ? '1' : '0');
       } catch {}
 
+      // נקה את ה-URL מקודים/טוקנים לפני המעבר ל-home
       router.replace('/home');
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-green-50 via-white to-green-50">
@@ -95,5 +118,19 @@ export default function AuthCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-gray-500 bg-gradient-to-b from-green-50 via-white to-green-50">
+          רגע, מחבר.ת...
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

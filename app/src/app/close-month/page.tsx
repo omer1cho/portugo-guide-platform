@@ -441,7 +441,7 @@ function CloseMonthContent() {
                           <span>
                             הפקיד.י לפורטוגו{' '}
                             <span className="font-bold">{depositToPortugo.toFixed(0)}€</span>{' '}
-                            <span className="text-xs text-amber-700">(בהמשך, כשתגיעי לבנק)</span>
+                            <span className="text-xs text-amber-700 font-semibold">— נא הפקיד.י בהקדם</span>
                           </span>
                         );
                       }
@@ -488,7 +488,7 @@ function CloseMonthContent() {
                     <div className="text-green-900 mt-1">
                       נשאר להפקיד לפורטוגו{' '}
                       <span className="font-bold">{depositToPortugo.toFixed(0)}€</span>{' '}
-                      כשתגיעי לבנק.
+                      — נא להפקיד בהקדם.
                     </div>
                   ) : needsFromPortugo ? (
                     <div className="text-green-900 mt-1">

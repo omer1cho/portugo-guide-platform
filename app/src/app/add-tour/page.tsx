@@ -105,6 +105,9 @@ function AddTourContent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [showMismatchModal, setShowMismatchModal] = useState(false);
+  // מודאלים של "שכחת תמונה?"
+  const [showPhotoPromptModal, setShowPhotoPromptModal] = useState(false);
+  const [showForgotPhotoModal, setShowForgotPhotoModal] = useState(false);
 
   useEffect(() => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -176,7 +179,23 @@ function AddTourContent() {
   const addBooking = () => setBookings([...bookings, emptyBooking()]);
   const removeBooking = (idx: number) => setBookings(bookings.filter((_, i) => i !== idx));
 
-  const handleSave = async (skipMismatchCheck = false) => {
+  /**
+   * נקרא כשהמדריך לוחץ "שמור" בטופס סיור.
+   * אם בסיור חדש (לא עריכה) חסרה תמונה — מציגים מודאל "שכחת לצרף תמונה?"
+   * לפני שמתחילים את השמירה האמיתית.
+   */
+  const onSaveClicked = () => {
+    setError('');
+    // רק לסיורים חדשים (לא בעריכה) ורק אם אין תמונה ואין תמונה קיימת
+    const noPhoto = !tourPhoto && !existingPhotoUrl;
+    if (mode === 'tour' && !isEditMode && noPhoto) {
+      setShowPhotoPromptModal(true);
+      return;
+    }
+    handleSave(false, false);
+  };
+
+  const handleSave = async (skipMismatchCheck = false, photoSkipped = false) => {
     setError('');
     if (!guideId) return;
 
@@ -346,6 +365,7 @@ function AddTourContent() {
               category: tourCategory,
               notes,
               start_time: startTime || null,
+              photo_skipped: photoSkipped,
             })
             .select()
             .single();
@@ -721,7 +741,7 @@ function AddTourContent() {
             )}
 
             {/* Tour photo */}
-            <div className="bg-white rounded-xl shadow p-4">
+            <div id="tour-photo-section" className="bg-white rounded-xl shadow p-4">
               <label className="block text-sm font-semibold mb-2">תמונת הסיור</label>
               {existingPhotoUrl && !tourPhoto ? (
                 <div>
@@ -1030,7 +1050,7 @@ function AddTourContent() {
         )}
 
         <button
-          onClick={() => handleSave()}
+          onClick={onSaveClicked}
           disabled={saving}
           className="w-full bg-green-700 hover:bg-green-800 active:scale-98 disabled:bg-gray-400 text-white rounded-2xl shadow-lg py-4 text-lg font-bold transition-all"
         >
@@ -1104,6 +1124,71 @@ function AddTourContent() {
               to { opacity: 1; transform: translateY(0); }
             }
           `}</style>
+        </div>
+      )}
+
+      {/* Photo prompt modal — שלב 1: שואלים אם רוצה לצרף תמונה */}
+      {showPhotoPromptModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">📸</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">שכחת לצרף תמונה?</h3>
+              <p className="text-sm text-gray-600">
+                תמונת סיור עוזרת לנו לזכור ולעדכן את הרשתות החברתיות 💚
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setShowPhotoPromptModal(false);
+                  // גלילה לטופס תמונה — המשתמש כבר נמצא במסך, ה-PhotoPicker בתוך הטופס
+                  setTimeout(() => {
+                    const el = document.getElementById('tour-photo-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 200);
+                }}
+                className="w-full bg-green-700 hover:bg-green-800 active:scale-98 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                כן, קח.י אותי להעלות 📷
+              </button>
+              <button
+                onClick={() => {
+                  setShowPhotoPromptModal(false);
+                  setShowForgotPhotoModal(true);
+                }}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                שכחתי לצלם :/
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo "forgot" modal — שלב 2: חמוד אבל כועס */}
+      {showForgotPhotoModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">😤</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">אוקיי, רושמים את זה אצלנו...</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                סיור בלי תמונה זה כמו פסטל בלי קרם — חבל!
+                <br />
+                אנחנו זוכרים שפעם הזאת שכחת. <span className="font-bold">בפעם הבאה — לצלם!</span> 📸
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setShowForgotPhotoModal(false);
+                handleSave(false, true); // שמירה עם photo_skipped=true
+              }}
+              className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-xl py-3 font-bold"
+            >
+              הבנתי, ממשיכים לשמירה
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -337,14 +337,13 @@ function HomeContent() {
             <>
               {(() => {
                 const s = summary.salary;
-                const classicAvg = s.classic_people > 0 ? s.classic_collected / s.classic_people : 0;
                 const mainBalance = s.total_cash_collected + summary.change_given - summary.transfers - summary.cash_refill - summary.expenses_refill - summary.salary_withdrawn;
                 const changeBalance = summary.cash_refill - summary.change_given;
                 const expensesBalance = summary.expenses_refill - summary.expenses;
                 return (
                   <>
-                    {/* KPIs — tours, people, classic avg */}
-                    <div className="grid grid-cols-3 gap-3 text-center mb-3">
+                    {/* KPIs — tours, people */}
+                    <div className="grid grid-cols-2 gap-3 text-center mb-3">
                       <div className="bg-green-50 rounded-xl p-3">
                         <div className="text-2xl font-bold text-green-800">{summary.tours}</div>
                         <div className="text-xs text-gray-600 mt-1">סיורים</div>
@@ -352,12 +351,6 @@ function HomeContent() {
                       <div className="bg-green-50 rounded-xl p-3">
                         <div className="text-2xl font-bold text-green-800">{summary.people}</div>
                         <div className="text-xs text-gray-600 mt-1">משתתפים</div>
-                      </div>
-                      <div className="bg-green-50 rounded-xl p-3">
-                        <div className="text-2xl font-bold text-green-800">
-                          {s.classic_people > 0 ? `${classicAvg.toFixed(1)}€` : '—'}
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">ממוצע לאדם (קלאסי)</div>
                       </div>
                     </div>
 

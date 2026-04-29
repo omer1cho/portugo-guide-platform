@@ -46,3 +46,7 @@ yarn-error.log*
 # Migration logs (data, not code)
 migration.log
 migration/__pycache__/
+
+# Word documents (specs/feedback — not code)
+*.docx
+~$*

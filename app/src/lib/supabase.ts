@@ -3,7 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// הגדרות auth מפורשות כדי להבטיח שמירת סשן ל-90 יום:
+// - persistSession: שומר את הסשן ב-localStorage בין רענונים/סגירות דפדפן
+// - autoRefreshToken: מחדש את ה-JWT אוטומטית לפני שתוקפו פג (ה-refresh token מחזיק זמן רב)
+// - flowType=pkce: הזרימה המודרנית והמאובטחת. /auth/callback מבצע exchangeCodeForSession מפורש
+// - detectSessionInUrl: מטפל אוטומטית ב-tokens שמופיעים ב-URL hash (זרימת implicit, fallback)
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+});
 
 // Types matching our DB schema
 export type Guide = {
@@ -28,6 +40,8 @@ export type Tour = {
   notes: string;
   /** קישור לתמונת הסיור ב-Supabase Storage (באקט tour-photos) */
   photo_url?: string | null;
+  /** True אם המדריך בחר במפורש לא לצרף תמונה (לדוח חודשי) */
+  photo_skipped?: boolean | null;
 };
 
 export type Expense = {

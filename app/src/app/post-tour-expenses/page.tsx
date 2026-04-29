@@ -258,7 +258,7 @@ function PostTourExpensesContent() {
     setSaving(false);
     resetForm();
     setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 2000);
+    setTimeout(() => setShowSavedToast(false), 3500);
   };
 
   const handleFinish = () => {
@@ -310,7 +310,7 @@ function PostTourExpensesContent() {
         {/* כותרת חמה */}
         <div className="bg-white rounded-2xl shadow p-5 text-center border-2 border-green-200">
           <div className="text-4xl mb-2">🎉</div>
-          <h2 className="text-lg font-bold text-green-900">הסיור נשמר!</h2>
+          <h2 className="text-lg font-bold text-green-900">הסיור כמעט נשמר!</h2>
           <p className="text-sm text-gray-600 mt-1">
             רגע רגע — כדי לשמור נשאר למלא את ההוצאות מהסיור
           </p>

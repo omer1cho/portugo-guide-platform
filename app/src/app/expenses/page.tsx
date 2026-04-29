@@ -27,6 +27,7 @@ type Expense = {
 };
 
 const OTHER_OPTION_VALUE = '__other__';
+const GENERAL_TOUR_VALUE = '__general__'; // הוצאה שלא קשורה לסיור ספציפי
 
 function todayISO() {
   const d = new Date();
@@ -111,9 +112,9 @@ function ExpensesContent() {
     return TOUR_TYPES[guideCity].filter((t) => t.category !== 'private' || true);
   }, [guideCity]);
 
-  // הפריטים הזמינים לסיור הנבחר (מהקטלוג)
+  // הפריטים הזמינים לסיור הנבחר (מהקטלוג). "ללא סיור" => אין קטלוג, רק "אחר".
   const itemsForTour = useMemo(() => {
-    if (!tourType) return [];
+    if (!tourType || tourType === GENERAL_TOUR_VALUE) return [];
     return catalog.filter((c) => c.tour_type === tourType);
   }, [tourType, catalog]);
 
@@ -218,6 +219,9 @@ function ExpensesContent() {
 
     setSaving(true);
 
+    // ללא סיור → tour_type = null ב-DB (לא הערך הסנטינלי שמשמש את ה-UI)
+    const tourTypeToSave = tourType === GENERAL_TOUR_VALUE ? null : tourType;
+
     const { data: inserted, error } = await supabase
       .from('expenses')
       .insert({
@@ -226,7 +230,7 @@ function ExpensesContent() {
         item: itemName,
         amount: amt,
         notes,
-        tour_type: tourType,
+        tour_type: tourTypeToSave,
         catalog_item_id: catalogId,
         quantity: qtyValue,
         expected_amount: expectedValue,
@@ -247,7 +251,7 @@ function ExpensesContent() {
           file: receipt,
           expenseId: inserted.id,
           expenseDate: date,
-          tourType,
+          tourType: tourTypeToSave,
         });
         await supabase.from('expenses').update({ receipt_url: url }).eq('id', inserted.id);
       } catch (uploadErr) {
@@ -326,6 +330,7 @@ function ExpensesContent() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
               >
                 <option value="">-- בחר.י --</option>
+                <option value={GENERAL_TOUR_VALUE}>ללא סיור / הוצאה כללית</option>
                 {tourOptions.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
