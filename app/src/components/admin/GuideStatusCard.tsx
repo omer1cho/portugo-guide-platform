@@ -32,7 +32,7 @@ const STATUS_META: Record<
     icon: '🟢',
   },
   closed: {
-    label: 'סגרה את החודש',
+    label: 'סגר.ה את החודש',
     color: ADMIN_COLORS.gray700,
     bg: ADMIN_COLORS.gray50,
     icon: '✅',
@@ -158,7 +158,7 @@ export default function GuideStatusCard({ summary }: Props) {
         onMouseEnter={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green800)}
         onMouseLeave={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green700)}
       >
-        👁️ צפי כמו {guide.name.split(' ')[0]}
+        👁️ צפ.י כמו {guide.name.split(' ')[0]}
       </button>
     </div>
   );

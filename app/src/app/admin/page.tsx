@@ -3,8 +3,8 @@
 /**
  * /admin — דשבורד ראשי לעומר.
  *
- * מציג: ברכת "שלום עומר", בורר חודש, KPI עליונים, ארבע כרטיסי
- * סטטוס מדריכות, וטבלת סיכום משכורות מצרפי.
+ * מציג: ברכת "שלום עומר", בורר חודש, KPI עליונים, כרטיסי
+ * סטטוס מדריכים, וטבלת סיכום משכורות מצרפי.
  *
  * מבוסס על portugo-dashboard-v4.html (עמוד ראשי), אבל מתחבר
  * לדאטה אמיתית מ-Supabase ומשתמש ב-lib/salary.ts.
@@ -67,7 +67,7 @@ function AdminMainContent() {
             שלום עומר 👋
           </h1>
           <p style={{ fontSize: 14, color: ADMIN_COLORS.gray500, marginTop: 4 }}>
-            סיכום {monthName(year, month)} — כל המדריכות במבט אחד
+            סיכום {monthName(year, month)} — כל המדריכים במבט אחד
           </p>
         </div>
         <MonthSwitcher year={year} month={month} />
@@ -114,7 +114,7 @@ function AdminMainContent() {
             <KpiCard label="סה״כ סיורים" value={snapshot.totals.tours} />
             <KpiCard label="סה״כ משתתפים" value={snapshot.totals.people.toLocaleString('he-IL')} />
             <KpiCard
-              label="סה״כ קופה (כל המדריכות)"
+              label="סה״כ קופה (כל המדריכים)"
               value={fmtEuro(snapshot.totals.cash_collected)}
               sub="כסף שנאסף בסיורים"
             />
@@ -122,7 +122,7 @@ function AdminMainContent() {
               label="סה״כ הוצאות"
               value={fmtEuro(snapshot.totals.expenses)}
               variant="red"
-              sub="ששילמו המדריכות"
+              sub="ששילמו המדריכים"
             />
             <KpiCard
               label="סה״כ משכורות"
@@ -136,14 +136,14 @@ function AdminMainContent() {
             />
           </section>
 
-          {/* סטטוס מדריכות */}
+          {/* סטטוס מדריכים */}
           <section>
             <SectionHeader
-              title="המדריכות החודש"
-              subtitle={`${snapshot.totals.closed_count} סגרו · ${snapshot.totals.open_count} פתוחות · ${snapshot.guides.length - snapshot.totals.closed_count - snapshot.totals.open_count} בלי פעילות`}
+              title="המדריכים החודש"
+              subtitle={`${snapshot.totals.closed_count} סגרו · ${snapshot.totals.open_count} פתוחים · ${snapshot.guides.length - snapshot.totals.closed_count - snapshot.totals.open_count} בלי פעילות`}
             />
             {snapshot.guides.length === 0 ? (
-              <EmptyState message="אין מדריכות פעילות החודש" />
+              <EmptyState message="אין מדריכים פעילים החודש" />
             ) : (
               <div
                 style={{
@@ -219,7 +219,7 @@ function SalaryTable({ snapshot }: { snapshot: MonthSnapshot }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
         <thead>
           <tr style={{ background: ADMIN_COLORS.green25 }}>
-            <Th>מדריכה</Th>
+            <Th>מדריך.ה</Th>
             <Th>עיר</Th>
             <Th align="center">סיורים</Th>
             <Th align="center">משתתפים</Th>

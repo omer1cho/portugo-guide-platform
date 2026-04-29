@@ -95,7 +95,7 @@ export default function AdminGuideSwitcher() {
           href="/admin"
           className="bg-white text-green-800 hover:bg-green-50 active:scale-98 transition-all rounded-md px-3 py-1.5 text-xs font-semibold"
         >
-          פתחי דשבורד ←
+          פתח.י דשבורד ←
         </Link>
       </div>
 
