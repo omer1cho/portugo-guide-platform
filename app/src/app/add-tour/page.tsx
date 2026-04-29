@@ -1133,10 +1133,7 @@ function AddTourContent() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">📸</div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">שכחת לצרף תמונה?</h3>
-              <p className="text-sm text-gray-600">
-                תמונת סיור עוזרת לנו לזכור ולעדכן את הרשתות החברתיות 💚
-              </p>
+              <h3 className="text-lg font-bold text-gray-900">שכחת לצרף תמונה?</h3>
             </div>
             <div className="flex flex-col gap-2">
               <button
@@ -1172,11 +1169,9 @@ function AddTourContent() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">😤</div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">אוקיי, רושמים את זה אצלנו...</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">אוףףףףףףף</h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                סיור בלי תמונה זה כמו פסטל בלי קרם — חבל!
-                <br />
-                אנחנו זוכרים שפעם הזאת שכחת. <span className="font-bold">בפעם הבאה — לצלם!</span> 📸
+                אנחנו זוכרים שהפעם שכחת, אבל <span className="font-bold">בפעם הבאה — לצלם!</span>
               </p>
             </div>
             <button
@@ -1186,7 +1181,7 @@ function AddTourContent() {
               }}
               className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-xl py-3 font-bold"
             >
-              הבנתי, ממשיכים לשמירה
+              זה לא יקרה שוב! בואו נשמור את הסיור
             </button>
           </div>
         </div>
