@@ -112,18 +112,43 @@ export default function LoginPage() {
   // ─────────── שלב 2: אימות קוד ───────────
   const handleVerifyCode = async () => {
     setError('');
-    const cleaned = code.replace(/\D/g, ''); // רק ספרות
-    if (cleaned.length !== 6) {
-      setError('הקוד צריך להיות 6 ספרות');
+    const cleaned = code.trim();
+    if (cleaned.length < 6) {
+      setError('הקוד קצר מדי');
       return;
     }
 
     setVerifying(true);
-    const { error: verifyErr } = await supabase.auth.verifyOtp({
-      email,
-      token: cleaned,
-      type: 'email',
-    });
+
+    // Supabase יכול לשלוח שני סוגי קודים:
+    //   1. OTP קצר (6 ספרות) — verifyOtp עם token+email
+    //   2. Token hash ארוך (32+ תווים, מהקישור עצמו) — verifyOtp עם token_hash
+    // ננסה אוטומטית את הסוג המתאים לפי אורך הקוד.
+    const isNumericShort = /^\d{6,10}$/.test(cleaned);
+    let verifyErr: { message?: string } | null = null;
+
+    if (isNumericShort) {
+      const result = await supabase.auth.verifyOtp({
+        email,
+        token: cleaned,
+        type: 'email',
+      });
+      verifyErr = result.error;
+      // אם נכשל כ-OTP, ננסה גם כ-token_hash
+      if (verifyErr) {
+        const fallback = await supabase.auth.verifyOtp({
+          token_hash: cleaned,
+          type: 'email',
+        });
+        if (!fallback.error) verifyErr = null;
+      }
+    } else {
+      const result = await supabase.auth.verifyOtp({
+        token_hash: cleaned,
+        type: 'email',
+      });
+      verifyErr = result.error;
+    }
 
     if (verifyErr) {
       setVerifying(false);
@@ -254,7 +279,7 @@ export default function LoginPage() {
                   {email}
                 </p>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  תקליד.י כאן את הקוד בן 6 הספרות שמופיע באימייל
+                  תעתיק.י לכאן את הקוד שמופיע באימייל
                 </p>
               </div>
 
@@ -262,17 +287,17 @@ export default function LoginPage() {
                 type="text"
                 value={code}
                 onChange={(e) => {
-                  const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  // מקבל גם 6 ספרות וגם token_hash ארוך (אותיות+ספרות+מקפים)
+                  const cleaned = e.target.value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
                   setCode(cleaned);
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleVerifyCode()}
-                placeholder="123456"
-                inputMode="numeric"
+                placeholder="הקוד מהמייל"
+                inputMode="text"
                 autoComplete="one-time-code"
                 dir="ltr"
-                maxLength={6}
                 autoFocus
-                className="w-full border-2 border-gray-300 rounded-xl px-4 py-4 text-3xl text-center font-bold tracking-[0.5em] focus:border-green-700 focus:outline-none"
+                className="w-full border-2 border-gray-300 rounded-xl px-4 py-4 text-xl text-center font-mono focus:border-green-700 focus:outline-none"
               />
 
               {error && (
@@ -283,7 +308,7 @@ export default function LoginPage() {
 
               <button
                 onClick={handleVerifyCode}
-                disabled={verifying || code.length !== 6}
+                disabled={verifying || code.length < 6}
                 className="w-full bg-green-700 hover:bg-green-800 disabled:bg-gray-400 active:scale-98 transition-all text-white rounded-xl py-3 text-lg font-bold"
               >
                 {verifying ? 'בודק.ת...' : 'כניסה ←'}
