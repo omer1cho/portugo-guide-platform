@@ -3,17 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// הגדרות auth מפורשות כדי להבטיח שמירת סשן ל-90 יום:
+// הגדרות auth מפורשות:
 // - persistSession: שומר את הסשן ב-localStorage בין רענונים/סגירות דפדפן
-// - autoRefreshToken: מחדש את ה-JWT אוטומטית לפני שתוקפו פג (ה-refresh token מחזיק זמן רב)
-// - flowType=pkce: הזרימה המודרנית והמאובטחת. /auth/callback מבצע exchangeCodeForSession מפורש
-// - detectSessionInUrl: מטפל אוטומטית ב-tokens שמופיעים ב-URL hash (זרימת implicit, fallback)
+// - autoRefreshToken: מחדש את ה-JWT אוטומטית לפני שתוקפו פג (סשן ל-90 יום)
+// - detectSessionInUrl: ה-SDK שולף tokens אוטומטית מ-URL hash (זרימת implicit)
+// - flowType=implicit: הזרימה הקלאסית, tokens מועברים ב-#hash. עובד **בין דפדפנים** —
+//   זה קריטי כשמדריכים פותחים את הקישור באפליקציית Gmail/מייל בנייד, שמשגרת אותם
+//   לדפדפן פנימי שונה מהדפדפן המקורי שבו הזינו את המייל. PKCE היה שובר את זה כי
+//   ה-code_verifier נשמר ב-localStorage של הדפדפן המקורי בלבד.
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: 'implicit',
   },
 });
 
