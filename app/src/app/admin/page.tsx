@@ -30,6 +30,7 @@ function AdminMainContent() {
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadCounter, setReloadCounter] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,7 +49,9 @@ function AdminMainContent() {
     return () => {
       cancelled = true;
     };
-  }, [year, month, cityFilter]);
+  }, [year, month, cityFilter, reloadCounter]);
+
+  const handleReload = () => setReloadCounter((c) => c + 1);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -153,7 +156,7 @@ function AdminMainContent() {
                 }}
               >
                 {snapshot.guides.map((s) => (
-                  <GuideStatusCard key={s.guide.id} summary={s} />
+                  <GuideStatusCard key={s.guide.id} summary={s} onChange={handleReload} />
                 ))}
               </div>
             )}

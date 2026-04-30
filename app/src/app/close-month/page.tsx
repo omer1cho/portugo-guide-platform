@@ -113,18 +113,22 @@ function CloseMonthContent() {
     let cashRefill = 0;
     let expensesRefill = 0;
     let salaryWithdrawn = 0;
+    let adminTopupChange = 0;
+    let adminTopupExpenses = 0;
     (trRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
       const amt = t.amount || 0;
       if (t.transfer_type === 'cash_refill') cashRefill += amt;
       else if (t.transfer_type === 'expenses_refill') expensesRefill += amt;
       else if (t.transfer_type === 'salary_withdrawal') salaryWithdrawn += amt;
+      else if (t.transfer_type === 'admin_topup_change') adminTopupChange += amt;
+      else if (t.transfer_type === 'admin_topup_expenses') adminTopupExpenses += amt;
       else transfersTotal += amt;
     });
 
     setCash({
       mainBalance: s.total_cash_collected + changeGiven - transfersTotal - cashRefill - expensesRefill - salaryWithdrawn,
-      changeBalance: openingChange + cashRefill - changeGiven,
-      expensesBalance: openingExpenses + expensesRefill - expensesTotal,
+      changeBalance: openingChange + cashRefill + adminTopupChange - changeGiven,
+      expensesBalance: openingExpenses + expensesRefill + adminTopupExpenses - expensesTotal,
       salaryWithdrawn,
     });
     setLoading(false);

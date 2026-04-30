@@ -18,6 +18,8 @@ type Summary = {
   salary_withdrawn: number;    // salary the guide withdrew from the main box at month-close
   opening_change: number;      // יתרת פתיחה במעטפת עודף
   opening_expenses: number;    // יתרת פתיחה במעטפת הוצאות
+  admin_topup_change: number;  // תוספת אדמין למעטפת עודף (לא מהקופה הראשית)
+  admin_topup_expenses: number; // תוספת אדמין למעטפת הוצאות (לא מהקופה הראשית)
   external: { description: string; amount: number; date: string }[];
   expenses: number;
   transfers: number;
@@ -64,6 +66,7 @@ function HomeContent() {
     tours: 0, people: 0, collected: 0,
     change_given: 0, cash_refill: 0, expenses_refill: 0, salary_withdrawn: 0,
     opening_change: 0, opening_expenses: 0,
+    admin_topup_change: 0, admin_topup_expenses: 0,
     external: [],
     expenses: 0, transfers: 0,
     salary: EMPTY_SALARY,
@@ -169,11 +172,15 @@ function HomeContent() {
       let cashRefill = 0;
       let expensesRefill = 0;
       let salaryWithdrawn = 0;
+      let adminTopupChange = 0;
+      let adminTopupExpenses = 0;
       (trRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
         const amt = t.amount || 0;
         if (t.transfer_type === 'cash_refill') cashRefill += amt;
         else if (t.transfer_type === 'expenses_refill') expensesRefill += amt;
         else if (t.transfer_type === 'salary_withdrawal') salaryWithdrawn += amt;
+        else if (t.transfer_type === 'admin_topup_change') adminTopupChange += amt;
+        else if (t.transfer_type === 'admin_topup_expenses') adminTopupExpenses += amt;
         else transfersTotal += amt;
       });
 
@@ -187,6 +194,8 @@ function HomeContent() {
         salary_withdrawn: salaryWithdrawn,
         opening_change: guide?.opening_change_balance || 0,
         opening_expenses: guide?.opening_expenses_balance || 0,
+        admin_topup_change: adminTopupChange,
+        admin_topup_expenses: adminTopupExpenses,
         external: externalActivities,
         expenses: expensesTotal,
         transfers: transfersTotal,
@@ -344,8 +353,8 @@ function HomeContent() {
               {(() => {
                 const s = summary.salary;
                 const mainBalance = s.total_cash_collected + summary.change_given - summary.transfers - summary.cash_refill - summary.expenses_refill - summary.salary_withdrawn;
-                const changeBalance = summary.opening_change + summary.cash_refill - summary.change_given;
-                const expensesBalance = summary.opening_expenses + summary.expenses_refill - summary.expenses;
+                const changeBalance = summary.opening_change + summary.cash_refill + summary.admin_topup_change - summary.change_given;
+                const expensesBalance = summary.opening_expenses + summary.expenses_refill + summary.admin_topup_expenses - summary.expenses;
                 return (
                   <>
                     {/* KPIs — tours, people */}

@@ -14,6 +14,8 @@ type Totals = {
   expenses: number;         // expenses from expenses envelope
   expensesRefill: number;   // guide self-reinforcing: main → expenses envelope
   salaryWithdrawn: number;  // salary withdrawn from main box at month-close
+  adminTopupChange: number; // אדמין הוסיף למעטפת עודף (לא מהקופה הראשית)
+  adminTopupExpenses: number; // אדמין הוסיף למעטפת הוצאות (לא מהקופה הראשית)
 };
 
 type RefillKind = 'change' | 'expenses';
@@ -88,6 +90,8 @@ function CashBoxesContent() {
     expenses: 0,
     expensesRefill: 0,
     salaryWithdrawn: 0,
+    adminTopupChange: 0,
+    adminTopupExpenses: 0,
   });
   const [mainMovements, setMainMovements] = useState<Movement[]>([]);
   const [changeMovements, setChangeMovements] = useState<Movement[]>([]);
@@ -182,6 +186,8 @@ function CashBoxesContent() {
     let cashRefill = 0;
     let expensesRefill = 0;
     let salaryWithdrawn = 0;
+    let adminTopupChange = 0;
+    let adminTopupExpenses = 0;
     const expensesMov: Movement[] = [];
 
     (transfers || []).forEach(
@@ -198,6 +204,20 @@ function CashBoxesContent() {
         } else if (t.transfer_type === 'salary_withdrawal') {
           salaryWithdrawn += amt;
           mainMov.push({ date: t.transfer_date, description: 'משיכת משכורת (סגירת חודש)', amount: -amt });
+        } else if (t.transfer_type === 'admin_topup_change') {
+          adminTopupChange += amt;
+          changeMov.push({
+            date: t.transfer_date,
+            description: t.notes || 'תוספת מפורטוגו',
+            amount: amt,
+          });
+        } else if (t.transfer_type === 'admin_topup_expenses') {
+          adminTopupExpenses += amt;
+          expensesMov.push({
+            date: t.transfer_date,
+            description: t.notes || 'תוספת מפורטוגו',
+            amount: amt,
+          });
         } else {
           // to_portugo (ברירת מחדל)
           transferred += amt;
@@ -264,6 +284,8 @@ function CashBoxesContent() {
       expenses: expensesTotal,
       expensesRefill,
       salaryWithdrawn,
+      adminTopupChange,
+      adminTopupExpenses,
     });
     setLoading(false);
   }
@@ -279,8 +301,8 @@ function CashBoxesContent() {
     totals.cashRefill -
     totals.expensesRefill -
     totals.salaryWithdrawn;
-  const changeBalance = openingChange + totals.cashRefill - totals.changeGiven;
-  const expensesBalance = openingExpenses + totals.expensesRefill - totals.expenses;
+  const changeBalance = openingChange + totals.cashRefill + totals.adminTopupChange - totals.changeGiven;
+  const expensesBalance = openingExpenses + totals.expensesRefill + totals.adminTopupExpenses - totals.expenses;
   const needsChangeRefill = totals.changeGiven > 0 && changeBalance < 51;
 
   const refillAmt = parseFloat(refillAmount) || 0;
@@ -428,6 +450,12 @@ function CashBoxesContent() {
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
                   <span className="font-semibold">+{totals.cashRefill.toFixed(2)}€</span>
                 </div>
+                {totals.adminTopupChange > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">תוספת מפורטוגו:</span>
+                    <span className="font-semibold">+{totals.adminTopupChange.toFixed(2)}€</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">עודף שנתתי ללקוחות:</span>
                   <span className="font-semibold text-red-700">
@@ -483,6 +511,12 @@ function CashBoxesContent() {
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
                   <span className="font-semibold">+{totals.expensesRefill.toFixed(2)}€</span>
                 </div>
+                {totals.adminTopupExpenses > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">תוספת מפורטוגו:</span>
+                    <span className="font-semibold">+{totals.adminTopupExpenses.toFixed(2)}€</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">הוצאות החודש:</span>
                   <span className="font-semibold text-red-700">

@@ -5,14 +5,18 @@
  *
  * מציג: שם, עיר, מס׳ סיורים, סטטוס סגירה, סה"כ משכורת,
  * וכפתור "צפה כמו..." שעובד דרך localStorage (כמו AdminGuideSwitcher).
+ * וכפתור "💰 הוסף למעטפה" שמוסיף כסף שלא מהקופה הראשית.
  */
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ADMIN_COLORS, cityLabel, fmtEuro } from '@/lib/admin/theme';
 import type { GuideMonthSummary, GuideStatus } from '@/lib/admin/data';
+import AdminEnvelopeTopupModal from './AdminEnvelopeTopupModal';
 
 type Props = {
   summary: GuideMonthSummary;
+  onChange?: () => void; // קוראים אחרי שינוי (כמו topup) — כדי לרענן את הסיכום
 };
 
 const STATUS_META: Record<
@@ -45,10 +49,11 @@ const STATUS_META: Record<
   },
 };
 
-export default function GuideStatusCard({ summary }: Props) {
+export default function GuideStatusCard({ summary, onChange }: Props) {
   const router = useRouter();
   const meta = STATUS_META[summary.status];
   const { guide } = summary;
+  const [showTopupModal, setShowTopupModal] = useState(false);
 
   const handleViewAs = () => {
     try {
@@ -141,25 +146,54 @@ export default function GuideStatusCard({ summary }: Props) {
       )}
 
       {/* Actions */}
-      <button
-        onClick={handleViewAs}
-        style={{
-          padding: '10px',
-          background: ADMIN_COLORS.green700,
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          fontSize: 14,
-          fontWeight: 600,
-          transition: 'background 200ms',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green800)}
-        onMouseLeave={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green700)}
-      >
-        👁️ צפ.י כמו {guide.name.split(' ')[0]}
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button
+          onClick={handleViewAs}
+          style={{
+            padding: '10px',
+            background: ADMIN_COLORS.green700,
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: 14,
+            fontWeight: 600,
+            transition: 'background 200ms',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green800)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green700)}
+        >
+          👁️ צפ.י כמו {guide.name.split(' ')[0]}
+        </button>
+        <button
+          onClick={() => setShowTopupModal(true)}
+          style={{
+            padding: '8px',
+            background: 'transparent',
+            color: ADMIN_COLORS.green800,
+            border: `1px solid ${ADMIN_COLORS.green700}`,
+            borderRadius: 8,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
+          💰 הוספת כסף למעטפה
+        </button>
+      </div>
+
+      {showTopupModal && (
+        <AdminEnvelopeTopupModal
+          guideId={guide.id}
+          guideName={guide.name}
+          onClose={() => setShowTopupModal(false)}
+          onSaved={() => {
+            if (onChange) onChange();
+          }}
+        />
+      )}
     </div>
   );
 }
