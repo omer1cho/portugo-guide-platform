@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
 
@@ -114,9 +115,18 @@ function TransfersContent() {
     <div className="min-h-screen pb-20 bg-gray-50">
       <header className="bg-green-800 text-white p-4 shadow-md sticky top-0 z-10">
         <div className="max-w-md mx-auto flex justify-between items-center">
-          <button onClick={() => router.back()} className="text-sm bg-green-900 hover:bg-green-950 active:scale-95 transition-transform px-3 py-2 rounded-md">
-            ← חזרה
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => router.back()} className="text-sm bg-green-900 hover:bg-green-950 active:scale-95 transition-transform px-3 py-2 rounded-md">
+              ← חזרה
+            </button>
+            <Link
+              href="/home"
+              aria-label="מסך הבית"
+              className="text-base bg-green-900 hover:bg-green-950 active:scale-95 transition-transform px-3 py-2 rounded-md"
+            >
+              🏠
+            </Link>
+          </div>
           <h1 className="text-lg font-bold">העברות שלי</h1>
         </div>
       </header>

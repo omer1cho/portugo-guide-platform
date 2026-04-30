@@ -332,11 +332,12 @@ function HomeContent() {
 
           {loading ? (
             <div className="text-gray-400 text-center py-6">רגע, מושך נתונים...</div>
-          ) : summary.tours === 0 ? (
+          ) : summary.tours === 0 && summary.salary.total_with_tips === 0 ? (
+            // empty state: אין סיורים ואין פעילות שכר (אשל / הכשרה / חיצונית)
             <div className="text-center py-6 text-gray-500">
               {isCurrent
-                ? 'עוד לא הוספת סיור החודש — בוא.י נתחיל! 👇'
-                : 'לא נרשמו סיורים בחודש זה.'}
+                ? 'עוד לא הוספת סיור או פעילות החודש — בוא.י נתחיל! 👇'
+                : 'לא נרשמה פעילות בחודש זה.'}
             </div>
           ) : (
             <>

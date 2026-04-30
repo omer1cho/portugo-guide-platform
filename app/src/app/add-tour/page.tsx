@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   supabase,
   TOUR_TYPES,
@@ -71,6 +72,20 @@ function AddTourContent() {
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
   const isEditMode = !!editId;
+  const editActivityId = searchParams.get('editActivity');
+  const isEditActivityMode = !!editActivityId;
+  // ב-מצב עריכת פעילות, אנחנו עוקפים את כל הטופס המורכב ומציגים טופס פשוט.
+  // הטופס המקורי תומך בכמה פעילויות במקביל, אבל בעריכה אנחנו עורכים רק
+  // אחת — עם תאריך, סכום (לחיצונית), והערות.
+  const [editActivity, setEditActivity] = useState<{
+    id: string;
+    activity_type: string;
+    activity_date: string;
+    amount: number;
+    notes: string;
+  } | null>(null);
+  const [editActivityAmount, setEditActivityAmount] = useState<number>(0);
+  const [editActivityNotes, setEditActivityNotes] = useState<string>('');
   const [guideId, setGuideId] = useState<string | null>(null);
   const [guideName, setGuideName] = useState<string>('');
   const [guideCity, setGuideCity] = useState<'lisbon' | 'porto'>('lisbon');
@@ -121,6 +136,32 @@ function AddTourContent() {
     setGuideName(name);
     setGuideCity(city || 'lisbon');
   }, [router]);
+
+  // Load activity data in edit-activity mode
+  useEffect(() => {
+    if (!editActivityId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('id, activity_type, activity_date, amount, notes')
+        .eq('id', editActivityId)
+        .single();
+      if (cancelled) return;
+      if (error || !data) {
+        setError('לא מצאנו את הפעילות לעריכה');
+        return;
+      }
+      setEditActivity(data);
+      setMode('activity');
+      setDate(data.activity_date);
+      setEditActivityAmount(data.amount || 0);
+      setEditActivityNotes(data.notes || '');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editActivityId]);
 
   // Load tour data in edit mode
   useEffect(() => {
@@ -434,6 +475,36 @@ function AddTourContent() {
     }
   };
 
+  // ─────── עזר: תווית עברית לסוג פעילות (לעריכה) ───────
+  function activityTypeLabel(t: string): string {
+    if (t === 'habraza') return 'הברזה בכיכר';
+    if (t === 'training') return 'הכשרה (כתלמיד.ה)';
+    if (t === 'training_lead') return 'הכשרה (העברתי)';
+    if (t === 'external') return 'פעילות חיצונית';
+    return t;
+  }
+
+  // ─────── שמירת עריכת פעילות יחידה ───────
+  async function handleSaveEditActivity() {
+    if (!editActivity) return;
+    setError('');
+    setSaving(true);
+    const { error: updErr } = await supabase
+      .from('activities')
+      .update({
+        activity_date: date,
+        amount: editActivityAmount,
+        notes: editActivityNotes,
+      })
+      .eq('id', editActivity.id);
+    setSaving(false);
+    if (updErr) {
+      setError('משהו השתבש: ' + updErr.message);
+      return;
+    }
+    router.push('/my-tours');
+  }
+
   const totalPeople = bookings.reduce((s, b) => s + (b.people || 0), 0);
   const totalPrice = bookings.reduce((s, b) => s + (b.price || 0), 0);
 
@@ -449,16 +520,100 @@ function AddTourContent() {
       {/* Header */}
       <header className="bg-green-800 text-white p-4 shadow-md sticky top-0 z-10">
         <div className="max-w-md mx-auto flex justify-between items-center">
-          <button onClick={() => router.back()} className="text-sm bg-green-900 hover:bg-green-950 active:scale-95 transition-transform px-3 py-2 rounded-md">
-            ← חזרה
-          </button>
-          <h1 className="text-lg font-bold">{isEditMode ? 'עריכת סיור' : 'מה מוסיפים?'}</h1>
+          <div className="flex gap-2">
+            <button onClick={() => router.back()} className="text-sm bg-green-900 hover:bg-green-950 active:scale-95 transition-transform px-3 py-2 rounded-md">
+              ← חזרה
+            </button>
+            <Link
+              href="/home"
+              aria-label="מסך הבית"
+              className="text-base bg-green-900 hover:bg-green-950 active:scale-95 transition-transform px-3 py-2 rounded-md"
+            >
+              🏠
+            </Link>
+          </div>
+          <h1 className="text-lg font-bold">
+            {isEditMode ? 'עריכת סיור' : isEditActivityMode ? 'עריכת פעילות' : 'מה מוסיפים?'}
+          </h1>
         </div>
       </header>
 
       <main className="max-w-md mx-auto p-4 space-y-4">
+        {/* Edit-activity simple form — replaces the whole tour/activity form when editing one activity */}
+        {isEditActivityMode && (
+          <div className="bg-white rounded-xl shadow p-5 space-y-4">
+            <div>
+              <div className="text-sm text-gray-500 mb-1">סוג הפעילות</div>
+              <div className="font-bold text-lg text-green-800">
+                {activityTypeLabel(editActivity?.activity_type || '')}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                לשינוי הסוג — צריך למחוק את הפעילות ולהוסיף מחדש.
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-1">תאריך</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+
+            {/* סכום — ניתן לעריכה רק ל-external. השאר חישוב אוטומטי. */}
+            {editActivity?.activity_type === 'external' ? (
+              <div>
+                <label className="block text-sm font-semibold mb-1">סכום (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={editActivityAmount || ''}
+                  onChange={(e) => setEditActivityAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm text-gray-500 mb-1">סכום</div>
+                <div className="font-bold text-green-800">{editActivityAmount}€</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  הסכום מחושב אוטומטית לפי סוג הפעילות, לא ניתן לעריכה.
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-semibold mb-1">הערות</label>
+              <textarea
+                value={editActivityNotes}
+                onChange={(e) => setEditActivityNotes(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleSaveEditActivity}
+              disabled={saving}
+              className="w-full bg-green-700 hover:bg-green-800 disabled:bg-gray-400 active:scale-98 transition-all text-white rounded-xl py-3 font-bold"
+            >
+              {saving ? 'מעדכן...' : 'עדכן פעילות'}
+            </button>
+          </div>
+        )}
+
         {/* Mode switcher — hidden in edit mode */}
-        {!isEditMode && (
+        {!isEditMode && !isEditActivityMode && (
           <div className="bg-white rounded-xl shadow p-2 flex gap-2">
             <button
               onClick={() => setMode('tour')}
@@ -771,7 +926,7 @@ function AddTourContent() {
           </>
         )}
 
-        {mode === 'activity' && (
+        {mode === 'activity' && !isEditActivityMode && (
           <div className="bg-white rounded-xl shadow p-4 space-y-3">
             <div>
               <label className="block text-sm font-semibold mb-1">תאריך</label>
@@ -1043,19 +1198,24 @@ function AddTourContent() {
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
-            {error}
-          </div>
-        )}
+        {/* Save button + error: only for the regular tour/activity flow, not for edit-activity */}
+        {!isEditActivityMode && (
+          <>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+                {error}
+              </div>
+            )}
 
-        <button
-          onClick={onSaveClicked}
-          disabled={saving}
-          className="w-full bg-green-700 hover:bg-green-800 active:scale-98 disabled:bg-gray-400 text-white rounded-2xl shadow-lg py-4 text-lg font-bold transition-all"
-        >
-          {saving ? (isEditMode ? 'מעדכן...' : 'שומר...') : (isEditMode ? 'עדכן סיור' : 'שמור')}
-        </button>
+            <button
+              onClick={onSaveClicked}
+              disabled={saving}
+              className="w-full bg-green-700 hover:bg-green-800 active:scale-98 disabled:bg-gray-400 text-white rounded-2xl shadow-lg py-4 text-lg font-bold transition-all"
+            >
+              {saving ? (isEditMode ? 'מעדכן...' : 'שומר...') : (isEditMode ? 'עדכן סיור' : 'שמור')}
+            </button>
+          </>
+        )}
       </main>
 
       {/* Mismatch confirmation modal */}
