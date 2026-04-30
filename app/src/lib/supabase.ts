@@ -20,6 +20,17 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
+/**
+ * תאריך שבו המערכת עברה לפרודקשן.
+ *
+ * נתונים מלפני התאריך הזה (ינואר-מרץ 2026) הם נתוני ארכיון שעומר ייבאה
+ * מהאקסלים הישנים — נשמרים לצרכי אנליטיקה והיסטוריה אבל **לא משפיעים**
+ * על חישוב יתרות הקופות. יתרות הפתיחה (`opening_change_balance` /
+ * `opening_expenses_balance`) מייצגות את המצב הפיזי של המעטפות בדיוק
+ * בתאריך הזה — מ-1.4 ואילך הקופות צוברות לפי הפעילות באפליקציה בלבד.
+ */
+export const SYSTEM_START_DATE = '2026-04-01';
+
 // Types matching our DB schema
 export type Guide = {
   id: string;

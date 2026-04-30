@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase, type Guide } from '@/lib/supabase';
+import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
 import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
 import { useAuthGuard, logout } from '@/lib/auth';
 import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
@@ -123,13 +123,14 @@ function HomeContent() {
         // Pending deposits — לא תלוי בחודש, מצטבר על פני זמן
         supabase.from('transfers').select('amount')
           .eq('guide_id', id).eq('transfer_type', 'to_portugo').eq('is_pending_deposit', true),
-        // יתרות מעטפות מצטברות — עד סוף החודש הנבחר (חוצה חודשים)
+        // יתרות מעטפות מצטברות — מ-SYSTEM_START_DATE עד סוף החודש הנבחר
+        // (נתונים מלפני התאריך הם ארכיון, יתרת הפתיחה כבר מייצגת אותם)
         supabase.from('transfers').select('amount, transfer_type')
-          .eq('guide_id', id).lte('transfer_date', end),
+          .eq('guide_id', id).gte('transfer_date', SYSTEM_START_DATE).lte('transfer_date', end),
         supabase.from('tours').select('bookings(change_given)')
-          .eq('guide_id', id).lte('tour_date', end),
+          .eq('guide_id', id).gte('tour_date', SYSTEM_START_DATE).lte('tour_date', end),
         supabase.from('expenses').select('amount')
-          .eq('guide_id', id).lte('expense_date', end),
+          .eq('guide_id', id).gte('expense_date', SYSTEM_START_DATE).lte('expense_date', end),
       ]);
 
       const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'> | null) || null;

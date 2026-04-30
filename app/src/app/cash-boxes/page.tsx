@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase, SYSTEM_START_DATE } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
 import { uploadTransferReceipt } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
@@ -219,24 +219,28 @@ function CashBoxesContent() {
       .order('transfer_date', { ascending: true });
     setPendingDeposits((pendings as PendingRow[]) || []);
 
-    // ─── יתרות מעטפות מצטברות — עד סוף החודש הנבחר (חוצה חודשים) ───
+    // ─── יתרות מעטפות מצטברות — מ-SYSTEM_START_DATE ועד סוף החודש הנבחר ───
     // המעטפות הן כסף פיזי שהמדריך נושא, אז היתרה ממשיכה מחודש לחודש.
-    // נטענים: כל ה-transfers וכל ה-bookings.change_given עד תאריך הסיום של החודש הנבחר.
+    // אבל נתוני ארכיון מלפני SYSTEM_START_DATE לא נספרים — יתרת הפתיחה כבר
+    // מייצגת את המצב הפיזי של המעטפות באותו רגע.
     const [cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
       supabase
         .from('transfers')
         .select('amount, transfer_type')
         .eq('guide_id', id)
+        .gte('transfer_date', SYSTEM_START_DATE)
         .lte('transfer_date', end),
       supabase
         .from('tours')
         .select('tour_date, bookings(change_given)')
         .eq('guide_id', id)
+        .gte('tour_date', SYSTEM_START_DATE)
         .lte('tour_date', end),
       supabase
         .from('expenses')
         .select('amount')
         .eq('guide_id', id)
+        .gte('expense_date', SYSTEM_START_DATE)
         .lte('expense_date', end),
     ]);
 
