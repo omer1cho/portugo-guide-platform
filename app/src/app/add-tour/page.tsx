@@ -509,9 +509,10 @@ function AddTourContent() {
   const totalPrice = bookings.reduce((s, b) => s + (b.price || 0), 0);
 
   // Mismatch detection (only flag when user actually filled the expected totals)
-  const expectedPeople = totalPeopleExpected !== '' ? parseInt(totalPeopleExpected) : null;
+  // אנשים יכולים להיות עשרוניים בקלאסי — משתמשים ב-parseFloat
+  const expectedPeople = totalPeopleExpected !== '' ? parseFloat(totalPeopleExpected) : null;
   const expectedPrice = totalPriceExpected !== '' ? parseFloat(totalPriceExpected) : null;
-  const peopleMismatch = expectedPeople !== null && totalPeople > 0 && totalPeople !== expectedPeople;
+  const peopleMismatch = expectedPeople !== null && totalPeople > 0 && Math.abs(totalPeople - expectedPeople) > 0.01;
   const priceMismatch = expectedPrice !== null && totalPrice > 0 && Math.abs(totalPrice - expectedPrice) > 0.01;
   const hasMismatch = peopleMismatch || priceMismatch;
 
@@ -705,7 +706,8 @@ function AddTourContent() {
                   <input
                     type="number"
                     min="0"
-                    inputMode="numeric"
+                    step={tourCategory === 'classic' ? '0.5' : '1'}
+                    inputMode={tourCategory === 'classic' ? 'decimal' : 'numeric'}
                     value={totalPeopleExpected}
                     onChange={(e) => setTotalPeopleExpected(e.target.value)}
                     placeholder="לדוגמה: 10"
@@ -753,12 +755,26 @@ function AddTourContent() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">כמה אנשים</label>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        כמה אנשים
+                        {tourCategory === 'classic' && (
+                          <span className="text-gray-400"> (אפשר חצאים: 1.5, 2.5...)</span>
+                        )}
+                      </label>
                       <input
                         type="number"
                         min="0"
+                        // ב-קלאסי מאפשרים חצאים (0.5 step), בכל השאר רק שלמים (1).
+                        step={tourCategory === 'classic' ? '0.5' : '1'}
                         value={b.people || ''}
-                        onChange={(e) => updateBooking(idx, 'people', parseInt(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value) || 0;
+                          // בקלאסי — מעגלים לחצי הקרוב; באחרים — מעגלים למעלה לשלם
+                          const rounded = tourCategory === 'classic'
+                            ? Math.round(v * 2) / 2
+                            : Math.ceil(v);
+                          updateBooking(idx, 'people', rounded);
+                        }}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                       />
                     </div>
@@ -768,6 +784,7 @@ function AddTourContent() {
                         <input
                           type="number"
                           min="0"
+                          step="1"
                           value={b.kids || ''}
                           onChange={(e) => updateBooking(idx, 'kids', parseInt(e.target.value) || 0)}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"

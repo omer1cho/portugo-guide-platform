@@ -76,20 +76,31 @@ export type SalaryBreakdown = {
  * Returns { base, transfer } for a single classic booking.
  *
  * @param people    Total people in the sub-group (kids included).
+ *                  Yכול להיות עשרוני בחצאים (1.5, 2.5...) — מדיניות פורטוגו:
+ *                  אם משתתף פורש באמצע סיור (אחרי נקודה מסוימת) הוא נספר כחצי.
  * @param kids      Kids in the group (kids don't pay → don't count toward transfer or base).
+ *                  ילדים תמיד שלמים (לא חצאים).
  * @param transferPerPerson  Per-guide rate for "transfer to Portugo" per paying head.
  *                           Veterans = 10€. New guides starting mid-2026 = 11€.
  *                           Defaults to 10 to keep old call sites working.
+ *
+ * חישוב:
+ *   - paying = max(0, people - kids) — יכול להיות עשרוני (למשל 1.5).
+ *   - transfer = paying × transferPerPerson — עשרוני כפי שהוא (1.5 × 10€ = 15€).
+ *   - base = lookup לפי tier, עם **עיגול למעלה** של מספר המשלמים
+ *     (1.5 → tier של 2 = 10€, 12.5 → tier של 13-22 = 20€).
  */
 export function calcClassicSalary(people: number, kids: number = 0, transferPerPerson: number = 10) {
   const paying = Math.max(0, people - kids);
   const transfer = paying * transferPerPerson;
+  // עיגול למעלה לחישוב ה-base
+  const payingForBase = Math.ceil(paying);
   let base: number;
-  if (paying <= 1) base = 5;
-  else if (paying <= 2) base = 10;
-  else if (paying <= 12) base = 15;
-  else if (paying <= 22) base = 20;
-  else if (paying <= 32) base = 25;
+  if (payingForBase <= 1) base = 5;
+  else if (payingForBase <= 2) base = 10;
+  else if (payingForBase <= 12) base = 15;
+  else if (payingForBase <= 22) base = 20;
+  else if (payingForBase <= 32) base = 25;
   else base = 30;
   return { base, transfer };
 }
