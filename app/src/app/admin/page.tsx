@@ -137,6 +137,22 @@ function AdminMainContent() {
               value={fmtEuro(snapshot.totals.salary_to_pay)}
               sub="מה שצריך לשלם בנטו"
             />
+            {snapshot.totals.pending_total > 0 && (
+              <KpiCard
+                label="ממתין להפקדה (כל המדריכים)"
+                value={fmtEuro(snapshot.totals.pending_total)}
+                variant="red"
+                sub="כסף שטרם הופקד פיזית"
+              />
+            )}
+            {snapshot.totals.missing_photos_total > 0 && (
+              <KpiCard
+                label="תמונות חסרות"
+                value={snapshot.totals.missing_photos_total}
+                variant="yellow"
+                sub="סיורים בלי תמונה"
+              />
+            )}
           </section>
 
           {/* סטטוס מדריכים */}
@@ -162,6 +178,13 @@ function AdminMainContent() {
             )}
           </section>
 
+          {/* דוח תמונות חסרות — מתקפל, מציג רק אם יש */}
+          {snapshot.totals.missing_photos_total > 0 && (
+            <section>
+              <MissingPhotosReport snapshot={snapshot} />
+            </section>
+          )}
+
           {/* טבלת סיכום משכורות */}
           {snapshot.guides.length > 0 && (
             <section>
@@ -170,6 +193,92 @@ function AdminMainContent() {
             </section>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// דוח תמונות חסרות — מקופל כברירת מחדל; קליק פותח רשימה לפי מדריך
+// ---------------------------------------------------------------------------
+
+function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
+  const [open, setOpen] = useState(false);
+  const guidesWithMissing = snapshot.guides.filter((g) => g.missing_photos > 0);
+
+  const formatDate = (d: string) => {
+    const dt = new Date(d);
+    return dt.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' });
+  };
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+        border: '1px solid #fff8d4',
+      }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '14px 16px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'right',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#a37b00' }}>
+          📷 תמונות חסרות החודש ({snapshot.totals.missing_photos_total})
+        </span>
+        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
+          {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fff8d4' }}>
+          {guidesWithMissing.map((g) => (
+            <div key={g.guide.id} style={{ marginTop: 12 }}>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: ADMIN_COLORS.green800,
+                  marginBottom: 6,
+                }}
+              >
+                {g.guide.name} — {g.missing_photos} סיור{g.missing_photos > 1 ? 'ים' : ''}
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {g.missing_photos_list.map((t) => (
+                  <li
+                    key={t.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '6px 10px',
+                      background: '#fffbe6',
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: ADMIN_COLORS.gray700,
+                    }}
+                  >
+                    <span>{t.tour_type}</span>
+                    <span style={{ color: ADMIN_COLORS.gray500 }}>{formatDate(t.tour_date)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

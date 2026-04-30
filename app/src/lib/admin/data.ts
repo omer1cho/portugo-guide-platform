@@ -42,6 +42,10 @@ export type GuideMonthSummary = {
   salary: SalaryBreakdown;
   /** סיורים בלי תמונה (ולא photo_skipped=true) — דוח חודשי */
   missing_photos: number;
+  /** רשימת הסיורים החסרים תמונה — לתצוגה מפורטת */
+  missing_photos_list: { id: string; tour_date: string; tour_type: string }[];
+  /** סה"כ ממתין להפקדה (חוצה חודשים — נצבר עד שהמדריך מפקיד פיזית) */
+  pending_total: number;
 };
 
 export type MonthSnapshot = {
@@ -57,6 +61,8 @@ export type MonthSnapshot = {
     salary_to_pay: number; // total transfer_amount (מה שפורטוגו מעבירה)
     closed_count: number;
     open_count: number;
+    pending_total: number; // סה"כ כסף שממתין להפקדה אצל כל המדריכים
+    missing_photos_total: number; // סה"כ סיורים בלי תמונה
   };
 };
 
@@ -121,6 +127,8 @@ export async function loadMonthSnapshot(
         salary_to_pay: 0,
         closed_count: 0,
         open_count: 0,
+        pending_total: 0,
+        missing_photos_total: 0,
       },
     };
   }
@@ -128,7 +136,7 @@ export async function loadMonthSnapshot(
   const guideIds = guides.map((g) => g.id);
 
   // ─── שלב 2: סיורים + הזמנות, פעילויות, הוצאות, העברות — בקריאות מקבילות ─
-  const [toursRes, actsRes, expsRes, trsRes] = await Promise.all([
+  const [toursRes, actsRes, expsRes, trsRes, pendingRes] = await Promise.all([
     supabase
       .from('tours')
       .select(
@@ -155,12 +163,20 @@ export async function loadMonthSnapshot(
       .in('guide_id', guideIds)
       .gte('transfer_date', start)
       .lte('transfer_date', end),
+    // Pending deposits — חוצה חודשים, לא תלוי בחודש הנבחר
+    supabase
+      .from('transfers')
+      .select('guide_id, amount')
+      .in('guide_id', guideIds)
+      .eq('transfer_type', 'to_portugo')
+      .eq('is_pending_deposit', true),
   ]);
 
   if (toursRes.error) throw toursRes.error;
   if (actsRes.error) throw actsRes.error;
   if (expsRes.error) throw expsRes.error;
   if (trsRes.error) throw trsRes.error;
+  if (pendingRes.error) throw pendingRes.error;
 
   type RawTour = {
     id: string;
@@ -190,6 +206,7 @@ export async function loadMonthSnapshot(
     transfer_date: string;
     notes: string | null;
   }[];
+  const pendings = (pendingRes.data || []) as { guide_id: string; amount: number }[];
 
   // ─── שלב 3: עיבוד לכל מדריך ─────────────────────────────────────────────
   const summaries: GuideMonthSummary[] = guides.map((g) => {
@@ -197,6 +214,8 @@ export async function loadMonthSnapshot(
     const myActs = acts.filter((a) => a.guide_id === g.id);
     const myExps = exps.filter((e) => e.guide_id === g.id);
     const myTrs = trs.filter((t) => t.guide_id === g.id);
+    const myPendings = pendings.filter((p) => p.guide_id === g.id);
+    const pending_total = myPendings.reduce((s, p) => s + (p.amount || 0), 0);
 
     // מבני נתונים לחישוב משכורת
     const salaryTours: SalaryTour[] = myTours.map((t) => ({
@@ -266,10 +285,14 @@ export async function loadMonthSnapshot(
       status = 'open';
     }
 
-    // תמונות חסרות: סיורים קלאסי/פיקסד שאין להם photo_url ולא photo_skipped
-    const missing_photos = myTours.filter(
+    // תמונות חסרות: סיורים שאין להם photo_url ולא photo_skipped
+    const missingPhotosTours = myTours.filter(
       (t) => !t.photo_url && !t.photo_skipped,
-    ).length;
+    );
+    const missing_photos = missingPhotosTours.length;
+    const missing_photos_list = missingPhotosTours
+      .sort((a, b) => a.tour_date.localeCompare(b.tour_date))
+      .map((t) => ({ id: t.id, tour_date: t.tour_date, tour_type: t.tour_type }));
 
     return {
       guide: g,
@@ -283,6 +306,8 @@ export async function loadMonthSnapshot(
       closed_at,
       salary,
       missing_photos,
+      missing_photos_list,
+      pending_total,
     };
   });
 
@@ -299,6 +324,8 @@ export async function loadMonthSnapshot(
     salary_to_pay: summaries.reduce((s, x) => s + (x.salary.transfer_amount || 0), 0),
     closed_count: summaries.filter((x) => x.status === 'closed').length,
     open_count: summaries.filter((x) => x.status === 'open').length,
+    pending_total: summaries.reduce((s, x) => s + (x.pending_total || 0), 0),
+    missing_photos_total: summaries.reduce((s, x) => s + (x.missing_photos || 0), 0),
   };
 
   return { year, month, guides: summaries, totals };

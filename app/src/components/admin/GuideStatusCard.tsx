@@ -127,7 +127,29 @@ export default function GuideStatusCard({ summary, onChange }: Props) {
         </div>
       </div>
 
-      {/* Warnings — תמונות חסרות */}
+      {/* Warnings — אדום: כסף בהמתנה להפקדה (חוצה חודשים, חשוב לראות) */}
+      {summary.pending_total > 0 && (
+        <div
+          style={{
+            padding: '10px 12px',
+            background: '#fee2e2',
+            color: '#991b1b',
+            border: '1px solid #fca5a5',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 6,
+          }}
+        >
+          <span>💰 ממתין להפקדה</span>
+          <span style={{ fontSize: 15 }}>{summary.pending_total.toFixed(0)}€</span>
+        </div>
+      )}
+
+      {/* Warnings — צהוב: תמונות חסרות */}
       {summary.missing_photos > 0 && (
         <div
           style={{
