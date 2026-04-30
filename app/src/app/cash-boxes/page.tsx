@@ -18,6 +18,45 @@ type Totals = {
 
 type RefillKind = 'change' | 'expenses';
 
+/** תנועה אחת בקופה — לטיימליין */
+type Movement = {
+  date: string;
+  description: string;
+  amount: number;     // חיובי = נכנס, שלילי = יצא
+};
+
+function formatShortDate(d: string): string {
+  const dt = new Date(d);
+  return dt.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' });
+}
+
+/** רכיב טיימליין: שורות עם תאריך, תיאור, סכום (+/-) */
+function Timeline({ movements }: { movements: Movement[] }) {
+  if (movements.length === 0) {
+    return (
+      <div className="text-center text-xs text-gray-400 py-3">אין תנועות בחודש זה</div>
+    );
+  }
+  return (
+    <ul className="space-y-1.5 text-sm pt-2 border-t mt-3">
+      {movements.map((m, idx) => {
+        const isPositive = m.amount > 0;
+        return (
+          <li key={idx} className="flex justify-between items-center gap-2">
+            <span className="text-xs text-gray-500 font-mono shrink-0 w-12">
+              {formatShortDate(m.date)}
+            </span>
+            <span className="flex-1 text-gray-700 truncate">{m.description}</span>
+            <span className={`font-semibold shrink-0 ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
+              {isPositive ? '+' : ''}{m.amount.toFixed(2)}€
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function formatMonthLabel(year: number, month: number) {
   return new Date(year, month, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
 }
@@ -50,6 +89,12 @@ function CashBoxesContent() {
     expensesRefill: 0,
     salaryWithdrawn: 0,
   });
+  const [mainMovements, setMainMovements] = useState<Movement[]>([]);
+  const [changeMovements, setChangeMovements] = useState<Movement[]>([]);
+  const [expensesMovements, setExpensesMovements] = useState<Movement[]>([]);
+  const [showMainTimeline, setShowMainTimeline] = useState(false);
+  const [showChangeTimeline, setShowChangeTimeline] = useState(false);
+  const [showExpensesTimeline, setShowExpensesTimeline] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Refill modal state
@@ -83,55 +128,133 @@ function CashBoxesContent() {
     setOpeningChange(guideRow?.opening_change_balance || 0);
     setOpeningExpenses(guideRow?.opening_expenses_balance || 0);
 
-    // Tours + bookings (for classic collected + change_given)
+    // Tours + bookings (for classic collected + change_given) — כולל תאריך + סוג סיור לטיימליין
     const { data: tours } = await supabase
       .from('tours')
-      .select('id, category, bookings(price, change_given)')
+      .select('id, tour_date, tour_type, category, bookings(price, change_given)')
       .eq('guide_id', id)
       .gte('tour_date', start)
       .lte('tour_date', end);
 
     let collected = 0;
     let changeGiven = 0;
+    const mainMov: Movement[] = [];
+    const changeMov: Movement[] = [];
+
     (tours || []).forEach((t) => {
       const bks = (t.bookings as { price: number; change_given: number }[]) || [];
-      bks.forEach((b) => {
-        // All cash paid by tourists (any tour category) goes into the main box
-        collected += b.price || 0;
-        changeGiven += b.change_given || 0;
-      });
+      const tourPrice = bks.reduce((s, b) => s + (b.price || 0), 0);
+      const tourChangeGiven = bks.reduce((s, b) => s + (b.change_given || 0), 0);
+      collected += tourPrice;
+      changeGiven += tourChangeGiven;
+      // ─ קופה ראשית: הכסף שנכנס מהסיור
+      if (tourPrice > 0) {
+        mainMov.push({
+          date: (t as { tour_date: string }).tour_date,
+          description: `סיור ${(t as { tour_type: string }).tour_type}`,
+          amount: tourPrice,
+        });
+      }
+      // ─ עודף שניתן ללקוחות בסיור — יוצא ממעטפת העודף, נכנס לקופה הראשית
+      if (tourChangeGiven > 0) {
+        mainMov.push({
+          date: (t as { tour_date: string }).tour_date,
+          description: `עודף שנכנס מהסיור`,
+          amount: tourChangeGiven,
+        });
+        changeMov.push({
+          date: (t as { tour_date: string }).tour_date,
+          description: `עודף שניתן ללקוחות`,
+          amount: -tourChangeGiven,
+        });
+      }
     });
 
-    // Transfers — split by type
+    // Transfers — split by type, with full row info for timeline
     const { data: transfers } = await supabase
       .from('transfers')
-      .select('amount, transfer_type')
+      .select('amount, transfer_type, transfer_date, notes')
       .eq('guide_id', id)
       .gte('transfer_date', start)
-      .lte('transfer_date', end);
+      .lte('transfer_date', end)
+      .order('transfer_date', { ascending: true });
     let transferred = 0;
     let cashRefill = 0;
     let expensesRefill = 0;
     let salaryWithdrawn = 0;
-    (transfers || []).forEach((t: { amount: number; transfer_type: string }) => {
-      const amt = t.amount || 0;
-      if (t.transfer_type === 'cash_refill') cashRefill += amt;
-      else if (t.transfer_type === 'expenses_refill') expensesRefill += amt;
-      else if (t.transfer_type === 'salary_withdrawal') salaryWithdrawn += amt;
-      else transferred += amt; // to_portugo (default)
-    });
+    const expensesMov: Movement[] = [];
 
-    // Expenses
+    (transfers || []).forEach(
+      (t: { amount: number; transfer_type: string; transfer_date: string; notes: string | null }) => {
+        const amt = t.amount || 0;
+        if (t.transfer_type === 'cash_refill') {
+          cashRefill += amt;
+          mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת עודף', amount: -amt });
+          changeMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt });
+        } else if (t.transfer_type === 'expenses_refill') {
+          expensesRefill += amt;
+          mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת הוצאות', amount: -amt });
+          expensesMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt });
+        } else if (t.transfer_type === 'salary_withdrawal') {
+          salaryWithdrawn += amt;
+          mainMov.push({ date: t.transfer_date, description: 'משיכת משכורת (סגירת חודש)', amount: -amt });
+        } else {
+          // to_portugo (ברירת מחדל)
+          transferred += amt;
+          mainMov.push({ date: t.transfer_date, description: 'הופקד לפורטוגו', amount: -amt });
+        }
+      },
+    );
+
+    // Expenses (כולל תאריך ופריט לטיימליין)
     const { data: expenses } = await supabase
       .from('expenses')
-      .select('amount')
+      .select('amount, expense_date, item')
       .eq('guide_id', id)
       .gte('expense_date', start)
-      .lte('expense_date', end);
+      .lte('expense_date', end)
+      .order('expense_date', { ascending: true });
     const expensesTotal = (expenses || []).reduce(
       (s: number, e: { amount: number }) => s + (e.amount || 0),
-      0
+      0,
     );
+
+    (expenses || []).forEach(
+      (e: { amount: number; expense_date: string; item: string }) => {
+        if (e.amount > 0) {
+          expensesMov.push({
+            date: e.expense_date,
+            description: e.item || 'הוצאה',
+            amount: -(e.amount || 0),
+          });
+        }
+      },
+    );
+
+    // יתרת פתיחה — מוסיפים בראש הטיימליין של מעטפות (רק אם יש)
+    if ((guideRow?.opening_change_balance || 0) > 0) {
+      changeMov.unshift({
+        date: start,
+        description: 'יתרת פתיחה',
+        amount: guideRow!.opening_change_balance,
+      });
+    }
+    if ((guideRow?.opening_expenses_balance || 0) > 0) {
+      expensesMov.unshift({
+        date: start,
+        description: 'יתרת פתיחה',
+        amount: guideRow!.opening_expenses_balance,
+      });
+    }
+
+    // מיון לפי תאריך עולה
+    mainMov.sort((a, b) => a.date.localeCompare(b.date));
+    changeMov.sort((a, b) => a.date.localeCompare(b.date));
+    expensesMov.sort((a, b) => a.date.localeCompare(b.date));
+
+    setMainMovements(mainMov);
+    setChangeMovements(changeMov);
+    setExpensesMovements(expensesMov);
 
     setTotals({
       collected,
@@ -264,6 +387,16 @@ function CashBoxesContent() {
                   </div>
                 )}
               </div>
+
+              {/* Timeline toggle */}
+              <button
+                onClick={() => setShowMainTimeline(!showMainTimeline)}
+                className="w-full mt-3 text-sm text-green-800 hover:text-green-900 font-medium flex items-center justify-center gap-1"
+              >
+                {showMainTimeline ? '▲ הסתר.י פירוט תנועות' : '▼ פירוט תנועות לפי תאריך'}
+              </button>
+              {showMainTimeline && <Timeline movements={mainMovements} />}
+
               <Link
                 href={`/transfers?year=${year}&month=${month + 1}`}
                 className="block mt-3 text-center bg-green-700 hover:bg-green-800 active:scale-98 transition-all text-white rounded-lg py-2 font-semibold"
@@ -285,6 +418,12 @@ function CashBoxesContent() {
                 </span>
               </div>
               <div className="space-y-1 text-sm">
+                {openingChange > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">יתרת פתיחה:</span>
+                    <span className="font-semibold">+{openingChange.toFixed(2)}€</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
                   <span className="font-semibold">+{totals.cashRefill.toFixed(2)}€</span>
@@ -296,6 +435,16 @@ function CashBoxesContent() {
                   </span>
                 </div>
               </div>
+
+              {/* Timeline toggle */}
+              <button
+                onClick={() => setShowChangeTimeline(!showChangeTimeline)}
+                className="w-full mt-3 text-sm text-blue-800 hover:text-blue-900 font-medium flex items-center justify-center gap-1"
+              >
+                {showChangeTimeline ? '▲ הסתר.י פירוט תנועות' : '▼ פירוט תנועות לפי תאריך'}
+              </button>
+              {showChangeTimeline && <Timeline movements={changeMovements} />}
+
               {needsChangeRefill && (
                 <div className="mt-3 p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-900 text-sm font-medium">
                   ⚠️ המעטפת מתרוקנת — כדאי לחזק אותה מהקופה הראשית.
@@ -324,6 +473,12 @@ function CashBoxesContent() {
                 </span>
               </div>
               <div className="space-y-1 text-sm">
+                {openingExpenses > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">יתרת פתיחה:</span>
+                    <span className="font-semibold">+{openingExpenses.toFixed(2)}€</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
                   <span className="font-semibold">+{totals.expensesRefill.toFixed(2)}€</span>
@@ -335,6 +490,16 @@ function CashBoxesContent() {
                   </span>
                 </div>
               </div>
+
+              {/* Timeline toggle */}
+              <button
+                onClick={() => setShowExpensesTimeline(!showExpensesTimeline)}
+                className="w-full mt-3 text-sm text-amber-800 hover:text-amber-900 font-medium flex items-center justify-center gap-1"
+              >
+                {showExpensesTimeline ? '▲ הסתר.י פירוט תנועות' : '▼ פירוט תנועות לפי תאריך'}
+              </button>
+              {showExpensesTimeline && <Timeline movements={expensesMovements} />}
+
               <div className="flex gap-2 mt-3">
                 <Link
                   href={`/expenses?year=${year}&month=${month + 1}`}

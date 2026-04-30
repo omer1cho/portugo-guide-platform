@@ -137,6 +137,34 @@ export async function uploadTourPhoto(opts: {
 }
 
 /**
+ * מעלה אסמכתא להעברה לפורטוגו.
+ * מבנה ב-Supabase Storage (ASCII): <year>/<MM-month>/<transfer_id>.jpg
+ *
+ * זה רלוונטי רק ל-transfer_type = 'to_portugo' (העברות יזומות מהמדריך).
+ * חיזוקי מעטפות (cash_refill / expenses_refill / salary_withdrawal) לא
+ * דורשים אסמכתא — הם פעולות פנימיות של המדריך.
+ */
+export async function uploadTransferReceipt(opts: {
+  file: File;
+  transferId: string;
+  transferDate: string;
+}): Promise<string> {
+  const compressed = await compressImage(opts.file);
+  const year = opts.transferDate.slice(0, 4);
+  const month = monthSlug(opts.transferDate);
+  const path = `${year}/${month}/${opts.transferId}.jpg`;
+
+  const { error } = await supabase.storage
+    .from('transfer-receipts')
+    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from('transfer-receipts').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/**
  * מעלה קבלה.
  * מבנה ב-Supabase Storage (ASCII): <year>/<MM-month>/<tour_slug>/<expense_id>.jpg
  */

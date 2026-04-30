@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
+import { uploadTransferReceipt } from '@/lib/storage';
+import PhotoPicker from '@/components/PhotoPicker';
 
 type Transfer = {
   id: string;
@@ -12,6 +14,8 @@ type Transfer = {
   amount: number;
   transfer_type: string;
   notes: string;
+  receipt_url?: string | null;
+  is_deposit?: boolean | null;
 };
 
 function todayISO() {
@@ -42,6 +46,9 @@ function TransfersContent() {
   const [date, setDate] = useState(todayISO());
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [receipt, setReceipt] = useState<File | null>(null);
+  // ברירת מחדל: זו הפקדה (ולכן צריך אסמכתא). הטוגל מאפשר לסמן "זו לא הפקדה".
+  const [notADeposit, setNotADeposit] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -90,22 +97,59 @@ function TransfersContent() {
       setFormError('נשאר להזין סכום 🙂');
       return;
     }
-    setSaving(true);
-    const { error } = await supabase.from('transfers').insert({
-      guide_id: guideId,
-      transfer_date: date,
-      amount: amt,
-      transfer_type: 'to_portugo',
-      notes,
-    });
-    setSaving(false);
-    if (error) {
-      setFormError('משהו השתבש: ' + error.message);
+    // אם זו הפקדה — חובה אסמכתא
+    if (!notADeposit && !receipt) {
+      setFormError('צריך לצרף אסמכתא להפקדה. אם זו לא הייתה הפקדה — סמן.י את התיבה למטה.');
       return;
     }
+
+    setSaving(true);
+
+    // שלב 1: יוצרים שורת העברה (בלי קישור לאסמכתא עדיין)
+    const { data: inserted, error: insErr } = await supabase
+      .from('transfers')
+      .insert({
+        guide_id: guideId,
+        transfer_date: date,
+        amount: amt,
+        transfer_type: 'to_portugo',
+        notes,
+        is_deposit: !notADeposit,
+      })
+      .select('id')
+      .single();
+
+    if (insErr || !inserted) {
+      setSaving(false);
+      setFormError('משהו השתבש: ' + (insErr?.message || ''));
+      return;
+    }
+
+    // שלב 2: אם יש אסמכתא — מעלים ל-Storage ומעדכנים את ה-URL בשורה
+    if (receipt) {
+      try {
+        const url = await uploadTransferReceipt({
+          file: receipt,
+          transferId: inserted.id,
+          transferDate: date,
+        });
+        await supabase.from('transfers').update({ receipt_url: url }).eq('id', inserted.id);
+      } catch (uploadErr) {
+        // rollback — מוחקים את ההעברה כי האסמכתא לא הצליחה לעלות
+        await supabase.from('transfers').delete().eq('id', inserted.id);
+        setSaving(false);
+        const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש';
+        setFormError(`העלאת האסמכתא נכשלה: ${msg}. נסה.י שוב.`);
+        return;
+      }
+    }
+
+    setSaving(false);
     setShowForm(false);
     setAmount('');
     setNotes('');
+    setReceipt(null);
+    setNotADeposit(false);
     loadTransfers(guideId);
   };
 
@@ -183,6 +227,42 @@ function TransfersContent() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
+
+            {/* אסמכתא — חובה אם זו הפקדה */}
+            {!notADeposit && (
+              <div>
+                <label className="block text-sm font-semibold mb-1">
+                  צילום אסמכתא <span className="text-red-600">*</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  אישור הפקדה (תמונה / סקרין-שוט)
+                </p>
+                <PhotoPicker
+                  value={receipt}
+                  onChange={setReceipt}
+                />
+              </div>
+            )}
+
+            {/* טוגל "זו לא הייתה הפקדה" */}
+            <label className="flex items-start gap-2 cursor-pointer p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={notADeposit}
+                onChange={(e) => {
+                  setNotADeposit(e.target.checked);
+                  if (e.target.checked) setReceipt(null);
+                }}
+                className="mt-1 w-4 h-4 accent-green-700"
+              />
+              <div>
+                <div className="text-sm font-semibold text-gray-800">זו לא הייתה הפקדה</div>
+                <div className="text-xs text-gray-600">
+                  למשל: העברה ישירה / אפליקציה / כסף שנמסר ביד. במקרה זה אין צורך באסמכתא.
+                </div>
+              </div>
+            </label>
+
             {formError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
                 {formError}
@@ -219,12 +299,24 @@ function TransfersContent() {
           <div className="bg-white rounded-xl shadow">
             <div className="p-4 border-b font-semibold">היסטוריית העברות</div>
             {transfers.map((t) => (
-              <div key={t.id} className="p-4 border-b last:border-b-0 flex justify-between">
-                <div>
+              <div key={t.id} className="p-4 border-b last:border-b-0 flex justify-between items-start gap-3">
+                <div className="flex-1">
                   <div className="font-semibold">
                     {new Date(t.transfer_date).toLocaleDateString('he-IL')}
                   </div>
                   {t.notes && <div className="text-xs text-gray-500">{t.notes}</div>}
+                  {t.receipt_url ? (
+                    <a
+                      href={t.receipt_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-green-700 hover:text-green-900 underline mt-1 inline-block"
+                    >
+                      📎 צילום אסמכתא
+                    </a>
+                  ) : t.is_deposit === false ? (
+                    <div className="text-xs text-gray-500 mt-1">לא היה הפקדה</div>
+                  ) : null}
                 </div>
                 <div className="font-bold text-green-800">{t.amount}€</div>
               </div>
