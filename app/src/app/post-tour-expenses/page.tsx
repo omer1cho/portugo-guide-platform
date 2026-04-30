@@ -124,16 +124,13 @@ function PostTourExpensesContent() {
     return Number((q * selectedCatalogItem.unit_price).toFixed(2));
   }, [selectedCatalogItem, quantity]);
 
-  // הצעה אוטומטית למספר אנשים — רק אם זה per_person ועוד לא הוזנה כמות
-  useEffect(() => {
-    if (calcType === 'per_person' && !quantity && tour?.totalPeople) {
-      setQuantity(String(tour.totalPeople));
-    }
-  }, [calcType, tour?.totalPeople, quantity]);
-
-  // איפוס הסכום כשמחליפים פריט — מונע "זליגה" של הסכום מההוצאה הקודמת
+  // איפוס הסכום והכמות כשמחליפים פריט — מונע "זליגה" של ערכים מההוצאה הקודמת.
+  // אנחנו לא ממלאים אוטומטית את הכמות לפי מספר משתתפי הסיור: לא כל המשתתפים
+  // קונים כל פריט (למשל לא כולם טועמים יין). המדריך תמיד מקליד ידנית את
+  // הכמות שבפועל קנה. שדה "💡 בסיור היו X אנשים" שמתחת מציג את המספר כתזכורת בלבד.
   useEffect(() => {
     setAmount('');
+    setQuantity('');
   }, [selectedItemValue]);
 
   // מילוי אוטומטי של הסכום מתוך ה-unit_price × quantity (אחרי שהפריט נבחר)
@@ -434,7 +431,7 @@ function PostTourExpensesContent() {
               />
               {calcType === 'per_person' && tour.totalPeople > 0 && (
                 <p className="text-[11px] text-gray-500 mt-1">
-                  💡 בסיור היו {tour.totalPeople} אנשים — תשנ.י אם הכמות שונה
+                  💡 בסיור היו {tour.totalPeople} אנשים — להזכיר.ך
                 </p>
               )}
               {expectedAmount !== null && (
