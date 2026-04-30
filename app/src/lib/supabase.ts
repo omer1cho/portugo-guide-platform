@@ -84,6 +84,8 @@ export type ExpenseCatalogItem = {
   unit_price: number | null;
   sort_order: number;
   is_active: boolean;
+  /** האם הפריט מחייב צירוף קבלה. ברירת מחדל TRUE. False לפריטים כמו בירה בטעימות. */
+  requires_receipt?: boolean;
 };
 
 /** סוגי הסיורים שיש להם קטלוג הוצאות (השאר ילכו רק ל"אחר") */

@@ -131,7 +131,12 @@ function PostTourExpensesContent() {
     }
   }, [calcType, tour?.totalPeople, quantity]);
 
-  // מילוי אוטומטי של הסכום
+  // איפוס הסכום כשמחליפים פריט — מונע "זליגה" של הסכום מההוצאה הקודמת
+  useEffect(() => {
+    setAmount('');
+  }, [selectedItemValue]);
+
+  // מילוי אוטומטי של הסכום מתוך ה-unit_price × quantity (אחרי שהפריט נבחר)
   useEffect(() => {
     if (expectedAmount !== null) {
       setAmount(expectedAmount.toFixed(2));
@@ -194,7 +199,9 @@ function PostTourExpensesContent() {
       setFormError('נשאר להזין סכום');
       return;
     }
-    if (!receipt) {
+    // קבלה — חובה אלא אם הפריט מסומן כ-requires_receipt=false (למשל בירה בטעימות)
+    const requiresReceipt = selectedCatalogItem?.requires_receipt !== false;
+    if (requiresReceipt && !receipt) {
       setFormError('נשאר לצרף צילום של הקבלה');
       return;
     }
@@ -224,23 +231,25 @@ function PostTourExpensesContent() {
       return;
     }
 
-    // העלאת קבלה
+    // העלאת קבלה (רק אם הוצמדה — יש פריטים פטורים מקבלה כמו בירה בטעימות)
     let receiptUrl: string | null = null;
-    try {
-      receiptUrl = await uploadExpenseReceipt({
-        file: receipt,
-        expenseId: inserted.id,
-        expenseDate: tour.tour_date,
-        tourType: tour.tour_type,
-      });
-      await supabase.from('expenses').update({ receipt_url: receiptUrl }).eq('id', inserted.id);
-    } catch (uploadErr) {
-      // rollback
-      await supabase.from('expenses').delete().eq('id', inserted.id);
-      setSaving(false);
-      const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש';
-      setFormError(`העלאת הקבלה נכשלה: ${msg}. נסי שוב.`);
-      return;
+    if (receipt) {
+      try {
+        receiptUrl = await uploadExpenseReceipt({
+          file: receipt,
+          expenseId: inserted.id,
+          expenseDate: tour.tour_date,
+          tourType: tour.tour_type,
+        });
+        await supabase.from('expenses').update({ receipt_url: receiptUrl }).eq('id', inserted.id);
+      } catch (uploadErr) {
+        // rollback
+        await supabase.from('expenses').delete().eq('id', inserted.id);
+        setSaving(false);
+        const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש';
+        setFormError(`העלאת הקבלה נכשלה: ${msg}. נסי שוב.`);
+        return;
+      }
     }
 
     setSavedExpenses((prev) => [
@@ -470,11 +479,16 @@ function PostTourExpensesContent() {
             </div>
           )}
 
-          {/* קבלה */}
+          {/* קבלה — חובה אלא אם הפריט מסומן כפטור (למשל בירה בטעימות) */}
           {selectedItemValue && (
             <div>
               <label className="block text-sm font-semibold mb-2">
-                צילום קבלה <span className="text-red-600">*</span>
+                צילום קבלה
+                {selectedCatalogItem?.requires_receipt === false ? (
+                  <span className="text-gray-400 text-xs font-normal"> (לא חובה)</span>
+                ) : (
+                  <span className="text-red-600"> *</span>
+                )}
               </label>
               <PhotoPicker
                 label="צרף.י קבלה"

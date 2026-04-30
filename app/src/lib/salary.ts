@@ -258,14 +258,22 @@ export function calculateMonthlySalary(
     }
 
     if (tour.category === 'classic') {
+      // ה-base בקלאסי הוא **לכל הסיור** (לא לכל תת-קבוצה).
+      // אגרגציה: סוכמים את כל המשתתפים והילדים מכל תתי-הקבוצות
+      // ואז מחילים את הנוסחה פעם אחת.
+      // ה-transfer זהה בכל מקרה (paying × rate, חיבורי).
+      let tourPeople = 0;
+      let tourKids = 0;
       for (const b of tour.bookings || []) {
-        const { base, transfer } = calcClassicSalary(b.people || 0, b.kids || 0, transferPerPerson);
-        classic_base += base;
-        classic_transfer += transfer;
+        tourPeople += b.people || 0;
+        tourKids += b.kids || 0;
         classic_tips += b.price || 0;
         classic_collected += b.price || 0;
         classic_people += b.people || 0;
       }
+      const { base, transfer } = calcClassicSalary(tourPeople, tourKids, transferPerPerson);
+      classic_base += base;
+      classic_transfer += transfer;
     } else if (tour.category === 'fixed') {
       const totalPeople = (tour.bookings || []).reduce((s, b) => s + (b.people || 0), 0);
       fixed_salaries += calcFixedSalary(tour.tour_type, totalPeople);

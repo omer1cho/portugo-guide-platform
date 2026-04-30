@@ -142,9 +142,15 @@ function ExpensesContent() {
   const isOther = selectedItemValue === OTHER_OPTION_VALUE;
   const calcType = selectedCatalogItem?.calc_type || null;
 
-  // איפוס בחירת פריט כשמשתנה סוג הסיור
+  // איפוס בחירת פריט כשמשתנה סוג הסיור.
+  // ב"ללא סיור / הוצאה כללית" — אין קטלוג, אז מדלגים אוטומטית לבחירת "אחר"
+  // כדי לחסוך למדריך שלב מיותר של בחירה מתפריט.
   useEffect(() => {
-    setSelectedItemValue('');
+    if (tourType === GENERAL_TOUR_VALUE) {
+      setSelectedItemValue(OTHER_OPTION_VALUE);
+    } else {
+      setSelectedItemValue('');
+    }
     setQuantity('');
     setAmount('');
     setOtherDescription('');
@@ -213,7 +219,9 @@ function ExpensesContent() {
       setFormError('נשאר להזין סכום');
       return;
     }
-    if (!receipt) {
+    // קבלה — חובה אלא אם הפריט מסומן כ-requires_receipt=false
+    const requiresReceipt = selectedCatalogItem?.requires_receipt !== false;
+    if (requiresReceipt && !receipt) {
       setFormError('נשאר לצרף צילום של הקבלה');
       return;
     }
@@ -246,7 +254,8 @@ function ExpensesContent() {
       return;
     }
 
-    if (inserted?.id) {
+    // העלאת קבלה רק אם הוצמדה — יש פריטים פטורים (בירה בטעימות) שמותרים בלי
+    if (inserted?.id && receipt) {
       try {
         const url = await uploadExpenseReceipt({
           file: receipt,
@@ -349,8 +358,8 @@ function ExpensesContent() {
               </select>
             </div>
 
-            {/* בחירת פריט (אחרי שנבחר סיור) */}
-            {tourType && (
+            {/* בחירת פריט — מוסתר ב"ללא סיור / הוצאה כללית" כי שם אין קטלוג */}
+            {tourType && tourType !== GENERAL_TOUR_VALUE && (
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   פריט <span className="text-red-600">*</span>
@@ -454,10 +463,15 @@ function ExpensesContent() {
               />
             </div>
 
-            {/* קבלה */}
+            {/* קבלה — חובה אלא אם הפריט מסומן כפטור (למשל בירה בטעימות) */}
             <div>
               <label className="block text-sm font-semibold mb-2">
-                צילום קבלה <span className="text-red-600">*</span>
+                צילום קבלה
+                {selectedCatalogItem?.requires_receipt === false ? (
+                  <span className="text-gray-400 text-xs font-normal"> (לא חובה)</span>
+                ) : (
+                  <span className="text-red-600"> *</span>
+                )}
               </label>
               <PhotoPicker
                 label="צרף.י קבלה"

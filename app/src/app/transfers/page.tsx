@@ -257,9 +257,7 @@ function TransfersContent() {
               />
               <div>
                 <div className="text-sm font-semibold text-gray-800">זו לא הייתה הפקדה</div>
-                <div className="text-xs text-gray-600">
-                  למשל: העברה ישירה / אפליקציה / כסף שנמסר ביד. במקרה זה אין צורך באסמכתא.
-                </div>
+                <div className="text-xs text-gray-600">אין אסמכתא</div>
               </div>
             </label>
 
