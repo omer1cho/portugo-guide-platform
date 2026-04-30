@@ -68,6 +68,11 @@ function ExpensesContent() {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  // edit / delete state
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -174,6 +179,45 @@ function ExpensesContent() {
     setAmount('');
     setNotes('');
     setReceipt(null);
+    setEditingExpense(null);
+  };
+
+  /** טעינת הוצאה לטופס לעריכה — פותחת את הטופס ממולא */
+  const handleEdit = (e: Expense) => {
+    setEditingExpense(e);
+    setShowForm(true);
+    setFormError('');
+    setDate(e.expense_date);
+    // אם יש tour_type → בוחרים אותו; אחרת → "כללי"
+    setTourType(e.tour_type || GENERAL_TOUR_VALUE);
+    // אם יש catalog_item_id → בוחרים את הפריט; אחרת → "אחר"
+    setSelectedItemValue(e.catalog_item_id || OTHER_OPTION_VALUE);
+    if (!e.catalog_item_id) {
+      setOtherDescription(e.item || '');
+    } else {
+      setOtherDescription('');
+    }
+    setQuantity(e.quantity ? String(e.quantity) : '');
+    setAmount(String(e.amount || ''));
+    setNotes(e.notes || '');
+    setReceipt(null); // אם רוצים להחליף קבלה — יבחרו חדשה. אחרת — נשארת הקיימת.
+    // Scroll to top so the form is visible
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /** מחיקת הוצאה — מאשרים במודאל, אז מוחקים מ-DB. הקבלה ב-Storage נשארת יתומה ולא מוצגת. */
+  const handleDeleteConfirmed = async () => {
+    if (!expenseToDelete) return;
+    setDeletingExpense(true);
+    setDeleteError('');
+    const { error } = await supabase.from('expenses').delete().eq('id', expenseToDelete.id);
+    setDeletingExpense(false);
+    if (error) {
+      setDeleteError('משהו השתבש: ' + error.message);
+      return;
+    }
+    setExpenseToDelete(null);
+    if (guideId) loadExpenses(guideId);
   };
 
   const handleSave = async () => {
@@ -219,9 +263,11 @@ function ExpensesContent() {
       setFormError('נשאר להזין סכום');
       return;
     }
-    // קבלה — חובה אלא אם הפריט מסומן כ-requires_receipt=false
+    // קבלה — חובה אלא אם הפריט מסומן כ-requires_receipt=false.
+    // בעריכה: אם כבר יש קבלה קיימת והמדריך לא צירף חדשה — בסדר.
     const requiresReceipt = selectedCatalogItem?.requires_receipt !== false;
-    if (requiresReceipt && !receipt) {
+    const hasExistingReceipt = editingExpense?.receipt_url ? true : false;
+    if (requiresReceipt && !receipt && !hasExistingReceipt) {
       setFormError('נשאר לצרף צילום של הקבלה');
       return;
     }
@@ -231,42 +277,71 @@ function ExpensesContent() {
     // ללא סיור → tour_type = null ב-DB (לא הערך הסנטינלי שמשמש את ה-UI)
     const tourTypeToSave = tourType === GENERAL_TOUR_VALUE ? null : tourType;
 
-    const { data: inserted, error } = await supabase
-      .from('expenses')
-      .insert({
-        guide_id: guideId,
-        expense_date: date,
-        item: itemName,
-        amount: amt,
-        notes,
-        tour_type: tourTypeToSave,
-        catalog_item_id: catalogId,
-        quantity: qtyValue,
-        expected_amount: expectedValue,
-        price_mismatch: hasMismatch,
-      })
-      .select('id')
-      .single();
+    let savedId: string | null = null;
+    if (editingExpense) {
+      // ─── מצב עריכה: UPDATE ───
+      const { error: updErr } = await supabase
+        .from('expenses')
+        .update({
+          expense_date: date,
+          item: itemName,
+          amount: amt,
+          notes,
+          tour_type: tourTypeToSave,
+          catalog_item_id: catalogId,
+          quantity: qtyValue,
+          expected_amount: expectedValue,
+          price_mismatch: hasMismatch,
+        })
+        .eq('id', editingExpense.id);
+      if (updErr) {
+        setSaving(false);
+        setFormError('משהו השתבש: ' + updErr.message);
+        return;
+      }
+      savedId = editingExpense.id;
+    } else {
+      // ─── מצב יצירה: INSERT ───
+      const { data: inserted, error } = await supabase
+        .from('expenses')
+        .insert({
+          guide_id: guideId,
+          expense_date: date,
+          item: itemName,
+          amount: amt,
+          notes,
+          tour_type: tourTypeToSave,
+          catalog_item_id: catalogId,
+          quantity: qtyValue,
+          expected_amount: expectedValue,
+          price_mismatch: hasMismatch,
+        })
+        .select('id')
+        .single();
 
-    if (error) {
-      setSaving(false);
-      setFormError('משהו השתבש: ' + error.message);
-      return;
+      if (error) {
+        setSaving(false);
+        setFormError('משהו השתבש: ' + error.message);
+        return;
+      }
+      savedId = inserted?.id || null;
     }
 
     // העלאת קבלה רק אם הוצמדה — יש פריטים פטורים (בירה בטעימות) שמותרים בלי
-    if (inserted?.id && receipt) {
+    if (savedId && receipt) {
       try {
         const url = await uploadExpenseReceipt({
           file: receipt,
-          expenseId: inserted.id,
+          expenseId: savedId,
           expenseDate: date,
           tourType: tourTypeToSave,
         });
-        await supabase.from('expenses').update({ receipt_url: url }).eq('id', inserted.id);
+        await supabase.from('expenses').update({ receipt_url: url }).eq('id', savedId);
       } catch (uploadErr) {
-        // rollback
-        await supabase.from('expenses').delete().eq('id', inserted.id);
+        // rollback רק במצב יצירה — בעריכה לא נמחק את הרשומה אם רק החלפת קבלה נכשלה
+        if (!editingExpense) {
+          await supabase.from('expenses').delete().eq('id', savedId);
+        }
         setSaving(false);
         const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש בהעלאת הקבלה';
         setFormError(`העלאת הקבלה נכשלה: ${msg}. נסי שוב.`);
@@ -320,7 +395,7 @@ function ExpensesContent() {
 
         {showForm && (
           <div className="bg-white rounded-xl shadow p-4 space-y-3">
-            <h3 className="font-semibold">הוצאה חדשה</h3>
+            <h3 className="font-semibold">{editingExpense ? 'עריכת הוצאה' : 'הוצאה חדשה'}</h3>
 
             {/* תאריך */}
             <div>
@@ -408,12 +483,18 @@ function ExpensesContent() {
                   {calcType === 'per_person' ? 'כמה אנשים?' : 'כמות'} <span className="text-red-600">*</span>
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step={calcType === 'per_person' ? '1' : '0.01'}
+                  type="text"
                   inputMode="decimal"
+                  pattern="[0-9.,]*"
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+                    const parts = cleaned.split('.');
+                    const final = parts.length > 2
+                      ? parts[0] + '.' + parts.slice(1).join('')
+                      : cleaned;
+                    setQuantity(final);
+                  }}
                   placeholder={calcType === 'per_person' ? '8' : '5'}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                 />
@@ -432,13 +513,25 @@ function ExpensesContent() {
                 <label className="block text-sm font-semibold mb-1">
                   סכום בפועל (מהקבלה) <span className="text-red-600">*</span>
                 </label>
+                {/*
+                  type=text + inputMode=decimal: על Android יש מקלדות שלא
+                  מציגות נקודה ב-type=number. עם text המקלדת הדצימלית
+                  מובטחת. מקבלים גם נקודה וגם פסיק כמפריד דצימלי.
+                */}
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
                   inputMode="decimal"
+                  pattern="[0-9.,]*"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+                    // מסיר נקודות מרובות (לא יכול להיות 6.2.3)
+                    const parts = cleaned.split('.');
+                    const final = parts.length > 2
+                      ? parts[0] + '.' + parts.slice(1).join('')
+                      : cleaned;
+                    setAmount(final);
+                  }}
                   placeholder="0.00"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                 />
@@ -493,7 +586,9 @@ function ExpensesContent() {
                 disabled={saving}
                 className="flex-1 bg-green-700 disabled:bg-gray-400 text-white rounded-lg py-3 font-semibold"
               >
-                {saving ? 'שומר...' : 'שמור'}
+                {saving
+                  ? (editingExpense ? 'מעדכנ.ת...' : 'שומר.ת...')
+                  : (editingExpense ? 'עדכן.י' : 'שמור.י')}
               </button>
               <button
                 onClick={resetForm}
@@ -515,50 +610,116 @@ function ExpensesContent() {
           <div className="bg-white rounded-xl shadow">
             <div className="p-4 border-b font-semibold">היסטוריית הוצאות</div>
             {expenses.map((e) => (
-              <div key={e.id} className="p-4 border-b last:border-b-0 flex justify-between">
-                <div className="flex-1">
-                  <div className="font-semibold flex items-center gap-2 flex-wrap">
-                    <span>{e.item}</span>
-                    {e.quantity ? (
-                      <span className="text-xs text-gray-500">× {e.quantity}</span>
-                    ) : null}
-                    {e.receipt_url && (
-                      <a
-                        href={e.receipt_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium hover:bg-blue-100"
-                      >
-                        🧾 קבלה
-                      </a>
-                    )}
-                    {e.price_mismatch && (
-                      <span
-                        title="הסכום בפועל לא תאם את החישוב"
-                        className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-medium"
-                      >
-                        ⚠️ אי-התאמה
-                      </span>
-                    )}
+              <div key={e.id} className="p-4 border-b last:border-b-0">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <div className="font-semibold flex items-center gap-2 flex-wrap">
+                      <span>{e.item}</span>
+                      {e.quantity ? (
+                        <span className="text-xs text-gray-500">× {e.quantity}</span>
+                      ) : null}
+                      {e.receipt_url && (
+                        <a
+                          href={e.receipt_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium hover:bg-blue-100"
+                        >
+                          🧾 קבלה
+                        </a>
+                      )}
+                      {e.price_mismatch && (
+                        <span
+                          title="הסכום בפועל לא תאם את החישוב"
+                          className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-medium"
+                        >
+                          ⚠️ אי-התאמה
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(e.expense_date).toLocaleDateString('he-IL')}
+                      {e.notes && ' · ' + e.notes}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(e.expense_date).toLocaleDateString('he-IL')}
-                    {e.notes && ' · ' + e.notes}
+                  <div className="text-left shrink-0">
+                    <div className="font-bold text-amber-700">{e.amount.toFixed(2)}€</div>
+                    {e.expected_amount && e.price_mismatch && (
+                      <div className="text-[11px] text-gray-400 line-through">
+                        {e.expected_amount.toFixed(2)}€
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="text-left">
-                  <div className="font-bold text-amber-700">{e.amount.toFixed(2)}€</div>
-                  {e.expected_amount && e.price_mismatch && (
-                    <div className="text-[11px] text-gray-400 line-through">
-                      {e.expected_amount.toFixed(2)}€
-                    </div>
-                  )}
+                {/* כפתורי עריכה ומחיקה */}
+                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => handleEdit(e)}
+                    className="flex-1 bg-amber-50 hover:bg-amber-100 active:scale-95 transition-transform text-amber-800 text-sm font-semibold px-3 py-2 rounded-md"
+                  >
+                    עריכה
+                  </button>
+                  <button
+                    onClick={() => setExpenseToDelete(e)}
+                    className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
+                  >
+                    מחיקה
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Delete confirmation modal — מודאל מעוצב במקום window.confirm */}
+      {expenseToDelete && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
+            <div className="text-center">
+              <div className="text-4xl mb-2">🗑</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">למחוק את ההוצאה?</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                <span className="font-semibold">{expenseToDelete.item}</span>
+                {' · '}
+                <span>{expenseToDelete.amount.toFixed(2)}€</span>
+                <br />
+                <span className="text-xs text-gray-500">
+                  {new Date(expenseToDelete.expense_date).toLocaleDateString('he-IL')}
+                </span>
+              </p>
+            </div>
+            {deleteError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
+                {deleteError}
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleDeleteConfirmed}
+                disabled={deletingExpense}
+                className="w-full bg-red-600 hover:bg-red-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                {deletingExpense ? 'מוחק.ת...' : 'כן, למחוק'}
+              </button>
+              <button
+                onClick={() => {
+                  setExpenseToDelete(null);
+                  setDeleteError('');
+                }}
+                disabled={deletingExpense}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+          <style jsx global>{`
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

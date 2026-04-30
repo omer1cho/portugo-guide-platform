@@ -417,12 +417,18 @@ function PostTourExpensesContent() {
                 <span className="text-red-600">*</span>
               </label>
               <input
-                type="number"
-                min="0"
-                step={calcType === 'per_person' ? '1' : '0.01'}
+                type="text"
                 inputMode="decimal"
+                pattern="[0-9.,]*"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+                  const parts = cleaned.split('.');
+                  const final = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : cleaned;
+                  setQuantity(final);
+                }}
                 placeholder={calcType === 'per_person' ? '8' : '5'}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
               />
@@ -447,12 +453,18 @@ function PostTourExpensesContent() {
                 סכום בפועל (מהקבלה) <span className="text-red-600">*</span>
               </label>
               <input
-                type="number"
-                step="0.01"
-                min="0"
+                type="text"
                 inputMode="decimal"
+                pattern="[0-9.,]*"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+                  const parts = cleaned.split('.');
+                  const final = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : cleaned;
+                  setAmount(final);
+                }}
                 placeholder="0.00"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
               />
