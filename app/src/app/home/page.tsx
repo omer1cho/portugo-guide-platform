@@ -313,6 +313,24 @@ function HomeContent() {
         {/* Admin: switch which guide we're viewing */}
         <AdminGuideSwitcher />
 
+        {/* תזכורת אדומה — קופת המתנה. מופיעה גבוה מעל סיכום החודש כדי שלא תפוספס. */}
+        {summary.pending_total > 0 && (
+          <Link
+            href={`/cash-boxes?year=${year}&month=${month + 1}`}
+            className="block bg-red-50 border-2 border-red-400 rounded-2xl p-4 hover:bg-red-100 active:scale-98 transition-all shadow"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-bold text-red-700 text-base">💰 ממתין להפקדה</div>
+                <div className="text-xs text-red-700 mt-0.5">לחצ.י כאן ברגע שהפקדת</div>
+              </div>
+              <div className="text-3xl font-bold text-red-700">
+                {summary.pending_total.toFixed(0)}€
+              </div>
+            </div>
+          </Link>
+        )}
+
         {/* Month summary with navigation */}
         <section className="bg-white rounded-2xl shadow p-5">
           {/* Month navigator */}
@@ -379,24 +397,6 @@ function HomeContent() {
                         <div className="text-xs text-gray-600 mt-1">משתתפים</div>
                       </div>
                     </div>
-
-                    {/* קופת המתנה — מודגשת באדום אם יש כסף ממתין להפקדה */}
-                    {summary.pending_total > 0 && (
-                      <Link
-                        href={`/cash-boxes?year=${year}&month=${month + 1}`}
-                        className="block mb-3 bg-red-50 border-2 border-red-400 rounded-xl p-3 hover:bg-red-100 active:scale-98 transition-all"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-bold text-red-700">💰 המתנה להפקדה</div>
-                            <div className="text-xs text-red-700">לחצ.י כאן כשהפקדת</div>
-                          </div>
-                          <div className="text-2xl font-bold text-red-700">
-                            {summary.pending_total.toFixed(0)}€
-                          </div>
-                        </div>
-                      </Link>
-                    )}
 
                     {/* Cash boxes snapshot */}
                     <div className="grid grid-cols-3 gap-2 text-center mb-3">

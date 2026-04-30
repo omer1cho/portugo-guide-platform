@@ -869,7 +869,7 @@ function AddTourContent() {
                 onClick={addBooking}
                 className="w-full border-2 border-dashed border-green-600 text-green-700 py-3 rounded-lg font-semibold hover:bg-green-50"
               >
-                הוסיפ.י תת-קבוצה +
+                הוסף.י תת-קבוצה +
               </button>
             </div>
 

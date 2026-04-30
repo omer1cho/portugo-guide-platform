@@ -472,7 +472,7 @@ function CashBoxesContent() {
                 </div>
                 <p className="text-xs text-red-700 mb-3">
                   זה הכסף שצבור אצלך וצריך להפקיד לפורטוגו. ברגע שתפקיד.י —
-                  סמני &quot;ביצעתי הפקדה&quot; ותצרפ.י אסמכתא.
+                  סמני &quot;ביצעתי הפקדה&quot; ותצרף.י אסמכתא.
                 </p>
                 <ul className="space-y-2 mb-3">
                   {pendingDeposits.map((p) => (
@@ -686,7 +686,7 @@ function CashBoxesContent() {
                   href={`/expenses?year=${year}&month=${month + 1}`}
                   className="flex-1 text-center bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-lg py-2 font-semibold"
                 >
-                  הוסף הוצאה
+                  הוסף.י הוצאה
                 </Link>
                 {isCurrent && (
                   <button

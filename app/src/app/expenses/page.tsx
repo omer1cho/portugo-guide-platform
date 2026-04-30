@@ -314,7 +314,7 @@ function ExpensesContent() {
             onClick={() => setShowForm(true)}
             className="w-full bg-red-600 hover:bg-red-700 active:scale-98 transition-all text-white rounded-2xl shadow-lg py-4 text-lg font-bold"
           >
-            הוסיפ.י הוצאה +
+            הוסף.י הוצאה +
           </button>
         )}
 
