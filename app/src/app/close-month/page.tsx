@@ -34,6 +34,10 @@ function CloseMonthContent() {
   const [confirming, setConfirming] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmError, setConfirmError] = useState('');
+  // מודאל "העבר למעטפת המתנה"
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [pendingSaving, setPendingSaving] = useState(false);
+  const [pendingError, setPendingError] = useState('');
 
   const loadData = React.useCallback(async () => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -230,6 +234,32 @@ function CloseMonthContent() {
       return;
     }
     setShowConfirmModal(false);
+    await loadData();
+  }
+
+  // העברה למעטפת המתנה: יוצרים transfer רגיל מסוג to_portugo עם דגל is_pending_deposit=true
+  // הסכום יוצא מיד מהקופה הראשית; כשהמדריך יפקיד פיזית, הוא ייכנס למעטפה ויסמן "ביצעתי הפקדה".
+  async function handleMoveToPending() {
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id) return;
+    setPendingSaving(true);
+    setPendingError('');
+    const today = new Date().toISOString().slice(0, 10);
+    const monthLabel = formatMonthLabel(year, month);
+    const { error } = await supabase.from('transfers').insert({
+      guide_id: id,
+      transfer_date: today,
+      amount: Number(depositToPortugo.toFixed(2)),
+      transfer_type: 'to_portugo',
+      is_pending_deposit: true,
+      notes: `ממתין להפקדה — סגירת ${monthLabel}`,
+    });
+    setPendingSaving(false);
+    if (error) {
+      setPendingError('משהו השתבש: ' + error.message);
+      return;
+    }
+    setShowPendingModal(false);
     await loadData();
   }
 
@@ -517,14 +547,25 @@ function CloseMonthContent() {
                 </div>
               )}
 
-              {/* Deposit button — shown when deposit is actually needed (before or after confirm) */}
+              {/* Deposit buttons — שתי אפשרויות: הפקדה מיידית או העברה למעטפת המתנה */}
               {needsDeposit && (
-                <Link
-                  href={`/transfers?year=${year}&month=${month + 1}&prefill=${depositToPortugo.toFixed(0)}&note=${encodeURIComponent(`יתרת קופה — סגירת ${formatMonthLabel(year, month)}`)}`}
-                  className="mt-3 block w-full bg-green-700 hover:bg-green-800 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
-                >
-                  בצע.י העברה לפורטוגו ({depositToPortugo.toFixed(0)}€) ←
-                </Link>
+                <div className="mt-3 space-y-2">
+                  <Link
+                    href={`/transfers?year=${year}&month=${month + 1}&prefill=${depositToPortugo.toFixed(0)}&note=${encodeURIComponent(`יתרת קופה — סגירת ${formatMonthLabel(year, month)}`)}`}
+                    className="block w-full bg-green-700 hover:bg-green-800 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
+                  >
+                    הפקדתי עכשיו — דווחי על העברה ({depositToPortugo.toFixed(0)}€) ←
+                  </Link>
+                  <button
+                    onClick={() => setShowPendingModal(true)}
+                    className="block w-full bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
+                  >
+                    העבר.י למעטפת המתנה ({depositToPortugo.toFixed(0)}€)
+                  </button>
+                  <p className="text-[11px] text-gray-500 text-center leading-tight">
+                    💡 לא הפקדת עדיין? &quot;מעטפת המתנה&quot; שומרת לך את הסכום עד שתפקיד.י בפועל.
+                  </p>
+                </div>
               )}
             </section>
 
@@ -618,6 +659,56 @@ function CloseMonthContent() {
               to { opacity: 1; transform: translateY(0); }
             }
           `}</style>
+        </div>
+      )}
+
+      {/* Pending-deposit modal — אישור העברה למעטפת המתנה */}
+      {showPendingModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              העברה למעטפת המתנה
+            </h3>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              הסכום הזה <span className="font-bold">{depositToPortugo.toFixed(0)}€</span> יצא
+              עכשיו מהקופה הראשית ויעבור למעטפת ההמתנה.
+              <br />
+              כשתפקיד.י בפועל — תיכנס.י למעטפה ותסמן.י &quot;ביצעתי הפקדה&quot; (עם אסמכתא).
+            </p>
+
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-700">סכום למעטפת המתנה:</span>
+                <span className="font-bold text-amber-900">{depositToPortugo.toFixed(0)}€</span>
+              </div>
+            </div>
+
+            {pendingError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
+                {pendingError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleMoveToPending}
+                disabled={pendingSaving}
+                className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                {pendingSaving ? 'שומר...' : 'כן, להעביר למעטפת המתנה'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowPendingModal(false);
+                  setPendingError('');
+                }}
+                disabled={pendingSaving}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

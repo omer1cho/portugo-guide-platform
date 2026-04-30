@@ -20,6 +20,7 @@ type Summary = {
   opening_expenses: number;    // יתרת פתיחה במעטפת הוצאות
   admin_topup_change: number;  // תוספת אדמין למעטפת עודף (לא מהקופה הראשית)
   admin_topup_expenses: number; // תוספת אדמין למעטפת הוצאות (לא מהקופה הראשית)
+  pending_total: number;       // סה"כ ממתין להפקדה — חוצה חודשים
   external: { description: string; amount: number; date: string }[];
   expenses: number;
   transfers: number;
@@ -67,6 +68,7 @@ function HomeContent() {
     change_given: 0, cash_refill: 0, expenses_refill: 0, salary_withdrawn: 0,
     opening_change: 0, opening_expenses: 0,
     admin_topup_change: 0, admin_topup_expenses: 0,
+    pending_total: 0,
     external: [],
     expenses: 0, transfers: 0,
     salary: EMPTY_SALARY,
@@ -98,7 +100,7 @@ function HomeContent() {
       const lastDay = new Date(year, month + 1, 0).getDate();
       const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-      const [guideRes, toursRes, actRes, expRes, trRes] = await Promise.all([
+      const [guideRes, toursRes, actRes, expRes, trRes, pendingRes] = await Promise.all([
         supabase.from('guides').select('name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
         supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
           .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
@@ -108,6 +110,9 @@ function HomeContent() {
           .eq('guide_id', id).gte('expense_date', start).lte('expense_date', end),
         supabase.from('transfers').select('amount, transfer_type')
           .eq('guide_id', id).gte('transfer_date', start).lte('transfer_date', end),
+        // Pending deposits — לא תלוי בחודש, מצטבר על פני זמן
+        supabase.from('transfers').select('amount')
+          .eq('guide_id', id).eq('transfer_type', 'to_portugo').eq('is_pending_deposit', true),
       ]);
 
       const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'> | null) || null;
@@ -184,6 +189,11 @@ function HomeContent() {
         else transfersTotal += amt;
       });
 
+      const pendingTotal = (pendingRes.data || []).reduce(
+        (s: number, p: { amount: number }) => s + (p.amount || 0),
+        0,
+      );
+
       setSummary({
         tours: toursRes.data?.length || 0,
         people: totalPeople,
@@ -196,6 +206,7 @@ function HomeContent() {
         opening_expenses: guide?.opening_expenses_balance || 0,
         admin_topup_change: adminTopupChange,
         admin_topup_expenses: adminTopupExpenses,
+        pending_total: pendingTotal,
         external: externalActivities,
         expenses: expensesTotal,
         transfers: transfersTotal,
@@ -368,6 +379,24 @@ function HomeContent() {
                         <div className="text-xs text-gray-600 mt-1">משתתפים</div>
                       </div>
                     </div>
+
+                    {/* קופת המתנה — מודגשת באדום אם יש כסף ממתין להפקדה */}
+                    {summary.pending_total > 0 && (
+                      <Link
+                        href={`/cash-boxes?year=${year}&month=${month + 1}`}
+                        className="block mb-3 bg-red-50 border-2 border-red-400 rounded-xl p-3 hover:bg-red-100 active:scale-98 transition-all"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-red-700">💰 המתנה להפקדה</div>
+                            <div className="text-xs text-red-700">לחצ.י כאן כשהפקדת</div>
+                          </div>
+                          <div className="text-2xl font-bold text-red-700">
+                            {summary.pending_total.toFixed(0)}€
+                          </div>
+                        </div>
+                      </Link>
+                    )}
 
                     {/* Cash boxes snapshot */}
                     <div className="grid grid-cols-3 gap-2 text-center mb-3">

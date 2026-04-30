@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
+import { uploadTransferReceipt } from '@/lib/storage';
+import PhotoPicker from '@/components/PhotoPicker';
 
 type Totals = {
   collected: number;        // all cash collected (any tour category)
@@ -82,6 +84,20 @@ function CashBoxesContent() {
   const [guideId, setGuideId] = useState<string | null>(null);
   const [openingChange, setOpeningChange] = useState(0);
   const [openingExpenses, setOpeningExpenses] = useState(0);
+  // המתנה להפקדה: שורות transfers מסוג to_portugo עם is_pending_deposit=true,
+  // מצטברות על פני חודשים, נסגרות פיזית כשהמדריך מסמן "ביצעתי הפקדה".
+  type PendingRow = {
+    id: string;
+    amount: number;
+    transfer_date: string;
+    notes: string | null;
+  };
+  const [pendingDeposits, setPendingDeposits] = useState<PendingRow[]>([]);
+  const [showSettleModal, setShowSettleModal] = useState<PendingRow | 'all' | null>(null);
+  const [settleReceipt, setSettleReceipt] = useState<File | null>(null);
+  const [settleNotADeposit, setSettleNotADeposit] = useState(false);
+  const [settleSaving, setSettleSaving] = useState(false);
+  const [settleError, setSettleError] = useState('');
   const [totals, setTotals] = useState<Totals>({
     collected: 0,
     changeGiven: 0,
@@ -174,14 +190,25 @@ function CashBoxesContent() {
       }
     });
 
-    // Transfers — split by type, with full row info for timeline
+    // Transfers של החודש הנבחר — לחישוב יתרת קופה ראשית וטיימליין
     const { data: transfers } = await supabase
       .from('transfers')
-      .select('amount, transfer_type, transfer_date, notes')
+      .select('id, amount, transfer_type, transfer_date, notes, is_pending_deposit')
       .eq('guide_id', id)
       .gte('transfer_date', start)
       .lte('transfer_date', end)
       .order('transfer_date', { ascending: true });
+
+    // ─── Pending deposits — מצטברים על פני חודשים, לא רק החודש הנבחר ───
+    // כי המעטפת הזו נצברת לאורך זמן עד שהמדריך מפקיד פיזית.
+    const { data: pendings } = await supabase
+      .from('transfers')
+      .select('id, amount, transfer_date, notes')
+      .eq('guide_id', id)
+      .eq('transfer_type', 'to_portugo')
+      .eq('is_pending_deposit', true)
+      .order('transfer_date', { ascending: true });
+    setPendingDeposits((pendings as PendingRow[]) || []);
     let transferred = 0;
     let cashRefill = 0;
     let expensesRefill = 0;
@@ -191,7 +218,7 @@ function CashBoxesContent() {
     const expensesMov: Movement[] = [];
 
     (transfers || []).forEach(
-      (t: { amount: number; transfer_type: string; transfer_date: string; notes: string | null }) => {
+      (t: { amount: number; transfer_type: string; transfer_date: string; notes: string | null; is_pending_deposit?: boolean | null }) => {
         const amt = t.amount || 0;
         if (t.transfer_type === 'cash_refill') {
           cashRefill += amt;
@@ -219,9 +246,12 @@ function CashBoxesContent() {
             amount: amt,
           });
         } else {
-          // to_portugo (ברירת מחדל)
+          // to_portugo — או הפקדה רגילה, או העברה למעטפת המתנה
           transferred += amt;
-          mainMov.push({ date: t.transfer_date, description: 'הופקד לפורטוגו', amount: -amt });
+          const desc = t.is_pending_deposit
+            ? 'הועבר למעטפת המתנה'
+            : 'הופקד לפורטוגו';
+          mainMov.push({ date: t.transfer_date, description: desc, amount: -amt });
         }
       },
     );
@@ -303,6 +333,8 @@ function CashBoxesContent() {
     totals.salaryWithdrawn;
   const changeBalance = openingChange + totals.cashRefill + totals.adminTopupChange - totals.changeGiven;
   const expensesBalance = openingExpenses + totals.expensesRefill + totals.adminTopupExpenses - totals.expenses;
+  // קופה רביעית: סך הכל ממתין להפקדה (חוצה חודשים — לא תלוי בחודש הנבחר)
+  const pendingTotal = pendingDeposits.reduce((s, p) => s + (p.amount || 0), 0);
   const needsChangeRefill = totals.changeGiven > 0 && changeBalance < 51;
 
   const refillAmt = parseFloat(refillAmount) || 0;
@@ -339,6 +371,68 @@ function CashBoxesContent() {
     loadTotals(guideId);
   }
 
+  /**
+   * סגירת המתנה: המדריך הפקיד פיזית.
+   * - אם המודאל פתוח עבור pending ספציפי → סוגרים רק אותו
+   * - אם פתוח עבור 'all' → סוגרים את כל ה-pending
+   * הסגירה: מורידים את הדגל is_pending_deposit ל-false ומצרפים אסמכתא
+   * (אלא אם המדריך סימן "לא הייתה הפקדה").
+   */
+  async function handleSettlePending() {
+    if (!guideId || !showSettleModal) return;
+    setSettleError('');
+    if (!settleNotADeposit && !settleReceipt) {
+      setSettleError('צריך לצרף אסמכתא להפקדה. אם זו לא הייתה הפקדה — סמן.י את התיבה למטה.');
+      return;
+    }
+
+    const targetIds: string[] =
+      showSettleModal === 'all'
+        ? pendingDeposits.map((p) => p.id)
+        : [showSettleModal.id];
+
+    setSettleSaving(true);
+    const today = todayISO();
+
+    // אם יש אסמכתא — מעלים אחת ומקשרים לכל ה-pending שנסגרים יחד
+    let receiptUrl: string | null = null;
+    if (settleReceipt && targetIds.length > 0) {
+      try {
+        receiptUrl = await uploadTransferReceipt({
+          file: settleReceipt,
+          transferId: targetIds[0], // משויך לראשונה — אם יש כמה, כולן יקבלו אותו URL
+          transferDate: today,
+        });
+      } catch (uploadErr) {
+        setSettleSaving(false);
+        const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש';
+        setSettleError(`העלאת האסמכתא נכשלה: ${msg}`);
+        return;
+      }
+    }
+
+    // עדכון הרשומות: דגל פנדינג=false, תאריך, אסמכתא, is_deposit
+    const { error } = await supabase
+      .from('transfers')
+      .update({
+        is_pending_deposit: false,
+        transfer_date: today,
+        is_deposit: !settleNotADeposit,
+        receipt_url: receiptUrl,
+      })
+      .in('id', targetIds);
+
+    setSettleSaving(false);
+    if (error) {
+      setSettleError('משהו השתבש: ' + error.message);
+      return;
+    }
+    setShowSettleModal(null);
+    setSettleReceipt(null);
+    setSettleNotADeposit(false);
+    loadTotals(guideId);
+  }
+
   return (
     <div className="min-h-screen pb-20 bg-gray-50">
       <header className="bg-green-800 text-white p-4 shadow-md sticky top-0 z-10">
@@ -369,6 +463,59 @@ function CashBoxesContent() {
           <div className="text-center py-8 text-gray-500">רגע, מחשב יתרות...</div>
         ) : (
           <>
+            {/* קופה רביעית — המתנה להפקדה (מודגשת באדום, נצברת על פני חודשים) */}
+            {pendingTotal > 0 && (
+              <div className="bg-red-50 border-2 border-red-400 rounded-xl shadow p-5">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-bold text-red-700">💰 המתנה להפקדה</h3>
+                  <span className="text-2xl font-bold text-red-700">{pendingTotal.toFixed(0)}€</span>
+                </div>
+                <p className="text-xs text-red-700 mb-3">
+                  זה הכסף שצבור אצלך וצריך להפקיד לפורטוגו. ברגע שתפקיד.י —
+                  סמני &quot;ביצעתי הפקדה&quot; ותצרפ.י אסמכתא.
+                </p>
+                <ul className="space-y-2 mb-3">
+                  {pendingDeposits.map((p) => (
+                    <li
+                      key={p.id}
+                      className="flex justify-between items-center text-sm bg-white border border-red-200 rounded-lg p-2"
+                    >
+                      <div>
+                        <div className="font-semibold text-red-800">{p.amount.toFixed(0)}€</div>
+                        <div className="text-[11px] text-gray-600">
+                          {p.notes || 'ממתין להפקדה'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowSettleModal(p);
+                          setSettleReceipt(null);
+                          setSettleNotADeposit(false);
+                          setSettleError('');
+                        }}
+                        className="bg-red-600 hover:bg-red-700 active:scale-98 transition-all text-white text-xs font-semibold px-3 py-1.5 rounded-md"
+                      >
+                        ביצעתי הפקדה ✓
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {pendingDeposits.length > 1 && (
+                  <button
+                    onClick={() => {
+                      setShowSettleModal('all');
+                      setSettleReceipt(null);
+                      setSettleNotADeposit(false);
+                      setSettleError('');
+                    }}
+                    className="w-full bg-red-600 hover:bg-red-700 active:scale-98 transition-all text-white rounded-lg py-2 font-semibold text-sm"
+                  >
+                    סגור את כל המעטפה ({pendingTotal.toFixed(0)}€) ✓
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Main box */}
             <div className="bg-white rounded-xl shadow p-5">
               <div className="flex justify-between items-center mb-3">
@@ -651,6 +798,78 @@ function CashBoxesContent() {
               to { opacity: 1; transform: translateY(0); }
             }
           `}</style>
+        </div>
+      )}
+
+      {/* Settle pending deposit modal — סגירת מעטפת המתנה */}
+      {showSettleModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out] max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              ביצעתי הפקדה ✓
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {showSettleModal === 'all'
+                ? `סגירת כל המתנה בבת אחת — סה"כ ${pendingTotal.toFixed(0)}€`
+                : `סגירת ההפקדה: ${(showSettleModal as PendingRow).amount.toFixed(0)}€`}
+            </p>
+
+            {/* אסמכתא — חובה אם זו הייתה הפקדה */}
+            {!settleNotADeposit && (
+              <div className="mb-4">
+                <label className="block text-sm font-semibold mb-1">
+                  צילום אסמכתא <span className="text-red-600">*</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-2">אישור הפקדה (תמונה / סקרין-שוט)</p>
+                <PhotoPicker value={settleReceipt} onChange={setSettleReceipt} />
+              </div>
+            )}
+
+            {/* טוגל "זו לא הייתה הפקדה" */}
+            <label className="flex items-start gap-2 cursor-pointer p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+              <input
+                type="checkbox"
+                checked={settleNotADeposit}
+                onChange={(e) => {
+                  setSettleNotADeposit(e.target.checked);
+                  if (e.target.checked) setSettleReceipt(null);
+                }}
+                className="mt-1 w-4 h-4 accent-green-700"
+              />
+              <div>
+                <div className="text-sm font-semibold text-gray-800">זו לא הייתה הפקדה</div>
+                <div className="text-xs text-gray-600">אין אסמכתא</div>
+              </div>
+            </label>
+
+            {settleError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
+                {settleError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleSettlePending}
+                disabled={settleSaving}
+                className="w-full bg-red-600 hover:bg-red-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                {settleSaving ? 'שומר...' : 'אישור — סגור.י את ההמתנה'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowSettleModal(null);
+                  setSettleError('');
+                  setSettleReceipt(null);
+                  setSettleNotADeposit(false);
+                }}
+                disabled={settleSaving}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
