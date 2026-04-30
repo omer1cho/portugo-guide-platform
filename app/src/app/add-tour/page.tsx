@@ -680,8 +680,8 @@ function AddTourContent() {
                   <input
                     type="number"
                     min="0"
-                    step={tourCategory === 'classic' ? '0.5' : '1'}
-                    inputMode={tourCategory === 'classic' ? 'decimal' : 'numeric'}
+                    step={tourType && tourCategory === 'classic' ? '0.5' : '1'}
+                    inputMode={tourType && tourCategory === 'classic' ? 'decimal' : 'numeric'}
                     value={totalPeopleExpected}
                     onChange={(e) => setTotalPeopleExpected(e.target.value)}
                     placeholder="לדוגמה: 10"
@@ -731,20 +731,20 @@ function AddTourContent() {
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
                         כמה אנשים
-                        {tourCategory === 'classic' && (
-                          <span className="text-gray-400"> (אפשר חצאים: 1.5, 2.5...)</span>
+                        {tourType && tourCategory === 'classic' && (
+                          <span className="text-gray-400"> (אפשר חצאים)</span>
                         )}
                       </label>
                       <input
                         type="number"
                         min="0"
-                        // ב-קלאסי מאפשרים חצאים (0.5 step), בכל השאר רק שלמים (1).
-                        step={tourCategory === 'classic' ? '0.5' : '1'}
+                        // חצאים מותרים רק כשנבחר סיור קלאסי. אחרת — שלמים בלבד.
+                        step={tourType && tourCategory === 'classic' ? '0.5' : '1'}
                         value={b.people || ''}
                         onChange={(e) => {
                           const v = parseFloat(e.target.value) || 0;
                           // בקלאסי — מעגלים לחצי הקרוב; באחרים — מעגלים למעלה לשלם
-                          const rounded = tourCategory === 'classic'
+                          const rounded = tourType && tourCategory === 'classic'
                             ? Math.round(v * 2) / 2
                             : Math.ceil(v);
                           updateBooking(idx, 'people', rounded);
