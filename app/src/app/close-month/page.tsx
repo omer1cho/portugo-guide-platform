@@ -51,7 +51,7 @@ function CloseMonthContent() {
     const lastDay = new Date(year, month + 1, 0).getDate();
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    const [guideRes, toursRes, actRes, expRes, trRes] = await Promise.all([
+    const [guideRes, toursRes, actRes, expRes, trRes, cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
       supabase.from('guides').select('id, name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
       supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
         .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
@@ -61,6 +61,13 @@ function CloseMonthContent() {
         .eq('guide_id', id).gte('expense_date', start).lte('expense_date', end),
       supabase.from('transfers').select('amount, transfer_type')
         .eq('guide_id', id).gte('transfer_date', start).lte('transfer_date', end),
+      // יתרות מעטפות מצטברות — עד סוף החודש הנבחר
+      supabase.from('transfers').select('amount, transfer_type')
+        .eq('guide_id', id).lte('transfer_date', end),
+      supabase.from('tours').select('bookings(change_given)')
+        .eq('guide_id', id).lte('tour_date', end),
+      supabase.from('expenses').select('amount')
+        .eq('guide_id', id).lte('expense_date', end),
     ]);
 
     const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'>) || null;
@@ -129,10 +136,29 @@ function CloseMonthContent() {
       else transfersTotal += amt;
     });
 
+    // יתרות מצטברות (עד סוף החודש הנבחר) — כסף פיזי שעובר מחודש לחודש
+    let cumChangeRefill = 0, cumExpensesRefill = 0, cumAdminTopupChange = 0, cumAdminTopupExpenses = 0;
+    (cumTrRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
+      const a = t.amount || 0;
+      if (t.transfer_type === 'cash_refill') cumChangeRefill += a;
+      else if (t.transfer_type === 'expenses_refill') cumExpensesRefill += a;
+      else if (t.transfer_type === 'admin_topup_change') cumAdminTopupChange += a;
+      else if (t.transfer_type === 'admin_topup_expenses') cumAdminTopupExpenses += a;
+    });
+    let cumChangeGiven = 0;
+    ((cumChangeGivenRes.data as { bookings: { change_given: number }[] | null }[]) || []).forEach((t) => {
+      (t.bookings || []).forEach((b) => { cumChangeGiven += b.change_given || 0; });
+    });
+    const cumExpenses = (cumExpRes.data || []).reduce(
+      (s2: number, e: { amount: number }) => s2 + (e.amount || 0),
+      0,
+    );
+
     setCash({
       mainBalance: s.total_cash_collected + changeGiven - transfersTotal - cashRefill - expensesRefill - salaryWithdrawn,
-      changeBalance: openingChange + cashRefill + adminTopupChange - changeGiven,
-      expensesBalance: openingExpenses + expensesRefill + adminTopupExpenses - expensesTotal,
+      // יתרת מעטפות מצטברת
+      changeBalance: openingChange + cumChangeRefill + cumAdminTopupChange - cumChangeGiven,
+      expensesBalance: openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses,
       salaryWithdrawn,
     });
     setLoading(false);

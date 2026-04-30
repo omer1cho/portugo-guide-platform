@@ -109,6 +109,15 @@ function CashBoxesContent() {
     adminTopupChange: 0,
     adminTopupExpenses: 0,
   });
+  // יתרות מצטברות על פני זמן — מעטפות עוברות מחודש לחודש לפי כסף פיזי
+  // שיש בהן בפועל. הסכומים האלו צוברים את כל החיזוקים, ההורדות וה-topups
+  // עד סוף החודש הנבחר (לא תלוי בחודש בלבד).
+  const [cumChangeRefill, setCumChangeRefill] = useState(0);
+  const [cumChangeGiven, setCumChangeGiven] = useState(0);
+  const [cumExpensesRefill, setCumExpensesRefill] = useState(0);
+  const [cumExpenses, setCumExpenses] = useState(0);
+  const [cumAdminTopupChange, setCumAdminTopupChange] = useState(0);
+  const [cumAdminTopupExpenses, setCumAdminTopupExpenses] = useState(0);
   const [mainMovements, setMainMovements] = useState<Movement[]>([]);
   const [changeMovements, setChangeMovements] = useState<Movement[]>([]);
   const [expensesMovements, setExpensesMovements] = useState<Movement[]>([]);
@@ -209,6 +218,57 @@ function CashBoxesContent() {
       .eq('is_pending_deposit', true)
       .order('transfer_date', { ascending: true });
     setPendingDeposits((pendings as PendingRow[]) || []);
+
+    // ─── יתרות מעטפות מצטברות — עד סוף החודש הנבחר (חוצה חודשים) ───
+    // המעטפות הן כסף פיזי שהמדריך נושא, אז היתרה ממשיכה מחודש לחודש.
+    // נטענים: כל ה-transfers וכל ה-bookings.change_given עד תאריך הסיום של החודש הנבחר.
+    const [cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
+      supabase
+        .from('transfers')
+        .select('amount, transfer_type')
+        .eq('guide_id', id)
+        .lte('transfer_date', end),
+      supabase
+        .from('tours')
+        .select('tour_date, bookings(change_given)')
+        .eq('guide_id', id)
+        .lte('tour_date', end),
+      supabase
+        .from('expenses')
+        .select('amount')
+        .eq('guide_id', id)
+        .lte('expense_date', end),
+    ]);
+
+    let _cumChangeRefill = 0;
+    let _cumExpensesRefill = 0;
+    let _cumAdminTopupChange = 0;
+    let _cumAdminTopupExpenses = 0;
+    (cumTrRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
+      const a = t.amount || 0;
+      if (t.transfer_type === 'cash_refill') _cumChangeRefill += a;
+      else if (t.transfer_type === 'expenses_refill') _cumExpensesRefill += a;
+      else if (t.transfer_type === 'admin_topup_change') _cumAdminTopupChange += a;
+      else if (t.transfer_type === 'admin_topup_expenses') _cumAdminTopupExpenses += a;
+    });
+    let _cumChangeGiven = 0;
+    type RawTour = { bookings: { change_given: number }[] | null };
+    ((cumChangeGivenRes.data as RawTour[]) || []).forEach((t) => {
+      (t.bookings || []).forEach((b) => {
+        _cumChangeGiven += b.change_given || 0;
+      });
+    });
+    const _cumExpenses = (cumExpRes.data || []).reduce(
+      (s: number, e: { amount: number }) => s + (e.amount || 0),
+      0,
+    );
+
+    setCumChangeRefill(_cumChangeRefill);
+    setCumExpensesRefill(_cumExpensesRefill);
+    setCumAdminTopupChange(_cumAdminTopupChange);
+    setCumAdminTopupExpenses(_cumAdminTopupExpenses);
+    setCumChangeGiven(_cumChangeGiven);
+    setCumExpenses(_cumExpenses);
     let transferred = 0;
     let cashRefill = 0;
     let expensesRefill = 0;
@@ -331,8 +391,10 @@ function CashBoxesContent() {
     totals.cashRefill -
     totals.expensesRefill -
     totals.salaryWithdrawn;
-  const changeBalance = openingChange + totals.cashRefill + totals.adminTopupChange - totals.changeGiven;
-  const expensesBalance = openingExpenses + totals.expensesRefill + totals.adminTopupExpenses - totals.expenses;
+  // היתרה במעטפות מצטברת על פני זמן — כסף פיזי שהמדריך נושא, ממשיך מחודש לחודש.
+  // יתרת פתיחה (חד-פעמית) + כל החיזוקים + תוספות מאדמין − כל המשיכות, עד סוף החודש הנבחר.
+  const changeBalance = openingChange + cumChangeRefill + cumAdminTopupChange - cumChangeGiven;
+  const expensesBalance = openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses;
   // קופה רביעית: סך הכל ממתין להפקדה (חוצה חודשים — לא תלוי בחודש הנבחר)
   const pendingTotal = pendingDeposits.reduce((s, p) => s + (p.amount || 0), 0);
   const needsChangeRefill = totals.changeGiven > 0 && changeBalance < 51;
@@ -587,12 +649,18 @@ function CashBoxesContent() {
                 </span>
               </div>
               <div className="space-y-1 text-sm">
-                {openingChange > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">יתרת פתיחה:</span>
-                    <span className="font-semibold">+{openingChange.toFixed(2)}€</span>
-                  </div>
-                )}
+                {/* יתרה שעברה: כסף שכבר היה במעטפה לפני תחילת החודש (כולל יתרת פתיחה + חודשים קודמים) */}
+                {(() => {
+                  const carriedOver =
+                    changeBalance -
+                    (totals.cashRefill + totals.adminTopupChange - totals.changeGiven);
+                  return carriedOver > 0.001 ? (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
+                      <span className="font-semibold">+{carriedOver.toFixed(2)}€</span>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="flex justify-between">
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
                   <span className="font-semibold">+{totals.cashRefill.toFixed(2)}€</span>
@@ -648,12 +716,17 @@ function CashBoxesContent() {
                 </span>
               </div>
               <div className="space-y-1 text-sm">
-                {openingExpenses > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">יתרת פתיחה:</span>
-                    <span className="font-semibold">+{openingExpenses.toFixed(2)}€</span>
-                  </div>
-                )}
+                {(() => {
+                  const carriedOver =
+                    expensesBalance -
+                    (totals.expensesRefill + totals.adminTopupExpenses - totals.expenses);
+                  return carriedOver > 0.001 ? (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
+                      <span className="font-semibold">+{carriedOver.toFixed(2)}€</span>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="flex justify-between">
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
                   <span className="font-semibold">+{totals.expensesRefill.toFixed(2)}€</span>

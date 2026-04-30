@@ -21,6 +21,13 @@ type Summary = {
   admin_topup_change: number;  // תוספת אדמין למעטפת עודף (לא מהקופה הראשית)
   admin_topup_expenses: number; // תוספת אדמין למעטפת הוצאות (לא מהקופה הראשית)
   pending_total: number;       // סה"כ ממתין להפקדה — חוצה חודשים
+  // יתרות מצטברות (עד סוף החודש הנבחר) — מעטפות עוברות מחודש לחודש
+  cum_change_refill: number;
+  cum_change_given: number;
+  cum_expenses_refill: number;
+  cum_expenses: number;
+  cum_admin_topup_change: number;
+  cum_admin_topup_expenses: number;
   external: { description: string; amount: number; date: string }[];
   expenses: number;
   transfers: number;
@@ -69,6 +76,9 @@ function HomeContent() {
     opening_change: 0, opening_expenses: 0,
     admin_topup_change: 0, admin_topup_expenses: 0,
     pending_total: 0,
+    cum_change_refill: 0, cum_change_given: 0,
+    cum_expenses_refill: 0, cum_expenses: 0,
+    cum_admin_topup_change: 0, cum_admin_topup_expenses: 0,
     external: [],
     expenses: 0, transfers: 0,
     salary: EMPTY_SALARY,
@@ -100,7 +110,7 @@ function HomeContent() {
       const lastDay = new Date(year, month + 1, 0).getDate();
       const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-      const [guideRes, toursRes, actRes, expRes, trRes, pendingRes] = await Promise.all([
+      const [guideRes, toursRes, actRes, expRes, trRes, pendingRes, cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
         supabase.from('guides').select('name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
         supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
           .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
@@ -113,6 +123,13 @@ function HomeContent() {
         // Pending deposits — לא תלוי בחודש, מצטבר על פני זמן
         supabase.from('transfers').select('amount')
           .eq('guide_id', id).eq('transfer_type', 'to_portugo').eq('is_pending_deposit', true),
+        // יתרות מעטפות מצטברות — עד סוף החודש הנבחר (חוצה חודשים)
+        supabase.from('transfers').select('amount, transfer_type')
+          .eq('guide_id', id).lte('transfer_date', end),
+        supabase.from('tours').select('bookings(change_given)')
+          .eq('guide_id', id).lte('tour_date', end),
+        supabase.from('expenses').select('amount')
+          .eq('guide_id', id).lte('expense_date', end),
       ]);
 
       const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'> | null) || null;
@@ -194,6 +211,24 @@ function HomeContent() {
         0,
       );
 
+      // ─── יתרות מצטברות (חוצות חודשים) — עד סוף החודש הנבחר ───
+      let cumChangeRefill = 0, cumExpensesRefill = 0, cumAdminTopupChange = 0, cumAdminTopupExpenses = 0;
+      (cumTrRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
+        const a = t.amount || 0;
+        if (t.transfer_type === 'cash_refill') cumChangeRefill += a;
+        else if (t.transfer_type === 'expenses_refill') cumExpensesRefill += a;
+        else if (t.transfer_type === 'admin_topup_change') cumAdminTopupChange += a;
+        else if (t.transfer_type === 'admin_topup_expenses') cumAdminTopupExpenses += a;
+      });
+      let cumChangeGiven = 0;
+      ((cumChangeGivenRes.data as { bookings: { change_given: number }[] | null }[]) || []).forEach((t) => {
+        (t.bookings || []).forEach((b) => { cumChangeGiven += b.change_given || 0; });
+      });
+      const cumExpenses = (cumExpRes.data || []).reduce(
+        (s: number, e: { amount: number }) => s + (e.amount || 0),
+        0,
+      );
+
       setSummary({
         tours: toursRes.data?.length || 0,
         people: totalPeople,
@@ -207,6 +242,12 @@ function HomeContent() {
         admin_topup_change: adminTopupChange,
         admin_topup_expenses: adminTopupExpenses,
         pending_total: pendingTotal,
+        cum_change_refill: cumChangeRefill,
+        cum_change_given: cumChangeGiven,
+        cum_expenses_refill: cumExpensesRefill,
+        cum_expenses: cumExpenses,
+        cum_admin_topup_change: cumAdminTopupChange,
+        cum_admin_topup_expenses: cumAdminTopupExpenses,
         external: externalActivities,
         expenses: expensesTotal,
         transfers: transfersTotal,
@@ -382,8 +423,9 @@ function HomeContent() {
               {(() => {
                 const s = summary.salary;
                 const mainBalance = s.total_cash_collected + summary.change_given - summary.transfers - summary.cash_refill - summary.expenses_refill - summary.salary_withdrawn;
-                const changeBalance = summary.opening_change + summary.cash_refill + summary.admin_topup_change - summary.change_given;
-                const expensesBalance = summary.opening_expenses + summary.expenses_refill + summary.admin_topup_expenses - summary.expenses;
+                // יתרת מעטפות מצטברת — כסף פיזי שעובר מחודש לחודש
+                const changeBalance = summary.opening_change + summary.cum_change_refill + summary.cum_admin_topup_change - summary.cum_change_given;
+                const expensesBalance = summary.opening_expenses + summary.cum_expenses_refill + summary.cum_admin_topup_expenses - summary.cum_expenses;
                 return (
                   <>
                     {/* KPIs — tours, people */}
