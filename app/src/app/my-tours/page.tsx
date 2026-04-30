@@ -66,7 +66,8 @@ function MyToursContent() {
       const lastDay = new Date(parseInt(year), parseInt(m), 0).getDate();
       const end = `${year}-${m}-${String(lastDay).padStart(2, '0')}`;
 
-      // טעינה במקביל של סיורים + פעילויות
+      // טעינה במקביל של סיורים + פעילויות. הכל בסדר עולה (מ-1 לחודש)
+      // כדי שהמדריך יראה את היומן באופן כרונולוגי טבעי.
       const [toursRes, activitiesRes] = await Promise.all([
         supabase
           .from('tours')
@@ -74,7 +75,7 @@ function MyToursContent() {
           .eq('guide_id', id)
           .gte('tour_date', start)
           .lte('tour_date', end)
-          .order('tour_date', { ascending: false })
+          .order('tour_date', { ascending: true })
           .order('start_time', { ascending: true, nullsFirst: true }),
         supabase
           .from('activities')
@@ -82,7 +83,7 @@ function MyToursContent() {
           .eq('guide_id', id)
           .gte('activity_date', start)
           .lte('activity_date', end)
-          .order('activity_date', { ascending: false }),
+          .order('activity_date', { ascending: true }),
       ]);
 
       if (toursRes.error) console.error(toursRes.error);
@@ -169,90 +170,109 @@ function MyToursContent() {
           </div>
         ) : (
           <>
-            {/* סיורים */}
-            {tours.map((t) => {
-              const people = t.bookings.reduce((s, b) => s + (b.people || 0), 0);
-              const price = t.bookings.reduce((s, b) => s + (b.price || 0), 0);
-              const tip = t.bookings.reduce((s, b) => s + (b.tip || 0), 0);
-              return (
-                <div key={t.id} className="bg-white rounded-xl shadow p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-bold text-lg">{t.tour_type}</div>
-                      <div className="text-sm text-gray-600">
-                        {formatDate(t.tour_date)}
-                        {t.start_time && <span className="mr-2 font-medium text-green-700">· {t.start_time.slice(0, 5)}</span>}
+            {/* סיורים + פעילויות ממוזגים בסדר כרונולוגי עולה.
+                סיורים נשארים בסגנון לבן/ירוק, פעילויות בסגול — קל להבחין. */}
+            {[
+              ...tours.map((t) => ({
+                kind: 'tour' as const,
+                date: t.tour_date,
+                sortKey: `${t.tour_date}_${t.start_time || '00:00:00'}_t`,
+                tour: t,
+              })),
+              ...activities.map((a) => ({
+                kind: 'activity' as const,
+                date: a.activity_date,
+                sortKey: `${a.activity_date}_99:99:99_a`, // פעילויות נופלות בסוף היום
+                activity: a,
+              })),
+            ]
+              .sort((x, y) => x.sortKey.localeCompare(y.sortKey))
+              .map((item) => {
+                if (item.kind === 'tour') {
+                  const t = item.tour;
+                  const people = t.bookings.reduce((s, b) => s + (b.people || 0), 0);
+                  const price = t.bookings.reduce((s, b) => s + (b.price || 0), 0);
+                  const tip = t.bookings.reduce((s, b) => s + (b.tip || 0), 0);
+                  return (
+                    <div key={`tour-${t.id}`} className="bg-white rounded-xl shadow p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-bold text-lg">{t.tour_type}</div>
+                          <div className="text-sm text-gray-600">
+                            {formatDate(t.tour_date)}
+                            {t.start_time && (
+                              <span className="mr-2 font-medium text-green-700">
+                                · {t.start_time.slice(0, 5)}
+                              </span>
+                            )}
+                          </div>
+                          {t.notes && <div className="text-xs text-gray-500 mt-1">{t.notes}</div>}
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-green-800">{price}€</div>
+                          <div className="text-sm text-gray-600">{people} אנשים</div>
+                          {tip > 0 && <div className="text-xs text-gray-500">טיפ: {tip}€</div>}
+                        </div>
                       </div>
-                      {t.notes && <div className="text-xs text-gray-500 mt-1">{t.notes}</div>}
+                      <div className="flex gap-2 pt-2 border-t">
+                        <button
+                          onClick={() => router.push(`/add-tour?edit=${t.id}`)}
+                          className="flex-1 bg-green-100 hover:bg-green-200 active:scale-95 transition-transform text-green-800 text-sm font-semibold px-3 py-2 rounded-md"
+                        >
+                          עריכה
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteError('');
+                            setTourToDelete(t);
+                          }}
+                          className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
+                        >
+                          מחיקה
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-green-800">{price}€</div>
-                      <div className="text-sm text-gray-600">{people} אנשים</div>
-                      {tip > 0 && <div className="text-xs text-gray-500">טיפ: {tip}€</div>}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 pt-2 border-t">
-                    <button
-                      onClick={() => router.push(`/add-tour?edit=${t.id}`)}
-                      className="flex-1 bg-green-100 hover:bg-green-200 active:scale-95 transition-transform text-green-800 text-sm font-semibold px-3 py-2 rounded-md"
-                    >
-                      עריכה
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDeleteError('');
-                        setTourToDelete(t);
-                      }}
-                      className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
-                    >
-                      מחיקה
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* כותרת מפרידה — מציגים רק אם יש פעילויות */}
-            {activities.length > 0 && (
-              <div className="pt-3 pb-1 px-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                פעילויות
-              </div>
-            )}
-
-            {/* פעילויות (סגנון שונה במעט מסיורים) */}
-            {activities.map((a) => (
-              <div key={a.id} className="bg-purple-50 border border-purple-200 rounded-xl shadow p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-bold text-lg text-purple-900">
-                      {activityTypeLabel(a.activity_type)}
-                    </div>
-                    <div className="text-sm text-gray-600">{formatDate(a.activity_date)}</div>
-                    {a.notes && <div className="text-xs text-gray-600 mt-1">{a.notes}</div>}
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-purple-900">{a.amount}€</div>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2 border-t border-purple-200">
-                  <button
-                    onClick={() => router.push(`/add-tour?editActivity=${a.id}`)}
-                    className="flex-1 bg-purple-200 hover:bg-purple-300 active:scale-95 transition-transform text-purple-900 text-sm font-semibold px-3 py-2 rounded-md"
+                  );
+                }
+                // פעילות
+                const a = item.activity;
+                return (
+                  <div
+                    key={`act-${a.id}`}
+                    className="bg-purple-50 border border-purple-200 rounded-xl shadow p-4"
                   >
-                    עריכה
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteError('');
-                      setActivityToDelete(a);
-                    }}
-                    className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
-                  >
-                    מחיקה
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-bold text-lg text-purple-900">
+                          {activityTypeLabel(a.activity_type)}
+                        </div>
+                        <div className="text-sm text-gray-600">{formatDate(a.activity_date)}</div>
+                        {a.notes && <div className="text-xs text-gray-600 mt-1">{a.notes}</div>}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-purple-900">{a.amount}€</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t border-purple-200">
+                      <button
+                        onClick={() => router.push(`/add-tour?editActivity=${a.id}`)}
+                        className="flex-1 bg-purple-200 hover:bg-purple-300 active:scale-95 transition-transform text-purple-900 text-sm font-semibold px-3 py-2 rounded-md"
+                      >
+                        עריכה
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteError('');
+                          setActivityToDelete(a);
+                        }}
+                        className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
+                      >
+                        מחיקה
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </>
         )}
       </main>
