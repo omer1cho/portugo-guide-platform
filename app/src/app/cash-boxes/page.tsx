@@ -590,7 +590,7 @@ function CashBoxesContent() {
               </div>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">נאסף בקלאסי:</span>
+                  <span className="text-gray-600">נאסף בסיורים:</span>
                   <span className="font-semibold">+{totals.collected.toFixed(2)}€</span>
                 </div>
                 {totals.changeGiven > 0 && (
