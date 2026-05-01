@@ -300,14 +300,19 @@ export function calculateMonthlySalary(
 
   // אשל detection
   const eshelDays = new Set<string>();
+
+  // ספירת פריטי עבודה לפי תאריך (סיורים + פעילויות בתשלום).
+  // 2+ פריטים באותו יום = יום מלא → אשל. דגל אשל ידני לא נספר כפריט עבודה.
+  const workItemsByDate: Record<string, number> = {};
+
   for (const [date, dayTours] of Object.entries(toursByDate)) {
+    workItemsByDate[date] = dayTours.length;
     const hasFullDay = dayTours.some(
       (t) =>
         FULL_DAY_TOURS.has(t.tour_type) ||
         (t.category === 'private' && isFullDayPrivate(t.notes || '')),
     );
-    const multipleTours = dayTours.length >= 2;
-    if (hasFullDay || multipleTours) {
+    if (hasFullDay) {
       eshelDays.add(date);
     }
   }
@@ -318,18 +323,30 @@ export function calculateMonthlySalary(
   let training_lead = 0;
   let external = 0;
   for (const a of activities) {
-    if (a.activity_type === 'eshel') eshelDays.add(a.activity_date);
-    else if (a.activity_type === 'habraza') habraza += a.amount || 0;
-    else if (a.activity_type === 'training') training += a.amount || 0;
+    if (a.activity_type === 'eshel') {
+      eshelDays.add(a.activity_date);
+      continue; // דגל ידני — לא פריט עבודה
+    }
+    // כל שאר סוגי הפעילות נספרים כפריט עבודה ליום
+    workItemsByDate[a.activity_date] = (workItemsByDate[a.activity_date] || 0) + 1;
+
+    if (a.activity_type === 'habraza') habraza += a.amount || 0;
+    else if (a.activity_type === 'training') {
+      training += a.amount || 0;
+      // הכשרה (כמתלמד) על סיור יום מלא = יום מלא → אשל
+      if (isFullDayPrivate(a.notes || '')) eshelDays.add(a.activity_date);
+    }
     else if (a.activity_type === 'training_lead') {
       training_lead += a.amount || 0;
-      // הכשרה שהמדריך הבכיר העביר על סיור יום מלא = יום עבודה מלא → אשל
-      const n = a.notes || '';
-      if (n.includes('סינטרה') || n.includes('אראבידה') || n.includes('אובידוש') || n.includes('דורו')) {
-        eshelDays.add(a.activity_date);
-      }
+      // הכשרה שהמדריך הבכיר העביר על סיור יום מלא = יום מלא → אשל
+      if (isFullDayPrivate(a.notes || '')) eshelDays.add(a.activity_date);
     }
     else if (a.activity_type === 'external') external += a.amount || 0;
+  }
+
+  // יום עם 2+ פריטי עבודה (סיורים + פעילויות) = יום מלא → אשל
+  for (const [date, count] of Object.entries(workItemsByDate)) {
+    if (count >= 2) eshelDays.add(date);
   }
 
   const eshel_days = eshelDays.size;
