@@ -87,6 +87,10 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(justSaved);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  // תזכורות הוצאת קבלה — חודשים שבהם הייתה משכורת לקבלה ולא נלחץ "הוצאתי".
+  // נצברות עד שלוחצים אישור לכל חודש — אם יש כמה חודשים פתוחים, יוצגו כמה באנרים.
+  type PendingReceipt = { year: number; month: number; receipt_amount: number };
+  const [pendingReceipts, setPendingReceipts] = useState<PendingReceipt[]>([]);
 
   // Month navigation — read initial from URL, default to current month
   const now = new Date();
@@ -267,6 +271,123 @@ function HomeContent() {
     }
   }, [showToast]);
 
+  // טעינת תזכורות הוצאת קבלה — סורק חודשים מ-SYSTEM_START_DATE עד החודש שלפני הנוכחי.
+  // לכל חודש שלא אושר ויש בו receipt_amount > 0 → מוסיפים לרשימה.
+  useEffect(() => {
+    async function loadPendingReceipts() {
+      const id = localStorage.getItem('portugo_guide_id');
+      if (!id) return;
+
+      const { data: acks } = await supabase
+        .from('receipt_acknowledgements')
+        .select('year, month')
+        .eq('guide_id', id);
+      const ackSet = new Set(
+        (acks || []).map((a: { year: number; month: number }) => `${a.year}-${a.month}`),
+      );
+
+      // בונים רשימת חודשים מ-SYSTEM_START_DATE ועד (לא כולל) החודש הנוכחי
+      const startDate = new Date(SYSTEM_START_DATE);
+      const today = new Date();
+      const currentFirst = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthsToCheck: { year: number; month: number }[] = [];
+      const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+      while (cursor < currentFirst) {
+        monthsToCheck.push({ year: cursor.getFullYear(), month: cursor.getMonth() + 1 });
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+      const unacknowledged = monthsToCheck.filter(
+        (m) => !ackSet.has(`${m.year}-${m.month}`),
+      );
+      if (unacknowledged.length === 0) {
+        setPendingReceipts([]);
+        return;
+      }
+
+      const guideRes = await supabase
+        .from('guides')
+        .select(
+          'name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person',
+        )
+        .eq('id', id)
+        .single();
+      const g = (guideRes.data as Pick<
+        Guide,
+        'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'
+      > | null) || null;
+      if (!g) return;
+
+      type RawTour = {
+        tour_date: string;
+        tour_type: string;
+        category: 'classic' | 'fixed' | 'private' | 'other';
+        notes: string | null;
+        bookings: { people: number; kids: number; price: number; tip: number }[] | null;
+      };
+
+      const results: PendingReceipt[] = [];
+      for (const m of unacknowledged) {
+        const start = `${m.year}-${String(m.month).padStart(2, '0')}-01`;
+        const lastDay = new Date(m.year, m.month, 0).getDate();
+        const end = `${m.year}-${String(m.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const [toursRes, actRes] = await Promise.all([
+          supabase
+            .from('tours')
+            .select('tour_date, tour_type, category, notes, bookings(people, kids, price, tip)')
+            .eq('guide_id', id)
+            .gte('tour_date', start)
+            .lte('tour_date', end),
+          supabase
+            .from('activities')
+            .select('amount, activity_type, activity_date, notes')
+            .eq('guide_id', id)
+            .gte('activity_date', start)
+            .lte('activity_date', end),
+        ]);
+        const sTours: SalaryTour[] = ((toursRes.data as RawTour[]) || []).map((t) => ({
+          tour_date: t.tour_date,
+          tour_type: t.tour_type,
+          category: t.category,
+          notes: t.notes || '',
+          bookings: (t.bookings || []).map((b) => ({
+            people: b.people || 0,
+            kids: b.kids || 0,
+            price: b.price || 0,
+            tip: b.tip || 0,
+          })),
+        }));
+        const sActs: SalaryActivity[] = (actRes.data || []).map(
+          (a: { activity_type: string; activity_date: string; amount: number; notes: string }) => ({
+            activity_date: a.activity_date,
+            activity_type: a.activity_type,
+            amount: a.amount || 0,
+            notes: a.notes || '',
+          }),
+        );
+        const s = calculateMonthlySalary(g, sTours, sActs);
+        if (s.receipt_amount > 0) {
+          results.push({ year: m.year, month: m.month, receipt_amount: s.receipt_amount });
+        }
+      }
+      setPendingReceipts(results);
+    }
+    loadPendingReceipts();
+  }, []);
+
+  // לחיצה על "הוצאתי קבלה" — שומר אישור והבאנר נעלם
+  async function acknowledgeReceipt(year: number, month: number) {
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id) return;
+    const { error } = await supabase
+      .from('receipt_acknowledgements')
+      .insert({ guide_id: id, year, month });
+    if (error) {
+      alert('משהו השתבש: ' + error.message);
+      return;
+    }
+    setPendingReceipts((prev) => prev.filter((r) => !(r.year === year && r.month === month)));
+  }
+
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
@@ -372,6 +493,32 @@ function HomeContent() {
             </div>
           </Link>
         )}
+
+        {/* תזכורות הוצאת קבלה — באנר אחד לכל חודש פתוח. נשארות עד שלוחצים אישור. */}
+        {pendingReceipts.map((r) => (
+          <div
+            key={`${r.year}-${r.month}`}
+            className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 shadow"
+          >
+            <div className="flex items-start gap-3 mb-3">
+              <span className="text-2xl">🧾</span>
+              <div className="flex-1">
+                <div className="font-bold text-amber-900 text-base">
+                  תזכורת: יש להוציא קבלה על {formatMonthLabel(r.year, r.month - 1)}
+                </div>
+                <div className="text-xs text-amber-800 mt-1">
+                  סכום הקבלה: {r.receipt_amount.toFixed(2)}€
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => acknowledgeReceipt(r.year, r.month)}
+              className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-lg py-2.5 font-semibold text-sm"
+            >
+              הוצאתי, תודה על התזכורת ✓
+            </button>
+          </div>
+        ))}
 
         {/* Month summary with navigation */}
         <section className="bg-white rounded-2xl shadow p-5">

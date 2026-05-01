@@ -582,6 +582,22 @@ function CloseMonthContent() {
                 </div>
               )}
 
+              {/* תזכורת הוצאת קבלה — אחרי סגירת חודש, רק אם יש סכום לקבלה */}
+              {alreadyConfirmed && (salary?.receipt_amount || 0) > 0 && (
+                <div className="mt-3 bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">🧾</span>
+                    <div className="text-amber-900">
+                      <div className="font-bold">אל תשכח.י להוציא קבלה החודש!</div>
+                      <div className="mt-0.5">
+                        סכום הקבלה: <span className="font-bold">{(salary?.receipt_amount || 0).toFixed(2)}€</span>.
+                        אם תשכח.י — נזכיר שוב בתחילת החודש הבא.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Deposit buttons — שתי אפשרויות: הפקדה מיידית או העברה למעטפת המתנה */}
               {needsDeposit && (
                 <div className="mt-3 space-y-2">
