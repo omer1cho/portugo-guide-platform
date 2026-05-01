@@ -511,9 +511,7 @@ function CloseMonthContent() {
                                 {!hasVatComponent && wasRoundedUp && (
                                   <>(שכר בפועל {totalSalaryRaw.toFixed(2)}€</>
                                 )}
-                                {wasRoundedUp && (
-                                  <>, מעוגל ל-{totalSalary}€{hasVatComponent && ' לטובתך'}</>
-                                )}
+                                {wasRoundedUp && <>, מעוגל ל-{totalSalary}€</>}
                                 {takeFromBox < totalSalary - 0.01 && (
                                   <>, סה&quot;כ {totalSalary}€ — היתרה תשלים פורטוגו</>
                                 )}
