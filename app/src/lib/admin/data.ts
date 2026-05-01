@@ -58,7 +58,7 @@ export type MonthSnapshot = {
     cash_collected: number;
     expenses: number;
     salary_total_with_tips: number;
-    salary_to_pay: number; // total transfer_amount + vat_amount (מה שפורטוגו מעבירה, כולל מע"מ למי שיש)
+    salary_to_pay: number; // total cash_to_withdraw (מה שפורטוגו מעבירה, כולל מע"מ למי שיש, מעוגל למעלה)
     closed_count: number;
     open_count: number;
     pending_total: number; // סה"כ כסף שממתין להפקדה אצל כל המדריכים
@@ -321,11 +321,8 @@ export async function loadMonthSnapshot(
       (s, x) => s + (x.salary.total_with_tips || 0),
       0,
     ),
-    // למדריכים עם מע"מ: סה"כ להעברה כולל את המע"מ (Portugo משלמת receipt_with_vat)
-    salary_to_pay: summaries.reduce(
-      (s, x) => s + (x.salary.transfer_amount || 0) + (x.salary.vat_amount || 0),
-      0,
-    ),
+    // סה"כ להעברה למדריכים = cash_to_withdraw (מעוגל לטובתם, כולל מע"מ למי שיש)
+    salary_to_pay: summaries.reduce((s, x) => s + (x.salary.cash_to_withdraw || 0), 0),
     closed_count: summaries.filter((x) => x.status === 'closed').length,
     open_count: summaries.filter((x) => x.status === 'open').length,
     pending_total: summaries.reduce((s, x) => s + (x.pending_total || 0), 0),

@@ -60,6 +60,10 @@ export type SalaryBreakdown = {
   receipt_amount: number;      // official income for the receipt
   vat_amount: number;          // 23% VAT on receipt (Maya/Meni only)
   receipt_with_vat: number;    // receipt_amount + vat_amount
+  // Cash withdrawal (משיכת משכורת בסגירת חודש)
+  // הסכום שהמדריך מושך מהקופה הראשית. = transfer_amount + vat_amount, מעוגל מעלה
+  // ליורו שלם — תמיד לטובת המדריך, כדי לא להתעסק במטבעות עשרוניים.
+  cash_to_withdraw: number;
   // Raw counters (useful for display / KPIs)
   work_days: number;
   classic_people: number;
@@ -405,6 +409,9 @@ export function calculateMonthlySalary(
   const vat_amount = guide?.has_vat ? receipt_amount * 0.23 : 0;
   const receipt_with_vat = receipt_amount + vat_amount;
 
+  // עיגול למעלה ליורו שלם — תמיד לטובת המדריך, כדי לא להתעסק במטבעות
+  const cash_to_withdraw = Math.ceil(transfer_amount + vat_amount);
+
   return {
     classic_base,
     classic_transfer,
@@ -426,6 +433,7 @@ export function calculateMonthlySalary(
     receipt_amount,
     vat_amount,
     receipt_with_vat,
+    cash_to_withdraw,
     work_days,
     classic_people,
     classic_collected,

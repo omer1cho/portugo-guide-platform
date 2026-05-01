@@ -375,7 +375,7 @@ function SalaryTable({ snapshot }: { snapshot: MonthSnapshot }) {
                 <Td align="left" bold>
                   {fmtEuro(sal.total_with_tips)}
                 </Td>
-                <Td align="left">{fmtEuro(sal.transfer_amount + sal.vat_amount)}</Td>
+                <Td align="left">{fmtEuro(sal.cash_to_withdraw)}</Td>
                 <Td>
                   <StatusPill status={s.status} />
                 </Td>

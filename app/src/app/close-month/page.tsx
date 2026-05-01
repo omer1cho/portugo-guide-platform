@@ -184,13 +184,16 @@ function CloseMonthContent() {
   const DEPOSIT_STEP = 5;
   const skipAllRefills = EXPENSES_TARGET === 0 && CHANGE_TARGET === 0;
 
-  // למדריכים עם מע"מ: המשיכה כוללת גם את המע"מ. הם יוציאו חשבונית על
-  // (משכורת + מע"מ) ולכן צריכים להוציא את שני הסכומים מהקופה.
-  // vat_amount כבר 0 למי שאין לו מע"מ, אז הנוסחה אחידה לכולם.
+  // משיכת משכורת בקופה הראשית:
+  //  - למדריכים עם מע"מ נכללת גם תוספת המע"מ (Portugo משלמת receipt_with_vat).
+  //  - הסכום מעוגל מעלה ליורו שלם — תמיד לטובת המדריך, אין צורך בעודף עשרוני.
+  // cash_to_withdraw מחושב פעם אחת ב-salary.ts ומשמש בכל מקומות התצוגה.
   const baseSalary = salary?.transfer_amount || 0;
   const vatAmount = salary?.vat_amount || 0;
-  const totalSalary = baseSalary + vatAmount;
+  const totalSalary = salary?.cash_to_withdraw || 0;
+  const totalSalaryRaw = baseSalary + vatAmount;
   const hasVatComponent = vatAmount > 0.01;
+  const wasRoundedUp = totalSalary > totalSalaryRaw + 0.005;
   const salaryRemaining = Math.max(0, totalSalary - cash.salaryWithdrawn);
   const mainBox = cash.mainBalance;
 
@@ -428,18 +431,20 @@ function CloseMonthContent() {
                 <div className="text-[11px] text-green-800 leading-tight pr-1">
                   כולל טיפים מסיורים רגילים
                 </div>
-                {(salary.non_classic_tips > 0 || hasVatComponent) && (
+                {salary.total_with_tips > 0 && (
                   <>
                     <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
                       <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
-                      <span className="font-bold text-green-900">{totalSalary.toFixed(2)}€</span>
+                      <span className="font-bold text-green-900">{salary.cash_to_withdraw}€</span>
                     </div>
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
                       {salary.non_classic_tips > 0 && hasVatComponent
-                        ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים'
+                        ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים (מעוגל לטובתך)'
                         : hasVatComponent
-                          ? 'משכורת + מע"מ'
-                          : 'ללא הטיפים מהסיורים הרגילים'}
+                          ? 'משכורת + מע"מ (מעוגל לטובתך)'
+                          : salary.non_classic_tips > 0
+                            ? 'ללא הטיפים מהסיורים הרגילים (מעוגל לטובתך)'
+                            : 'מעוגל לטובתך ליורו שלם'}
                     </div>
                   </>
                 )}
@@ -493,16 +498,24 @@ function CloseMonthContent() {
                       const steps: React.ReactNode[] = [];
 
                       if (needsSalaryWithdraw) {
+                        const takeIsWhole = Math.abs(takeFromBox - Math.round(takeFromBox)) < 0.005;
+                        const takeDisplay = takeIsWhole ? Math.round(takeFromBox).toString() : takeFromBox.toFixed(2);
                         steps.push(
                           <span>
                             קח.י לעצמך{' '}
-                            <span className="font-bold">{takeFromBox.toFixed(2)}€</span>{' '}
+                            <span className="font-bold">{takeDisplay}€</span>{' '}
                             {hasVatComponent ? 'מהקופה הראשית — משכורת + מע"מ' : 'משכורת מהקופה הראשית'}.
-                            {hasVatComponent && (
+                            {(hasVatComponent || wasRoundedUp) && (
                               <span className="block text-[11px] text-amber-700 font-normal mt-0.5">
-                                ({baseSalary.toFixed(2)}€ משכורת + {vatAmount.toFixed(2)}€ מע&quot;מ
+                                {hasVatComponent && (
+                                  <>({baseSalary.toFixed(2)}€ משכורת + {vatAmount.toFixed(2)}€ מע&quot;מ</>
+                                )}
+                                {!hasVatComponent && wasRoundedUp && (
+                                  <>(שכר בפועל {totalSalaryRaw.toFixed(2)}€</>
+                                )}
+                                {wasRoundedUp && <>, מעוגל ל-{totalSalary}€ לטובתך</>}
                                 {takeFromBox < totalSalary - 0.01 && (
-                                  <>, סה&quot;כ {totalSalary.toFixed(2)}€ — היתרה תשלים פורטוגו</>
+                                  <>, סה&quot;כ {totalSalary}€ — היתרה תשלים פורטוגו</>
                                 )}
                                 )
                               </span>
