@@ -47,6 +47,10 @@ export type Guide = {
   opening_change_balance?: number;
   /** יתרת פתיחה במעטפת הוצאות — הכסף שהמדריך נכנס איתו למערכת. ברירת מחדל 0. */
   opening_expenses_balance?: number;
+  /** יעד חיזוק מעטפת עודף בסוף חודש. ברירת מחדל 100€. 0 = לא לחזק. */
+  target_change_balance?: number;
+  /** יעד חיזוק מעטפת הוצאות בסוף חודש. ברירת מחדל 150€. 0 = לא לחזק. */
+  target_expenses_balance?: number;
 };
 
 export type Tour = {

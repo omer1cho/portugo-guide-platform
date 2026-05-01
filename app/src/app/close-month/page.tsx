@@ -27,7 +27,7 @@ function CloseMonthContent() {
   const month = searchParams.get('month') ? parseInt(searchParams.get('month')!) - 1 : now.getMonth();
 
   const [loading, setLoading] = useState(true);
-  const [guide, setGuide] = useState<Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'> | null>(null);
+  const [guide, setGuide] = useState<Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'target_change_balance' | 'target_expenses_balance'> | null>(null);
   const [salary, setSalary] = useState<SalaryBreakdown | null>(null);
   const [externalActivities, setExternalActivities] = useState<{ description: string; amount: number }[]>([]);
   const [cash, setCash] = useState<CashState>({ mainBalance: 0, changeBalance: 0, expensesBalance: 0, salaryWithdrawn: 0 });
@@ -52,7 +52,7 @@ function CloseMonthContent() {
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     const [guideRes, toursRes, actRes, expRes, trRes, cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
-      supabase.from('guides').select('id, name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
+      supabase.from('guides').select('id, name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance, target_change_balance, target_expenses_balance').eq('id', id).single(),
       supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
         .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
       supabase.from('activities').select('amount, activity_type, activity_date, notes')
@@ -71,7 +71,7 @@ function CloseMonthContent() {
         .eq('guide_id', id).gte('expense_date', SYSTEM_START_DATE).lte('expense_date', end),
     ]);
 
-    const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'>) || null;
+    const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance' | 'target_change_balance' | 'target_expenses_balance'>) || null;
     setGuide(g);
     const openingChange = g?.opening_change_balance || 0;
     const openingExpenses = g?.opening_expenses_balance || 0;
@@ -172,15 +172,17 @@ function CloseMonthContent() {
   // ─────────── Month-closing reconciliation ───────────
   // Priority order out of the main box:
   //   1. Salary (full amount, up to what the box holds)
-  //   2. Refill EXPENSES envelope to 150€ (higher priority)
-  //   3. Refill CHANGE envelope to 100€
+  //   2. Refill EXPENSES envelope to target (per-guide, default 150€) — higher priority
+  //   3. Refill CHANGE envelope to target (per-guide, default 100€)
   //   4. Deposit the remainder to Portugo, rounded DOWN to a multiple of 5€
   //      (any leftover "coins" <5€ are pushed into the expenses envelope
   //      so the guide can deposit a clean whole-bill amount)
   //   5. If the box didn't cover the full salary — Portugo transfers the rest separately.
-  const EXPENSES_TARGET = 150;
-  const CHANGE_TARGET = 100;
+  // יעדים פר-מדריך (עמודות בטבלת guides). אם 0 → לא מחזקים את המעטפת בכלל.
+  const EXPENSES_TARGET = guide?.target_expenses_balance ?? 150;
+  const CHANGE_TARGET = guide?.target_change_balance ?? 100;
   const DEPOSIT_STEP = 5;
+  const skipAllRefills = EXPENSES_TARGET === 0 && CHANGE_TARGET === 0;
 
   const totalSalary = salary?.transfer_amount || 0;
   const salaryRemaining = Math.max(0, totalSalary - cash.salaryWithdrawn);
@@ -199,10 +201,16 @@ function CloseMonthContent() {
   const changeRefill = Math.min(changeNeed, remaining);
   remaining -= changeRefill;
 
-  // Round the deposit DOWN to a multiple of DEPOSIT_STEP; sweep remainder into expenses envelope
-  const depositRounded = Math.floor(remaining / DEPOSIT_STEP) * DEPOSIT_STEP;
+  // עיגול הפקדה למכפלת DEPOSIT_STEP; "הרזרבה" שמתחת ל-5€ נדחפת למעטפת ההוצאות
+  // כדי שהמדריך יפקיד שטרות שלמים. אם המדריך פטור מחיזוק מעטפות (skipAllRefills),
+  // לא דוחפים שום דבר למעטפה — מפקידים את כל הסכום כמו שהוא.
+  const depositRounded = skipAllRefills
+    ? remaining
+    : Math.floor(remaining / DEPOSIT_STEP) * DEPOSIT_STEP;
   const coinExtra = remaining - depositRounded;
-  expensesRefill += coinExtra;
+  if (!skipAllRefills) {
+    expensesRefill += coinExtra;
+  }
   const depositToPortugo = depositRounded;
 
   const needsDeposit = depositToPortugo > 0.01;
