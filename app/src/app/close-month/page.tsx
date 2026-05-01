@@ -232,6 +232,16 @@ function CloseMonthContent() {
   // The bank deposit to Portugo is a separate action because it can take a few days.
   const hasImmediateActions = needsSalaryWithdraw || needsExpensesRefill || needsChangeRefill;
 
+  // תאריך ההעברה לפעולות סגירת חודש: היום האחרון של החודש שנסגר אם הוא בעבר,
+  // אחרת היום (סגירה של החודש הנוכחי לפני שהוא הסתיים). זה מבטיח שהמשיכות
+  // והחיזוקים נראים בתצוגת אותו חודש בקופות.
+  function getCloseDate(): string {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const lastDayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return lastDayStr < todayStr ? lastDayStr : todayStr;
+  }
+
   async function handleConfirmActions() {
     const id = localStorage.getItem('portugo_guide_id');
     if (!id) return;
@@ -239,14 +249,14 @@ function CloseMonthContent() {
 
     setConfirming(true);
     setConfirmError('');
-    const today = new Date().toISOString().slice(0, 10);
+    const closeDate = getCloseDate();
     const monthLabel = formatMonthLabel(year, month);
     const rows: { guide_id: string; transfer_date: string; amount: number; transfer_type: string; notes: string }[] = [];
 
     if (needsSalaryWithdraw) {
       rows.push({
         guide_id: id,
-        transfer_date: today,
+        transfer_date: closeDate,
         amount: Number(takeFromBox.toFixed(2)),
         transfer_type: 'salary_withdrawal',
         notes: `משכורת — סגירת ${monthLabel}`,
@@ -255,7 +265,7 @@ function CloseMonthContent() {
     if (needsExpensesRefill) {
       rows.push({
         guide_id: id,
-        transfer_date: today,
+        transfer_date: closeDate,
         amount: Number(expensesRefill.toFixed(2)),
         transfer_type: 'expenses_refill',
         notes: `חיזוק מעטפת הוצאות — סגירת ${monthLabel}`,
@@ -264,7 +274,7 @@ function CloseMonthContent() {
     if (needsChangeRefill) {
       rows.push({
         guide_id: id,
-        transfer_date: today,
+        transfer_date: closeDate,
         amount: Number(changeRefill.toFixed(2)),
         transfer_type: 'cash_refill',
         notes: `חיזוק מעטפת עודף — סגירת ${monthLabel}`,
@@ -288,11 +298,11 @@ function CloseMonthContent() {
     if (!id) return;
     setPendingSaving(true);
     setPendingError('');
-    const today = new Date().toISOString().slice(0, 10);
+    const closeDate = getCloseDate();
     const monthLabel = formatMonthLabel(year, month);
     const { error } = await supabase.from('transfers').insert({
       guide_id: id,
-      transfer_date: today,
+      transfer_date: closeDate,
       amount: Number(depositToPortugo.toFixed(2)),
       transfer_type: 'to_portugo',
       is_pending_deposit: true,
