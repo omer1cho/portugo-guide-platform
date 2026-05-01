@@ -54,6 +54,21 @@ function todayISO(): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * אם הגענו מ-/home בתצוגת חודש קודם (?for=YYYY-MM) — מחזיר את היום
+ * האחרון של אותו חודש כברירת מחדל לתאריך הסיור. אחרת — היום.
+ */
+function defaultTourDate(forParam: string | null): string {
+  if (!forParam) return todayISO();
+  const m = forParam.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return todayISO();
+  const year = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  if (!year || !month || month < 1 || month > 12) return todayISO();
+  const lastDay = new Date(year, month, 0).getDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+}
+
 function formatHebrewDate(iso: string): string {
   if (!iso) return '';
   const d = new Date(iso + 'T00:00:00');
@@ -92,8 +107,9 @@ function AddTourContent() {
   const [mode, setMode] = useState<'tour' | 'activity'>('tour');
   const isSeniorGuide = SENIOR_TRAINING_GUIDES.includes(guideName);
 
-  // Tour state
-  const [date, setDate] = useState(todayISO());
+  // Tour state — אם הגענו מתצוגת חודש קודם (?for=YYYY-MM), היום האחרון של אותו חודש;
+  // אחרת היום.
+  const [date, setDate] = useState(() => defaultTourDate(searchParams.get('for')));
   const [tourType, setTourType] = useState('');
   const [tourCategory, setTourCategory] = useState<'classic' | 'fixed' | 'private'>('classic');
   const [notes, setNotes] = useState('');

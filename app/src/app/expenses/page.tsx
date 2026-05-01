@@ -12,6 +12,11 @@ import {
 import { uploadExpenseReceipt } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
 import { useAuthGuard } from '@/lib/auth';
+import {
+  canEditMonth,
+  checkSalaryClosed,
+  getMonthEditExplanation,
+} from '@/lib/month-policy';
 
 type Expense = {
   id: string;
@@ -56,6 +61,10 @@ function ExpensesContent() {
   const [catalog, setCatalog] = useState<ExpenseCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  // האם החודש הנבחר נסגר (יש salary_withdrawal). משפיע על האפשרות להוסיף/לערוך.
+  const [salaryClosed, setSalaryClosed] = useState(false);
+  const editable = canEditMonth(year, month, salaryClosed);
+  const lockReason = getMonthEditExplanation(year, month, salaryClosed);
 
   // form state
   const [date, setDate] = useState(todayISO());
@@ -85,6 +94,8 @@ function ExpensesContent() {
     setGuideCity(city || 'lisbon');
     loadExpenses(id);
     loadCatalog();
+    // טעינת סטטוס סגירת משכורת כדי לדעת אם להציג כפתור הוספה
+    checkSalaryClosed(supabase, id, year, month).then(setSalaryClosed);
   }, [router, year, month]);
 
   async function loadExpenses(id: string) {
@@ -384,13 +395,18 @@ function ExpensesContent() {
           <div className="text-2xl font-bold text-amber-700">{total.toFixed(2)}€</div>
         </div>
 
-        {!showForm && isCurrent && (
+        {!showForm && editable && (
           <button
             onClick={() => setShowForm(true)}
             className="w-full bg-red-600 hover:bg-red-700 active:scale-98 transition-all text-white rounded-2xl shadow-lg py-4 text-lg font-bold"
           >
             הוסף.י הוצאה +
           </button>
+        )}
+        {!showForm && !editable && lockReason && (
+          <div className="bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm text-gray-700 text-center">
+            🔒 {lockReason}
+          </div>
         )}
 
         {showForm && (
@@ -651,21 +667,23 @@ function ExpensesContent() {
                     )}
                   </div>
                 </div>
-                {/* כפתורי עריכה ומחיקה */}
-                <div className="flex gap-2 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={() => handleEdit(e)}
-                    className="flex-1 bg-amber-50 hover:bg-amber-100 active:scale-95 transition-transform text-amber-800 text-sm font-semibold px-3 py-2 rounded-md"
-                  >
-                    עריכה
-                  </button>
-                  <button
-                    onClick={() => setExpenseToDelete(e)}
-                    className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
-                  >
-                    מחיקה
-                  </button>
-                </div>
+                {/* כפתורי עריכה ומחיקה — רק כשהחודש פתוח לעריכה */}
+                {editable && (
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleEdit(e)}
+                      className="flex-1 bg-amber-50 hover:bg-amber-100 active:scale-95 transition-transform text-amber-800 text-sm font-semibold px-3 py-2 rounded-md"
+                    >
+                      עריכה
+                    </button>
+                    <button
+                      onClick={() => setExpenseToDelete(e)}
+                      className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
+                    >
+                      מחיקה
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

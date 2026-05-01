@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
+import {
+  canEditMonth,
+  checkSalaryClosed,
+  getMonthEditExplanation,
+} from '@/lib/month-policy';
 
 type TourWithBookings = {
   id: string;
@@ -52,6 +57,14 @@ function MyToursContent() {
   const [tourToDelete, setTourToDelete] = useState<TourWithBookings | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [salaryClosed, setSalaryClosed] = useState(false);
+
+  // הפרדה ל-year/month-0-indexed כדי להעביר ל-canEditMonth
+  const [yearStr, monthStr] = month.split('-');
+  const viewYear = parseInt(yearStr, 10);
+  const viewMonth = parseInt(monthStr, 10) - 1;
+  const editable = canEditMonth(viewYear, viewMonth, salaryClosed);
+  const lockReason = getMonthEditExplanation(viewYear, viewMonth, salaryClosed);
 
   useEffect(() => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -93,7 +106,10 @@ function MyToursContent() {
       setLoading(false);
     }
     load();
-  }, [router, month]);
+    if (!isNaN(viewYear) && !isNaN(viewMonth)) {
+      checkSalaryClosed(supabase, id, viewYear, viewMonth).then(setSalaryClosed);
+    }
+  }, [router, month, viewYear, viewMonth]);
 
   const confirmDeleteTour = async () => {
     if (!tourToDelete) return;
@@ -162,6 +178,12 @@ function MyToursContent() {
           />
         </div>
 
+        {!editable && lockReason && (
+          <div className="bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm text-gray-700 text-center">
+            🔒 {lockReason}
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-8 text-gray-500">טוען...</div>
         ) : tours.length === 0 && activities.length === 0 ? (
@@ -214,23 +236,25 @@ function MyToursContent() {
                           {tip > 0 && <div className="text-xs text-gray-500">טיפ: {tip}€</div>}
                         </div>
                       </div>
-                      <div className="flex gap-2 pt-2 border-t">
-                        <button
-                          onClick={() => router.push(`/add-tour?edit=${t.id}`)}
-                          className="flex-1 bg-green-100 hover:bg-green-200 active:scale-95 transition-transform text-green-800 text-sm font-semibold px-3 py-2 rounded-md"
-                        >
-                          עריכה
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteError('');
-                            setTourToDelete(t);
-                          }}
-                          className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
-                        >
-                          מחיקה
-                        </button>
-                      </div>
+                      {editable && (
+                        <div className="flex gap-2 pt-2 border-t">
+                          <button
+                            onClick={() => router.push(`/add-tour?edit=${t.id}`)}
+                            className="flex-1 bg-green-100 hover:bg-green-200 active:scale-95 transition-transform text-green-800 text-sm font-semibold px-3 py-2 rounded-md"
+                          >
+                            עריכה
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteError('');
+                              setTourToDelete(t);
+                            }}
+                            className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
+                          >
+                            מחיקה
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -253,23 +277,25 @@ function MyToursContent() {
                         <div className="font-bold text-purple-900">{a.amount}€</div>
                       </div>
                     </div>
-                    <div className="flex gap-2 pt-2 border-t border-purple-200">
-                      <button
-                        onClick={() => router.push(`/add-tour?editActivity=${a.id}`)}
-                        className="flex-1 bg-purple-200 hover:bg-purple-300 active:scale-95 transition-transform text-purple-900 text-sm font-semibold px-3 py-2 rounded-md"
-                      >
-                        עריכה
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeleteError('');
-                          setActivityToDelete(a);
-                        }}
-                        className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
-                      >
-                        מחיקה
-                      </button>
-                    </div>
+                    {editable && (
+                      <div className="flex gap-2 pt-2 border-t border-purple-200">
+                        <button
+                          onClick={() => router.push(`/add-tour?editActivity=${a.id}`)}
+                          className="flex-1 bg-purple-200 hover:bg-purple-300 active:scale-95 transition-transform text-purple-900 text-sm font-semibold px-3 py-2 rounded-md"
+                        >
+                          עריכה
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteError('');
+                            setActivityToDelete(a);
+                          }}
+                          className="text-red-600 text-sm px-3 py-2 rounded-md hover:bg-red-50"
+                        >
+                          מחיקה
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

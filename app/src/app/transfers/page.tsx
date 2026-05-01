@@ -7,6 +7,11 @@ import { supabase } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
 import { uploadTransferReceipt } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
+import {
+  canEditMonth,
+  checkSalaryClosed,
+  getMonthEditExplanation,
+} from '@/lib/month-policy';
 
 type Transfer = {
   id: string;
@@ -42,6 +47,9 @@ function TransfersContent() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [salaryClosed, setSalaryClosed] = useState(false);
+  const editable = canEditMonth(year, month, salaryClosed);
+  const lockReason = getMonthEditExplanation(year, month, salaryClosed);
 
   const [date, setDate] = useState(todayISO());
   const [amount, setAmount] = useState('');
@@ -70,6 +78,7 @@ function TransfersContent() {
     }
 
     loadTransfers(id);
+    checkSalaryClosed(supabase, id, year, month).then(setSalaryClosed);
   }, [router, year, month, searchParams]);
 
   async function loadTransfers(id: string) {
@@ -182,13 +191,18 @@ function TransfersContent() {
           <div className="text-2xl font-bold text-green-800">{total.toLocaleString('he-IL')}€</div>
         </div>
 
-        {!showForm && isCurrent && (
+        {!showForm && editable && (
           <button
             onClick={() => setShowForm(true)}
             className="w-full bg-red-600 hover:bg-red-700 active:scale-98 transition-all text-white rounded-2xl shadow-lg py-4 text-lg font-bold"
           >
             דווח.י העברה +
           </button>
+        )}
+        {!showForm && !editable && lockReason && (
+          <div className="bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm text-gray-700 text-center">
+            🔒 {lockReason}
+          </div>
         )}
 
         {showForm && (

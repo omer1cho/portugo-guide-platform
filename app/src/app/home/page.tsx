@@ -7,6 +7,12 @@ import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
 import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
 import { useAuthGuard, logout } from '@/lib/auth';
 import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
+import {
+  canEditMonth,
+  getMonthEditExplanation,
+  getGracePeriodNotice,
+  formatYearMonthParam,
+} from '@/lib/month-policy';
 
 type Summary = {
   tours: number;
@@ -795,15 +801,39 @@ function HomeContent() {
           </section>
         )}
 
-        {/* Main action — only when viewing current month */}
-        {isCurrent && (
-          <Link
-            href="/add-tour"
-            className="block bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-2xl shadow-lg p-6 text-center text-xl font-bold transition-all"
-          >
-            הוסף.י סיור / פעילות +
-          </Link>
-        )}
+        {/* Main action — current month, או חודש קודם בתקופת השלמה (5 ימים, לפני סגירת משכורת). */}
+        {(() => {
+          const monthClosed = summary.salary_withdrawn > 0.01;
+          const editable = canEditMonth(year, month, monthClosed);
+          const graceNotice = getGracePeriodNotice(year, month, monthClosed);
+          const lockReason = getMonthEditExplanation(year, month, monthClosed);
+          const addTourHref = isCurrent
+            ? '/add-tour'
+            : `/add-tour?for=${formatYearMonthParam(year, month)}`;
+
+          return (
+            <>
+              {graceNotice && (
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 text-sm text-amber-900 font-medium text-center">
+                  ⏳ {graceNotice}
+                </div>
+              )}
+              {editable && (
+                <Link
+                  href={addTourHref}
+                  className="block bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-2xl shadow-lg p-6 text-center text-xl font-bold transition-all"
+                >
+                  הוסף.י סיור / פעילות +
+                </Link>
+              )}
+              {!editable && lockReason && (
+                <div className="bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm text-gray-700 text-center">
+                  🔒 {lockReason}
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
