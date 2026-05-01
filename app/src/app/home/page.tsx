@@ -710,21 +710,23 @@ function HomeContent() {
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
                       כולל טיפים מסיורים רגילים
                     </div>
-                    <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
-                      <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
-                      <span className="font-bold text-green-900">
-                        {summary.salary.cash_to_withdraw}€
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-green-800 leading-tight pr-1">
-                      {summary.salary.non_classic_tips > 0 && summary.salary.vat_amount > 0.01
-                        ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים (מעוגל לטובתך)'
-                        : summary.salary.vat_amount > 0.01
-                          ? 'משכורת + מע"מ (מעוגל לטובתך)'
-                          : summary.salary.non_classic_tips > 0
-                            ? 'ללא הטיפים מהסיורים הרגילים (מעוגל לטובתך)'
-                            : 'מעוגל לטובתך ליורו שלם'}
-                    </div>
+                    {(summary.salary.non_classic_tips > 0 || summary.salary.vat_amount > 0.01) && (
+                      <>
+                        <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
+                          <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
+                          <span className="font-bold text-green-900">
+                            {summary.salary.cash_to_withdraw}€
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-green-800 leading-tight pr-1">
+                          {summary.salary.non_classic_tips > 0 && summary.salary.vat_amount > 0.01
+                            ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים'
+                            : summary.salary.vat_amount > 0.01
+                              ? 'משכורת + מע"מ'
+                              : 'ללא הטיפים מהסיורים הרגילים'}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 

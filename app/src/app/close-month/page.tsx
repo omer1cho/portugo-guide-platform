@@ -431,7 +431,7 @@ function CloseMonthContent() {
                 <div className="text-[11px] text-green-800 leading-tight pr-1">
                   כולל טיפים מסיורים רגילים
                 </div>
-                {salary.total_with_tips > 0 && (
+                {(salary.non_classic_tips > 0 || hasVatComponent) && (
                   <>
                     <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
                       <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
@@ -439,12 +439,10 @@ function CloseMonthContent() {
                     </div>
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
                       {salary.non_classic_tips > 0 && hasVatComponent
-                        ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים (מעוגל לטובתך)'
+                        ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים'
                         : hasVatComponent
-                          ? 'משכורת + מע"מ (מעוגל לטובתך)'
-                          : salary.non_classic_tips > 0
-                            ? 'ללא הטיפים מהסיורים הרגילים (מעוגל לטובתך)'
-                            : 'מעוגל לטובתך ליורו שלם'}
+                          ? 'משכורת + מע"מ'
+                          : 'ללא הטיפים מהסיורים הרגילים'}
                     </div>
                   </>
                 )}
@@ -513,7 +511,9 @@ function CloseMonthContent() {
                                 {!hasVatComponent && wasRoundedUp && (
                                   <>(שכר בפועל {totalSalaryRaw.toFixed(2)}€</>
                                 )}
-                                {wasRoundedUp && <>, מעוגל ל-{totalSalary}€ לטובתך</>}
+                                {wasRoundedUp && (
+                                  <>, מעוגל ל-{totalSalary}€{hasVatComponent && ' לטובתך'}</>
+                                )}
                                 {takeFromBox < totalSalary - 0.01 && (
                                   <>, סה&quot;כ {totalSalary}€ — היתרה תשלים פורטוגו</>
                                 )}
