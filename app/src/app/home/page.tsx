@@ -709,14 +709,20 @@ function HomeContent() {
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
                       כולל טיפים מסיורים רגילים
                     </div>
-                    {summary.salary.non_classic_tips > 0 && (
+                    {(summary.salary.non_classic_tips > 0 || summary.salary.vat_amount > 0.01) && (
                       <>
                         <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
-                          <span className="font-semibold text-green-900 text-sm">משכורת למשוך</span>
-                          <span className="font-bold text-green-900">{summary.salary.transfer_amount.toFixed(2)}€</span>
+                          <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
+                          <span className="font-bold text-green-900">
+                            {(summary.salary.transfer_amount + summary.salary.vat_amount).toFixed(2)}€
+                          </span>
                         </div>
                         <div className="text-[11px] text-green-800 leading-tight pr-1">
-                          ללא הטיפים מהסיורים הרגילים
+                          {summary.salary.non_classic_tips > 0 && summary.salary.vat_amount > 0.01
+                            ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים'
+                            : summary.salary.vat_amount > 0.01
+                              ? 'משכורת + מע"מ'
+                              : 'ללא הטיפים מהסיורים הרגילים'}
                         </div>
                       </>
                     )}

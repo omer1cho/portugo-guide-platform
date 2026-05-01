@@ -184,7 +184,13 @@ function CloseMonthContent() {
   const DEPOSIT_STEP = 5;
   const skipAllRefills = EXPENSES_TARGET === 0 && CHANGE_TARGET === 0;
 
-  const totalSalary = salary?.transfer_amount || 0;
+  // למדריכים עם מע"מ: המשיכה כוללת גם את המע"מ. הם יוציאו חשבונית על
+  // (משכורת + מע"מ) ולכן צריכים להוציא את שני הסכומים מהקופה.
+  // vat_amount כבר 0 למי שאין לו מע"מ, אז הנוסחה אחידה לכולם.
+  const baseSalary = salary?.transfer_amount || 0;
+  const vatAmount = salary?.vat_amount || 0;
+  const totalSalary = baseSalary + vatAmount;
+  const hasVatComponent = vatAmount > 0.01;
   const salaryRemaining = Math.max(0, totalSalary - cash.salaryWithdrawn);
   const mainBox = cash.mainBalance;
 
@@ -422,14 +428,18 @@ function CloseMonthContent() {
                 <div className="text-[11px] text-green-800 leading-tight pr-1">
                   כולל טיפים מסיורים רגילים
                 </div>
-                {salary.non_classic_tips > 0 && (
+                {(salary.non_classic_tips > 0 || hasVatComponent) && (
                   <>
                     <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
-                      <span className="font-semibold text-green-900 text-sm">משכורת למשוך</span>
-                      <span className="font-bold text-green-900">{salary.transfer_amount.toFixed(2)}€</span>
+                      <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
+                      <span className="font-bold text-green-900">{totalSalary.toFixed(2)}€</span>
                     </div>
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
-                      ללא הטיפים מהסיורים הרגילים
+                      {salary.non_classic_tips > 0 && hasVatComponent
+                        ? 'משכורת + מע"מ, ללא הטיפים מהסיורים הרגילים'
+                        : hasVatComponent
+                          ? 'משכורת + מע"מ'
+                          : 'ללא הטיפים מהסיורים הרגילים'}
                     </div>
                   </>
                 )}
@@ -487,7 +497,16 @@ function CloseMonthContent() {
                           <span>
                             קח.י לעצמך{' '}
                             <span className="font-bold">{takeFromBox.toFixed(2)}€</span>{' '}
-                            משכורת מהקופה הראשית.
+                            {hasVatComponent ? 'מהקופה הראשית — משכורת + מע"מ' : 'משכורת מהקופה הראשית'}.
+                            {hasVatComponent && (
+                              <span className="block text-[11px] text-amber-700 font-normal mt-0.5">
+                                ({baseSalary.toFixed(2)}€ משכורת + {vatAmount.toFixed(2)}€ מע&quot;מ
+                                {takeFromBox < totalSalary - 0.01 && (
+                                  <>, סה&quot;כ {totalSalary.toFixed(2)}€ — היתרה תשלים פורטוגו</>
+                                )}
+                                )
+                              </span>
+                            )}
                           </span>
                         );
                       }
