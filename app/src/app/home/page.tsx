@@ -408,8 +408,8 @@ function HomeContent() {
       receiptUrl = await uploadMonthlyReceipt({
         file: receiptFile,
         guideId: id,
-        year: receiptUploadModal.year,
-        month: receiptUploadModal.month,
+        receiptYear: receiptUploadModal.year,
+        receiptMonth: receiptUploadModal.month,
       });
     } catch (uploadErr) {
       setReceiptUploading(false);

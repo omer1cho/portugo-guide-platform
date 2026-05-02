@@ -165,20 +165,29 @@ export async function uploadTransferReceipt(opts: {
 }
 
 /**
- * מעלה קבלה חודשית — קבלת מס שהמדריך מוציא לפורטוגו על המשכורת החודשית.
- * נקראת מתוך באנר התזכורת בעמוד הבית.
- * מבנה ב-Supabase Storage (ASCII): <year>/<MM-month>/<guide_id>.jpg
+ * מעלה קבלה חודשית — קבלת מס שהמדריך מוציא לפורטוגו על המשכורת.
+ *
+ * תיקיית האחסון נקבעת לפי **חודש ההוצאה בפועל** (היום). כך, אם המדריך
+ * הוציא קבלה במאי על משכורת אפריל — היא תיכנס לתיקיית מאי.
+ * שם הקובץ כולל את תקופת המשכורת ("for_YYYY-MM") כדי שיהיה ברור לאיזה חודש.
+ *
+ * מבנה (ASCII): <upload_year>/<MM-upload_month>/<guide_id>_for_<period_year>-<period_month>.jpg
  */
 export async function uploadMonthlyReceipt(opts: {
   file: File;
   guideId: string;
-  year: number;
-  month: number; // 1-12
+  /** החודש שעבורו הקבלה (תקופת המשכורת) — לא חודש ההעלאה */
+  receiptYear: number;
+  receiptMonth: number; // 1-12
 }): Promise<string> {
   const compressed = await compressImage(opts.file);
-  const mm = String(opts.month).padStart(2, '0');
-  const folderMonth = `${mm}-${EN_MONTH_SLUGS[opts.month - 1]}`;
-  const path = `${opts.year}/${folderMonth}/${opts.guideId}.jpg`;
+  const today = new Date();
+  const uploadYear = today.getFullYear();
+  const uploadMonthIdx = today.getMonth(); // 0-11
+  const mm = String(uploadMonthIdx + 1).padStart(2, '0');
+  const folderMonth = `${mm}-${EN_MONTH_SLUGS[uploadMonthIdx]}`;
+  const periodMm = String(opts.receiptMonth).padStart(2, '0');
+  const path = `${uploadYear}/${folderMonth}/${opts.guideId}_for_${opts.receiptYear}-${periodMm}.jpg`;
 
   const { error } = await supabase.storage
     .from('monthly-receipts')
