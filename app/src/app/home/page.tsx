@@ -10,6 +10,12 @@ import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
 import PhotoPicker from '@/components/PhotoPicker';
 import { uploadMonthlyReceipt } from '@/lib/storage';
 import {
+  getCalendarEventsForDate,
+  todayLocalISO,
+  todayMonthDay,
+  type CalendarEvent,
+} from '@/lib/calendar-events';
+import {
   canEditMonth,
   getMonthEditExplanation,
   getGracePeriodNotice,
@@ -105,6 +111,11 @@ function HomeContent() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [receiptError, setReceiptError] = useState('');
+  // ברכות יומיות — אירועי לוח (חגים/שעון) + ימי הולדת של היום
+  const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
+  type TeamBirthday = { id: string; name: string; birthday: string };
+  const [todayBirthdays, setTodayBirthdays] = useState<TeamBirthday[]>([]);
+  const [currentGuideId, setCurrentGuideId] = useState<string | null>(null);
 
   // Month navigation — read initial from URL, default to current month
   const now = new Date();
@@ -121,6 +132,16 @@ function HomeContent() {
       return;
     }
     setGuideName(name || '');
+    setCurrentGuideId(id);
+
+    // ברכות יומיות — אירועי לוח לפי תאריך היום, וכל ימי ההולדת של הצוות
+    setTodayEvents(getCalendarEventsForDate(todayLocalISO()));
+    (async () => {
+      const { data } = await supabase.rpc('public_team_birthdays');
+      const today = todayMonthDay();
+      const todayBdays = ((data as TeamBirthday[]) || []).filter((b) => b.birthday === today);
+      setTodayBirthdays(todayBdays);
+    })();
 
     async function loadSummary() {
       setLoading(true);
@@ -525,6 +546,40 @@ function HomeContent() {
       <main className="max-w-md mx-auto p-4 space-y-4">
         {/* Admin: switch which guide we're viewing */}
         <AdminGuideSwitcher />
+
+        {/* ברכות יומיות — חגים, ימי הולדת, ומעברי שעון. סדר תצוגה:
+            1. יום הולדת של החוגג עצמו (אם יש) — תמיד למעלה
+            2. אירועי לוח לפי עדיפות (ישראל → פורטוגל → שעון → בינלאומי)
+            3. ימי הולדת של אחרים בצוות */}
+        {(() => {
+          const myBirthday = todayBirthdays.find((b) => b.id === currentGuideId);
+          const othersBirthdays = todayBirthdays.filter((b) => b.id !== currentGuideId);
+          const hasContent =
+            todayEvents.length > 0 || !!myBirthday || othersBirthdays.length > 0;
+          if (!hasContent) return null;
+          return (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 shadow-sm space-y-2">
+              {myBirthday && (
+                <div className="text-amber-900 text-base font-semibold leading-relaxed">
+                  🎂 {myBirthday.name}, מזל טוב! שמחים לחגוג איתך יום הולדת במשפחת פורטוגו :)
+                </div>
+              )}
+              {todayEvents.map((e, i) => (
+                <div
+                  key={`event-${i}`}
+                  className="text-amber-900 text-sm leading-relaxed"
+                >
+                  {e.text}
+                </div>
+              ))}
+              {othersBirthdays.map((b) => (
+                <div key={b.id} className="text-amber-900 text-sm leading-relaxed">
+                  🎂 היום יום ההולדת של <strong>{b.name}</strong> — אל תשכח.י לאחל מזל טוב!
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* תזכורת אדומה — קופת המתנה. מופיעה גבוה מעל סיכום החודש כדי שלא תפוספס. */}
         {summary.pending_total > 0 && (
