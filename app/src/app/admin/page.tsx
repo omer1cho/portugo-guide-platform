@@ -14,6 +14,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ADMIN_COLORS, fmtEuro, monthName, cityLabel } from '@/lib/admin/theme';
 import { loadMonthSnapshot, type MonthSnapshot } from '@/lib/admin/data';
+import { supabase } from '@/lib/supabase';
 import KpiCard from '@/components/admin/KpiCard';
 import GuideStatusCard from '@/components/admin/GuideStatusCard';
 import MonthSwitcher from '@/components/admin/MonthSwitcher';
@@ -187,8 +188,15 @@ function AdminMainContent() {
 
           {/* דוח קבלות חודשיות — מתקפל, מציג רק אם יש מדריכים שזכאים לקבלה */}
           <section>
-            <MonthlyReceiptsReport snapshot={snapshot} />
+            <MonthlyReceiptsReport snapshot={snapshot} onChange={handleReload} />
           </section>
+
+          {/* דוח הפקדות שמחכות — מתקפל, מציג רק אם יש מדריכים עם סכום ממתין */}
+          {snapshot.totals.pending_total > 0 && (
+            <section>
+              <PendingDepositsReport snapshot={snapshot} onChange={handleReload} />
+            </section>
+          )}
 
           {/* טבלת סיכום משכורות */}
           {snapshot.guides.length > 0 && (
@@ -293,8 +301,30 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
 // דוח קבלות חודשיות — מי הוציא ומי לא, עם קישור לאסמכתא
 // ---------------------------------------------------------------------------
 
-function MonthlyReceiptsReport({ snapshot }: { snapshot: MonthSnapshot }) {
+function MonthlyReceiptsReport({
+  snapshot,
+  onChange,
+}: {
+  snapshot: MonthSnapshot;
+  onChange: () => void;
+}) {
   const [open, setOpen] = useState(false);
+
+  // אישור ידני: יוצר שורה ב-receipt_acknowledgements ללא receipt_url
+  // (המשמעות: עומר אישרה שהמדריך הוציא קבלה מחוץ למערכת — אין תמונה)
+  async function approveManually(guideId: string) {
+    const { error } = await supabase.from('receipt_acknowledgements').insert({
+      guide_id: guideId,
+      year: snapshot.year,
+      month: snapshot.month + 1,
+    });
+    if (error) {
+      alert('משהו השתבש: ' + error.message);
+      return;
+    }
+    onChange();
+  }
+
   // רק מדריכים שיש להם משכורת לקבלה > 0 (מי שלא עבד החודש לא רלוונטי)
   const eligible = snapshot.guides.filter((g) => g.salary.receipt_amount > 0);
 
@@ -386,6 +416,11 @@ function MonthlyReceiptsReport({ snapshot }: { snapshot: MonthSnapshot }) {
                         <span style={{ color: '#991b1b', fontWeight: 600 }}>
                           {fmtEuro(g.salary.receipt_amount)}
                         </span>
+                        <InlineConfirmButton
+                          label="✓ סמן.י כהוצאה"
+                          confirmLabel="בטוח.ה?"
+                          onConfirm={() => approveManually(g.guide.id)}
+                        />
                       </span>
                     </li>
                   );
@@ -453,6 +488,206 @@ function MonthlyReceiptsReport({ snapshot }: { snapshot: MonthSnapshot }) {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// דוח הפקדות שמחכות — מי לא הפקיד עדיין, חוצה חודשים
+// ---------------------------------------------------------------------------
+
+function PendingDepositsReport({
+  snapshot,
+  onChange,
+}: {
+  snapshot: MonthSnapshot;
+  onChange: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const guidesWithPending = snapshot.guides
+    .filter((g) => g.pending_total > 0)
+    .sort((a, b) => b.pending_total - a.pending_total);
+
+  if (guidesWithPending.length === 0) return null;
+
+  // שחרור ידני של הפקדה: מסמן את כל ה-pending של המדריך כ-"הופקד" בלי אסמכתא
+  async function settleManually(guideId: string) {
+    const { error } = await supabase
+      .from('transfers')
+      .update({ is_pending_deposit: false })
+      .eq('guide_id', guideId)
+      .eq('transfer_type', 'to_portugo')
+      .eq('is_pending_deposit', true);
+    if (error) {
+      alert('משהו השתבש: ' + error.message);
+      return;
+    }
+    onChange();
+  }
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+        border: '1px solid #fecaca',
+      }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '14px 16px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'right',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#991b1b' }}>
+          💰 הפקדות מחכות ({guidesWithPending.length} מדריכים · {fmtEuro(snapshot.totals.pending_total)})
+        </span>
+        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
+          {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fecaca' }}>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray500, marginBottom: 8 }}>
+              סכומים שצריכים להיכנס לחשבון פורטוגו (מצטבר על פני חודשים)
+            </div>
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+              }}
+            >
+              {guidesWithPending.map((g) => (
+                <li
+                  key={g.guide.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    background: '#fef2f2',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    color: ADMIN_COLORS.gray700,
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ color: '#991b1b', fontWeight: 600 }}>
+                      {fmtEuro(g.pending_total)}
+                    </span>
+                    <InlineConfirmButton
+                      label="✓ סמן.י כהופקד"
+                      confirmLabel="בטוח.ה?"
+                      onConfirm={() => settleManually(g.guide.id)}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// כפתור עם אישור inline — לחיצה ראשונה הופכת לשני כפתורים (אישור/ביטול),
+// לחיצה שנייה על אישור מבצעת. בלי modal, בלי confirm נטיב.
+// ---------------------------------------------------------------------------
+
+function InlineConfirmButton({
+  label,
+  confirmLabel,
+  onConfirm,
+}: {
+  label: string;
+  confirmLabel: string;
+  onConfirm: () => void | Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (busy) {
+    return (
+      <span style={{ fontSize: 12, color: ADMIN_COLORS.gray500 }}>שומר...</span>
+    );
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        onClick={() => setConfirming(true)}
+        style={{
+          fontSize: 11,
+          padding: '4px 10px',
+          background: '#fff',
+          border: `1px solid ${ADMIN_COLORS.gray300}`,
+          borderRadius: 6,
+          cursor: 'pointer',
+          color: ADMIN_COLORS.gray700,
+          fontFamily: 'inherit',
+        }}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  return (
+    <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <button
+        onClick={async () => {
+          setBusy(true);
+          await onConfirm();
+          setBusy(false);
+          setConfirming(false);
+        }}
+        style={{
+          fontSize: 11,
+          padding: '4px 10px',
+          background: ADMIN_COLORS.green800,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 6,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        {confirmLabel}
+      </button>
+      <button
+        onClick={() => setConfirming(false)}
+        style={{
+          fontSize: 11,
+          padding: '4px 8px',
+          background: '#fff',
+          border: `1px solid ${ADMIN_COLORS.gray300}`,
+          borderRadius: 6,
+          cursor: 'pointer',
+          color: ADMIN_COLORS.gray500,
+          fontFamily: 'inherit',
+        }}
+      >
+        ✗
+      </button>
+    </span>
   );
 }
 
