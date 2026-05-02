@@ -572,11 +572,22 @@ function HomeContent() {
                   {e.text}
                 </div>
               ))}
-              {othersBirthdays.map((b) => (
-                <div key={b.id} className="text-amber-900 text-sm leading-relaxed">
-                  🎂 היום יום ההולדת של <strong>{b.name}</strong> — אל תשכח.י לאחל מזל טוב!
+              {othersBirthdays.length > 0 && (
+                <div className="text-amber-900 text-sm leading-relaxed">
+                  🎂 היום {myBirthday ? 'גם ' : ''}יום ההולדת של{' '}
+                  <strong>
+                    {othersBirthdays.length === 1
+                      ? othersBirthdays[0].name
+                      : othersBirthdays.length === 2
+                      ? `${othersBirthdays[0].name} ו${othersBirthdays[1].name}`
+                      : `${othersBirthdays
+                          .slice(0, -1)
+                          .map((b) => b.name)
+                          .join(', ')} ו${othersBirthdays[othersBirthdays.length - 1].name}`}
+                  </strong>{' '}
+                  — אל תשכח.י לאחל מזל טוב!
                 </div>
-              ))}
+              )}
             </div>
           );
         })()}
