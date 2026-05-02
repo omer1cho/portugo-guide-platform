@@ -185,6 +185,11 @@ function AdminMainContent() {
             </section>
           )}
 
+          {/* דוח קבלות חודשיות — מתקפל, מציג רק אם יש מדריכים שזכאים לקבלה */}
+          <section>
+            <MonthlyReceiptsReport snapshot={snapshot} />
+          </section>
+
           {/* טבלת סיכום משכורות */}
           {snapshot.guides.length > 0 && (
             <section>
@@ -278,6 +283,173 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
               </ul>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// דוח קבלות חודשיות — מי הוציא ומי לא, עם קישור לאסמכתא
+// ---------------------------------------------------------------------------
+
+function MonthlyReceiptsReport({ snapshot }: { snapshot: MonthSnapshot }) {
+  const [open, setOpen] = useState(false);
+  // רק מדריכים שיש להם משכורת לקבלה > 0 (מי שלא עבד החודש לא רלוונטי)
+  const eligible = snapshot.guides.filter((g) => g.salary.receipt_amount > 0);
+
+  if (eligible.length === 0) return null;
+
+  const submitted = eligible.filter(
+    (g) => g.receipt_ack !== null && g.receipt_ack.acknowledged_at !== null,
+  );
+  const missing = eligible.filter(
+    (g) => g.receipt_ack === null || g.receipt_ack.acknowledged_at === null,
+  );
+
+  const headerColor = missing.length > 0 ? '#991b1b' : ADMIN_COLORS.green800;
+  const borderColor = missing.length > 0 ? '#fecaca' : '#d1fae5';
+  const summary =
+    missing.length > 0
+      ? `${missing.length} לא הוצאו · ${submitted.length} הוצאו`
+      : `${submitted.length} הוצאו — הכל בסדר ✓`;
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+        border: `1px solid ${borderColor}`,
+      }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '14px 16px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'right',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <span style={{ fontSize: 16, fontWeight: 600, color: headerColor }}>
+          🧾 קבלות חודשיות ({summary})
+        </span>
+        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
+          {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${borderColor}` }}>
+          {missing.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#991b1b',
+                  marginBottom: 6,
+                }}
+              >
+                🚨 לא הוצאו ({missing.length})
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {missing.map((g) => {
+                  const notified =
+                    g.receipt_ack !== null && g.receipt_ack.admin_notified_at !== null;
+                  return (
+                    <li
+                      key={g.guide.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        background: '#fef2f2',
+                        borderRadius: 6,
+                        fontSize: 14,
+                        color: ADMIN_COLORS.gray700,
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {notified && (
+                          <span style={{ fontSize: 11, color: '#a37b00' }}>📨 נשלחה התראה</span>
+                        )}
+                        <span style={{ color: '#991b1b', fontWeight: 600 }}>
+                          {fmtEuro(g.salary.receipt_amount)}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {submitted.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: ADMIN_COLORS.green800,
+                  marginBottom: 6,
+                }}
+              >
+                ✅ הוצאו ({submitted.length})
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {submitted.map((g) => (
+                  <li
+                    key={g.guide.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      background: '#f0fdf4',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      color: ADMIN_COLORS.gray700,
+                    }}
+                  >
+                    <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {g.receipt_ack?.receipt_url ? (
+                        <a
+                          href={g.receipt_ack.receipt_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: 12,
+                            color: '#1d4ed8',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          📷 צפי בקבלה
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+                          אישור ידני (אין תמונה)
+                        </span>
+                      )}
+                      <span style={{ fontWeight: 600 }}>
+                        {fmtEuro(g.salary.receipt_amount)}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -46,6 +46,12 @@ export type GuideMonthSummary = {
   missing_photos_list: { id: string; tour_date: string; tour_type: string }[];
   /** סה"כ ממתין להפקדה (חוצה חודשים — נצבר עד שהמדריך מפקיד פיזית) */
   pending_total: number;
+  /** סטטוס הקבלה החודשית — אם יש שורה ב-receipt_acknowledgements לחודש הזה */
+  receipt_ack: {
+    acknowledged_at: string | null;
+    admin_notified_at: string | null;
+    receipt_url: string | null;
+  } | null;
 };
 
 export type MonthSnapshot = {
@@ -135,8 +141,8 @@ export async function loadMonthSnapshot(
 
   const guideIds = guides.map((g) => g.id);
 
-  // ─── שלב 2: סיורים + הזמנות, פעילויות, הוצאות, העברות — בקריאות מקבילות ─
-  const [toursRes, actsRes, expsRes, trsRes, pendingRes] = await Promise.all([
+  // ─── שלב 2: סיורים + הזמנות, פעילויות, הוצאות, העברות, אישורי קבלה — קריאות מקבילות ─
+  const [toursRes, actsRes, expsRes, trsRes, pendingRes, acksRes] = await Promise.all([
     supabase
       .from('tours')
       .select(
@@ -170,6 +176,13 @@ export async function loadMonthSnapshot(
       .in('guide_id', guideIds)
       .eq('transfer_type', 'to_portugo')
       .eq('is_pending_deposit', true),
+    // אישורי קבלה לחודש הנבחר
+    supabase
+      .from('receipt_acknowledgements')
+      .select('guide_id, acknowledged_at, admin_notified_at, receipt_url')
+      .in('guide_id', guideIds)
+      .eq('year', year)
+      .eq('month', month + 1), // month ב-snapshot הוא 0-indexed; ב-DB 1-indexed
   ]);
 
   if (toursRes.error) throw toursRes.error;
@@ -177,6 +190,7 @@ export async function loadMonthSnapshot(
   if (expsRes.error) throw expsRes.error;
   if (trsRes.error) throw trsRes.error;
   if (pendingRes.error) throw pendingRes.error;
+  if (acksRes.error) throw acksRes.error;
 
   type RawTour = {
     id: string;
@@ -207,6 +221,12 @@ export async function loadMonthSnapshot(
     notes: string | null;
   }[];
   const pendings = (pendingRes.data || []) as { guide_id: string; amount: number }[];
+  const acks = (acksRes.data || []) as {
+    guide_id: string;
+    acknowledged_at: string | null;
+    admin_notified_at: string | null;
+    receipt_url: string | null;
+  }[];
 
   // ─── שלב 3: עיבוד לכל מדריך ─────────────────────────────────────────────
   const summaries: GuideMonthSummary[] = guides.map((g) => {
@@ -294,6 +314,8 @@ export async function loadMonthSnapshot(
       .sort((a, b) => a.tour_date.localeCompare(b.tour_date))
       .map((t) => ({ id: t.id, tour_date: t.tour_date, tour_type: t.tour_type }));
 
+    const myAck = acks.find((a) => a.guide_id === g.id);
+
     return {
       guide: g,
       tours_count,
@@ -308,6 +330,13 @@ export async function loadMonthSnapshot(
       missing_photos,
       missing_photos_list,
       pending_total,
+      receipt_ack: myAck
+        ? {
+            acknowledged_at: myAck.acknowledged_at,
+            admin_notified_at: myAck.admin_notified_at,
+            receipt_url: myAck.receipt_url,
+          }
+        : null,
     };
   });
 
