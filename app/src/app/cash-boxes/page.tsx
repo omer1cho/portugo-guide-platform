@@ -345,19 +345,34 @@ function CashBoxesContent() {
       },
     );
 
-    // יתרת פתיחה — מוסיפים בראש הטיימליין של מעטפות (רק אם יש)
-    if ((guideRow?.opening_change_balance || 0) > 0) {
+    // יתרה בתחילת החודש הנבחר = יתרה בסוף החודש הקודם.
+    // מחשבים מצטבר עד תחילת החודש: opening + (cum_until_end - this_month) על כל הסוגים.
+    // בחודש הראשון של המערכת (SYSTEM_START_DATE) זה יוצא בדיוק opening_*_balance —
+    // ושם נציג את התווית "יתרת פתיחה". בכל חודש אחר: "יתרה שעברה מחודש קודם".
+    const changeCarriedOver =
+      (guideRow?.opening_change_balance || 0) +
+      (_cumChangeRefill - cashRefill) +
+      (_cumAdminTopupChange - adminTopupChange) -
+      (_cumChangeGiven - changeGiven);
+    const expensesCarriedOver =
+      (guideRow?.opening_expenses_balance || 0) +
+      (_cumExpensesRefill - expensesRefill) +
+      (_cumAdminTopupExpenses - adminTopupExpenses) -
+      (_cumExpenses - expensesTotal);
+    const carriedLabel = start === SYSTEM_START_DATE ? 'יתרת פתיחה' : 'יתרה שעברה מחודש קודם';
+
+    if (changeCarriedOver > 0.001) {
       changeMov.unshift({
         date: start,
-        description: 'יתרת פתיחה',
-        amount: guideRow!.opening_change_balance,
+        description: carriedLabel,
+        amount: changeCarriedOver,
       });
     }
-    if ((guideRow?.opening_expenses_balance || 0) > 0) {
+    if (expensesCarriedOver > 0.001) {
       expensesMov.unshift({
         date: start,
-        description: 'יתרת פתיחה',
-        amount: guideRow!.opening_expenses_balance,
+        description: carriedLabel,
+        amount: expensesCarriedOver,
       });
     }
 
