@@ -165,6 +165,32 @@ export async function uploadTransferReceipt(opts: {
 }
 
 /**
+ * מעלה קבלה חודשית — קבלת מס שהמדריך מוציא לפורטוגו על המשכורת החודשית.
+ * נקראת מתוך באנר התזכורת בעמוד הבית.
+ * מבנה ב-Supabase Storage (ASCII): <year>/<MM-month>/<guide_id>.jpg
+ */
+export async function uploadMonthlyReceipt(opts: {
+  file: File;
+  guideId: string;
+  year: number;
+  month: number; // 1-12
+}): Promise<string> {
+  const compressed = await compressImage(opts.file);
+  const mm = String(opts.month).padStart(2, '0');
+  const folderMonth = `${mm}-${EN_MONTH_SLUGS[opts.month - 1]}`;
+  const path = `${opts.year}/${folderMonth}/${opts.guideId}.jpg`;
+
+  const { error } = await supabase.storage
+    .from('monthly-receipts')
+    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from('monthly-receipts').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/**
  * מעלה קבלה.
  * מבנה ב-Supabase Storage (ASCII): <year>/<MM-month>/<tour_slug>/<expense_id>.jpg
  */

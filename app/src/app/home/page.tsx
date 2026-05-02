@@ -7,6 +7,8 @@ import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
 import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
 import { useAuthGuard, logout } from '@/lib/auth';
 import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
+import PhotoPicker from '@/components/PhotoPicker';
+import { uploadMonthlyReceipt } from '@/lib/storage';
 import {
   canEditMonth,
   getMonthEditExplanation,
@@ -98,6 +100,11 @@ function HomeContent() {
   // נצברות עד שלוחצים אישור לכל חודש — אם יש כמה חודשים פתוחים, יוצגו כמה באנרים.
   type PendingReceipt = { year: number; month: number; receipt_amount: number };
   const [pendingReceipts, setPendingReceipts] = useState<PendingReceipt[]>([]);
+  // מודאל העלאת אסמכתא לקבלה החודשית — נפתח כשלוחצים על באנר תזכורת
+  const [receiptUploadModal, setReceiptUploadModal] = useState<PendingReceipt | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUploading, setReceiptUploading] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
 
   // Month navigation — read initial from URL, default to current month
   const now = new Date();
@@ -381,18 +388,54 @@ function HomeContent() {
     loadPendingReceipts();
   }, []);
 
-  // לחיצה על "הוצאתי קבלה" — שומר אישור והבאנר נעלם
-  async function acknowledgeReceipt(year: number, month: number) {
-    const id = localStorage.getItem('portugo_guide_id');
-    if (!id) return;
-    const { error } = await supabase
-      .from('receipt_acknowledgements')
-      .insert({ guide_id: id, year, month });
-    if (error) {
-      alert('משהו השתבש: ' + error.message);
+  // לחיצה על "אישור — שלחתי קבלה" בתוך המודאל:
+  // 1. מעלה את התמונה ל-Storage (bucket monthly-receipts)
+  // 2. שומר שורה ב-receipt_acknowledgements עם receipt_url
+  // 3. סוגר את המודאל ומסיר את הבאנר
+  async function handleReceiptUpload() {
+    if (!receiptUploadModal || !receiptFile) {
+      setReceiptError('צריך לצרף תמונה של הקבלה');
       return;
     }
-    setPendingReceipts((prev) => prev.filter((r) => !(r.year === year && r.month === month)));
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id) return;
+
+    setReceiptError('');
+    setReceiptUploading(true);
+
+    let receiptUrl: string;
+    try {
+      receiptUrl = await uploadMonthlyReceipt({
+        file: receiptFile,
+        guideId: id,
+        year: receiptUploadModal.year,
+        month: receiptUploadModal.month,
+      });
+    } catch (uploadErr) {
+      setReceiptUploading(false);
+      const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש';
+      setReceiptError(`העלאת האסמכתא נכשלה: ${msg}`);
+      return;
+    }
+
+    const { error } = await supabase.from('receipt_acknowledgements').insert({
+      guide_id: id,
+      year: receiptUploadModal.year,
+      month: receiptUploadModal.month,
+      receipt_url: receiptUrl,
+    });
+
+    setReceiptUploading(false);
+    if (error) {
+      setReceiptError('משהו השתבש בשמירה: ' + error.message);
+      return;
+    }
+    const closed = receiptUploadModal;
+    setPendingReceipts((prev) =>
+      prev.filter((r) => !(r.year === closed.year && r.month === closed.month)),
+    );
+    setReceiptUploadModal(null);
+    setReceiptFile(null);
   }
 
   const handleLogout = () => {
@@ -519,10 +562,14 @@ function HomeContent() {
               </div>
             </div>
             <button
-              onClick={() => acknowledgeReceipt(r.year, r.month)}
+              onClick={() => {
+                setReceiptUploadModal(r);
+                setReceiptFile(null);
+                setReceiptError('');
+              }}
               className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-lg py-2.5 font-semibold text-sm"
             >
-              הוצאתי, תודה על התזכורת ✓
+              שלחתי קבלה — צירוף אסמכתא 🧾
             </button>
           </div>
         ))}
@@ -867,6 +914,60 @@ function HomeContent() {
           </Link>
         </div>
       </main>
+
+      {/* Receipt upload modal — צירוף אסמכתא לקבלה החודשית */}
+      {receiptUploadModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out] max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              צירוף אסמכתא לקבלה
+            </h3>
+            <p className="text-sm text-gray-600 mb-1">
+              קבלה על {formatMonthLabel(receiptUploadModal.year, receiptUploadModal.month - 1)}
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              סכום הקבלה: {receiptUploadModal.receipt_amount.toFixed(2)}€
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">
+                צילום הקבלה <span className="text-red-600">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                תמונה או סקרין-שוט של הקבלה ששלחת.
+              </p>
+              <PhotoPicker value={receiptFile} onChange={setReceiptFile} />
+            </div>
+
+            {receiptError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
+                {receiptError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleReceiptUpload}
+                disabled={receiptUploading || !receiptFile}
+                className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                {receiptUploading ? 'מעלה...' : 'אישור — שלחתי קבלה ✓'}
+              </button>
+              <button
+                onClick={() => {
+                  setReceiptUploadModal(null);
+                  setReceiptFile(null);
+                  setReceiptError('');
+                }}
+                disabled={receiptUploading}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout confirm modal — replaces native window.confirm */}
       {showLogoutModal && (
