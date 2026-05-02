@@ -106,10 +106,12 @@ export default function PhotoPicker({
         </div>
       ) : (
         <div className="space-y-2">
-          {/* תווית קטנה (אופציונלית) — להציג מה הולכים לצרף */}
-          <div className="text-xs text-gray-500 mb-1">
-            {emoji} {label}
-          </div>
+          {/* תווית קטנה (אופציונלית) — מוצגת רק אם יש מה להציג */}
+          {(emoji || label) && (
+            <div className="text-xs text-gray-500 mb-1">
+              {emoji} {label}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"

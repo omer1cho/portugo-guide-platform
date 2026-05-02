@@ -930,13 +930,10 @@ function HomeContent() {
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold mb-1">
-                צילום הקבלה <span className="text-red-600">*</span>
+              <label className="block text-sm font-semibold mb-2">
+                צרף.י קבלה <span className="text-red-600">*</span>
               </label>
-              <p className="text-xs text-gray-500 mb-2">
-                תמונה או סקרין-שוט של הקבלה ששלחת.
-              </p>
-              <PhotoPicker value={receiptFile} onChange={setReceiptFile} />
+              <PhotoPicker value={receiptFile} onChange={setReceiptFile} label="" emoji="" />
             </div>
 
             {receiptError && (
@@ -951,7 +948,7 @@ function HomeContent() {
                 disabled={receiptUploading || !receiptFile}
                 className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
               >
-                {receiptUploading ? 'מעלה...' : 'אישור — שלחתי קבלה ✓'}
+                {receiptUploading ? 'שולח...' : 'אפשר לשלוח את הקבלה, תודה!'}
               </button>
               <button
                 onClick={() => {
