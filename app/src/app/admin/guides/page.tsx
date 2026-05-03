@@ -646,19 +646,42 @@ function Toggle({
         padding: '4px 0',
       }}
     >
+      {/* native checkbox מוסתר — שומר על נגישות, מקלדת, ו-form behaviour */}
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         style={{
-          width: 18,
-          height: 18,
-          accentColor: ADMIN_COLORS.green800,
-          marginTop: 1,
-          flexShrink: 0,
-          cursor: 'pointer',
+          position: 'absolute',
+          opacity: 0,
+          width: 0,
+          height: 0,
+          pointerEvents: 'none',
         }}
       />
+      {/* תיבת checkbox מותאמת — בולטת בעין */}
+      <span
+        aria-hidden="true"
+        style={{
+          width: 20,
+          height: 20,
+          border: `2px solid ${checked ? ADMIN_COLORS.green800 : ADMIN_COLORS.gray500}`,
+          background: checked ? ADMIN_COLORS.green800 : '#fff',
+          borderRadius: 4,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#fff',
+          fontSize: 14,
+          fontWeight: 700,
+          lineHeight: 1,
+          flexShrink: 0,
+          marginTop: 1,
+          transition: 'all 120ms',
+        }}
+      >
+        {checked ? '✓' : ''}
+      </span>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ color: ADMIN_COLORS.gray700, fontWeight: 500 }}>{label}</span>
         {hint && <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>{hint}</span>}
