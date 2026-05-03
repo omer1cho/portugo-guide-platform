@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ADMIN_COLORS, fmtEuro, monthName, cityLabel } from '@/lib/admin/theme';
 import { loadMonthSnapshot, type MonthSnapshot } from '@/lib/admin/data';
 import { supabase } from '@/lib/supabase';
@@ -43,9 +43,15 @@ function AdminMainContent() {
     const prevY = month === 0 ? year - 1 : year;
     const prevM = month === 0 ? 11 : month - 1;
 
+    // השוואה הוגנת: אם המוצג הוא החודש הנוכחי, נשווה רק עד היום הנוכחי
+    // (1-3 במאי מול 1-3 באפריל, לא מול כל אפריל). אחרת — חודש מלא.
+    const today = new Date();
+    const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+    const dayLimit = isCurrentMonth ? today.getDate() : undefined;
+
     Promise.all([
-      loadMonthSnapshot(year, month, { cityFilter }),
-      loadMonthSnapshot(prevY, prevM, { cityFilter }),
+      loadMonthSnapshot(year, month, { cityFilter, dayLimit }),
+      loadMonthSnapshot(prevY, prevM, { cityFilter, dayLimit }),
     ])
       .then(([current, prev]) => {
         if (cancelled) return;
@@ -125,7 +131,10 @@ function AdminMainContent() {
       {!loading && !error && snapshot && (
         <>
           {/* ─── שכבה 1: 🚨 Inbox — מה צריך תשומת לב עכשיו ─── */}
-          <InboxAlerts snapshot={snapshot} />
+          <InboxAlerts
+            snapshot={snapshot}
+            isCurrentMonth={year === now.getFullYear() && month === now.getMonth()}
+          />
 
           {/* ─── שכבה 2: 📊 Pulse — KPIs מרכזיים עם השוואה לחודש קודם ─── */}
           <section>
@@ -238,21 +247,30 @@ function AdminMainContent() {
             )}
           </section>
 
+          {/* מדריכים פתוחים — אפשרות לסגור עבורם.
+              מציג רק לחודשים שעברו (בחודש הנוכחי "פתוח" זה מצב תקין). */}
+          {snapshot.totals.open_count > 0 &&
+            !(year === now.getFullYear() && month === now.getMonth()) && (
+              <section id="section-open-guides">
+                <OpenGuidesReport snapshot={snapshot} />
+              </section>
+            )}
+
           {/* דוח תמונות חסרות — מתקפל, מציג רק אם יש */}
           {snapshot.totals.missing_photos_total > 0 && (
-            <section>
+            <section id="section-missing-photos">
               <MissingPhotosReport snapshot={snapshot} />
             </section>
           )}
 
           {/* דוח קבלות חודשיות — מתקפל, מציג רק אם יש מדריכים שזכאים לקבלה */}
-          <section>
+          <section id="section-receipts">
             <MonthlyReceiptsReport snapshot={snapshot} onChange={handleReload} />
           </section>
 
           {/* דוח הפקדות שמחכות — מתקפל, מציג רק אם יש מדריכים עם סכום ממתין */}
           {snapshot.totals.pending_total > 0 && (
-            <section>
+            <section id="section-pending-deposits">
               <PendingDepositsReport snapshot={snapshot} onChange={handleReload} />
             </section>
           )}
@@ -271,11 +289,120 @@ function AdminMainContent() {
 }
 
 // ---------------------------------------------------------------------------
+// ⏳ מדריכים שעוד לא סגרו — עם כפתור "סגרי בשבילי" (מנווט ל-/close-month)
+// ---------------------------------------------------------------------------
+
+function OpenGuidesReport({ snapshot }: { snapshot: MonthSnapshot }) {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const openGuides = snapshot.guides.filter((g) => g.status === 'open');
+  if (openGuides.length === 0) return null;
+
+  // לוחצים על "סגרי בשבילי" — שמים localStorage למדריך וניווט ל-/close-month
+  function handleCloseFor(guideId: string, guideName: string) {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('portugo_guide_id', guideId);
+    localStorage.setItem('portugo_guide_name', guideName);
+    router.push(`/close-month?year=${snapshot.year}&month=${snapshot.month + 1}`);
+  }
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+        border: '1px solid #fde047',
+      }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '14px 16px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'right',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#854d0e' }}>
+          ⏳ מדריכים פתוחים ({openGuides.length}) — עוד לא סגרו את החודש
+        </span>
+        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
+          {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fde047' }}>
+          <div style={{ marginTop: 12 }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {openGuides.map((g) => (
+                <li
+                  key={g.guide.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 12px',
+                    background: '#fef9c3',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    color: ADMIN_COLORS.gray700,
+                  }}
+                >
+                  <span>
+                    <strong>{g.guide.name}</strong>
+                    <span style={{ color: ADMIN_COLORS.gray500, fontSize: 12, marginInlineStart: 8 }}>
+                      {g.tours_count} סיורים · {fmtEuro(g.salary.total_with_tips)} שכר
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => handleCloseFor(g.guide.id, g.guide.name)}
+                    style={{
+                      background: ADMIN_COLORS.green800,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '6px 12px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    סגרי בשבילי ←
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div style={{ marginTop: 10, fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+              לחיצה על &quot;סגרי בשבילי&quot; תקח אותך לדף סגירת חודש של המדריך עם כל הפרטים.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 🚨 Inbox — alerts קצרים על דברים שצריכים תשומת לב מיידית
 // ---------------------------------------------------------------------------
 
-function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
-  const alerts: { icon: string; text: string; color: 'red' | 'yellow' }[] = [];
+function InboxAlerts({
+  snapshot,
+  isCurrentMonth,
+}: {
+  snapshot: MonthSnapshot;
+  isCurrentMonth: boolean;
+}) {
+  const alerts: { icon: string; text: string; color: 'red' | 'yellow'; targetId: string }[] = [];
 
   // קבלות חסרות (מדריכים שהיה להם receipt_amount > 0 ואין ack)
   const missingReceipts = snapshot.guides.filter(
@@ -290,6 +417,7 @@ function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
         missingReceipts.reduce((s, g) => s + g.salary.receipt_amount, 0).toFixed(0)
       }€`,
       color: 'red',
+      targetId: 'section-receipts',
     });
   }
 
@@ -300,6 +428,7 @@ function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
       icon: '💰',
       text: `${guidesWithPending} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toFixed(0)}€`,
       color: 'red',
+      targetId: 'section-pending-deposits',
     });
   }
 
@@ -309,19 +438,27 @@ function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
       icon: '📷',
       text: `${snapshot.totals.missing_photos_total} סיורים בלי תמונה`,
       color: 'yellow',
+      targetId: 'section-missing-photos',
     });
   }
 
   // מדריכים פתוחים — עבדו ולא סגרו את החודש (open status)
-  if (snapshot.totals.open_count > 0) {
+  // מציג רק לחודשים שכבר הסתיימו (בחודש הנוכחי "פתוח" זה מצב תקין)
+  if (!isCurrentMonth && snapshot.totals.open_count > 0) {
     alerts.push({
       icon: '⏳',
       text: `${snapshot.totals.open_count} מדריכים עוד לא סגרו את החודש`,
       color: 'yellow',
+      targetId: 'section-open-guides',
     });
   }
 
   if (alerts.length === 0) return null;
+
+  function scrollToSection(id: string) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   return (
     <section>
@@ -344,8 +481,9 @@ function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
           const border = a.color === 'red' ? '#fca5a5' : '#fde047';
           const fg = a.color === 'red' ? '#991b1b' : '#854d0e';
           return (
-            <div
+            <button
               key={i}
+              onClick={() => scrollToSection(a.targetId)}
               style={{
                 background: bg,
                 border: `1px solid ${border}`,
@@ -356,11 +494,24 @@ function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'right',
+                width: '100%',
+                transition: 'background 150ms',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background =
+                  a.color === 'red' ? '#fecaca' : '#fef08a';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = bg;
               }}
             >
               <span style={{ fontSize: 18 }}>{a.icon}</span>
               <span style={{ flex: 1 }}>{a.text}</span>
-            </div>
+              <span style={{ fontSize: 12, opacity: 0.7 }}>← לפירוט</span>
+            </button>
           );
         })}
       </div>
@@ -381,35 +532,33 @@ function Highlights({
   prevSnapshot: MonthSnapshot | null;
   pctChange: (current: number, prev: number) => number | null;
 }) {
-  // 1. המדריך המוביל (ממוצע משתתפים פר סיור הכי גבוה — מאשר לפחות 2 סיורים)
-  const guideStats = snapshot.guides
-    .filter((g) => g.tours_count >= 2)
+  // === מדדים פר מדריך (אסטרטגיים — לא תלויים בשיבוצים שעומר עושה) ===
+  // 1. הכי הרבה משמרות (מדד נכונות לעבוד / זמינות)
+  const guidesByShifts = [...snapshot.guides]
+    .filter((g) => g.tours_count > 0)
+    .sort((a, b) => b.tours_count - a.tours_count);
+  const topByShifts = guidesByShifts[0];
+
+  // 2. ממוצע טיפ פר ראש בקלאסי הכי גבוה (מדריך משפיע על איכות הטיפ)
+  const guidesByClassicTip = snapshot.guides
+    .filter((g) => g.salary.classic_people >= 5) // לפחות 5 משתתפים בקלאסי, אחרת לא מובהק
     .map((g) => ({
       name: g.guide.name,
-      avgPerTour: g.people_count / g.tours_count,
-      tours: g.tours_count,
-      people: g.people_count,
+      avgClassic: g.salary.classic_collected / g.salary.classic_people,
+      classicPeople: g.salary.classic_people,
     }))
-    .sort((a, b) => b.avgPerTour - a.avgPerTour);
-  const topGuide = guideStats[0];
+    .sort((a, b) => b.avgClassic - a.avgClassic);
+  const topByClassicTip = guidesByClassicTip[0];
 
-  // 2-3. סוגי סיור — ממוצע משתתפים פר סיור (להזדהות מוביל וחלש)
-  const byTourType = new Map<string, { tours: number; people: number }>();
-  for (const g of snapshot.guides) {
-    // אין לנו פירוט פר סיור פר סוג ב-snapshot. נשתמש בtours_count + people_count לכל מדריך,
-    // אבל זה לא יודע סוגים. במקום, נשתמש ב-classic vs non-classic מסיכום השכר:
-    // (לא הכי מדויק, אבל הכי קרוב למידע שיש לנו ב-snapshot.)
-    // אם יש סיורים — ממוצע פר מדריך
-    if (g.tours_count > 0) {
-      // נחלק לפי קלאסי vs כל השאר על בסיס classic_people
-      const classicPeople = g.salary.classic_people;
-      const otherPeople = g.people_count - classicPeople;
-      const classicCollected = g.salary.classic_collected;
-      void classicCollected;
-      void otherPeople;
-    }
-  }
-  void byTourType;
+  // 3. סך הטיפים הרגילים הכי גבוה (סיורים שאינם קלאסי)
+  const guidesByOtherTips = snapshot.guides
+    .filter((g) => g.salary.non_classic_tips > 0)
+    .map((g) => ({
+      name: g.guide.name,
+      tips: g.salary.non_classic_tips,
+    }))
+    .sort((a, b) => b.tips - a.tips);
+  const topByOtherTips = guidesByOtherTips[0];
 
   // 4. מגמה כללית — האם החודש טוב יותר מהקודם?
   let trendText = '';
@@ -438,11 +587,27 @@ function Highlights({
 
   const cards: { icon: string; title: string; text: string; color?: string }[] = [];
 
-  if (topGuide) {
+  if (topByShifts) {
     cards.push({
       icon: '🌟',
-      title: 'המדריך המוביל',
-      text: `${topGuide.name} — ממוצע ${topGuide.avgPerTour.toFixed(1)} אנשים פר סיור (${topGuide.tours} סיורים, ${topGuide.people} משתתפים סה״כ).`,
+      title: 'הכי הרבה משמרות',
+      text: `${topByShifts.guide.name} — ${topByShifts.tours_count} סיורים החודש (${topByShifts.people_count} משתתפים).`,
+    });
+  }
+
+  if (topByClassicTip) {
+    cards.push({
+      icon: '💰',
+      title: 'ממוצע טיפ הכי גבוה (קלאסי)',
+      text: `${topByClassicTip.name} — ממוצע ${topByClassicTip.avgClassic.toFixed(2)}€ פר ראש (${topByClassicTip.classicPeople} משתתפים בקלאסי).`,
+    });
+  }
+
+  if (topByOtherTips) {
+    cards.push({
+      icon: '💵',
+      title: 'הכי הרבה טיפים בסיורים רגילים',
+      text: `${topByOtherTips.name} — ${topByOtherTips.tips.toFixed(0)}€ טיפים מסיורים שאינם קלאסי.`,
     });
   }
 

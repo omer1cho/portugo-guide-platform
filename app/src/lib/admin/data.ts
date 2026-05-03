@@ -76,10 +76,11 @@ export type MonthSnapshot = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function monthBounds(year: number, month: number) {
+function monthBounds(year: number, month: number, dayLimit?: number) {
   const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+  const effectiveDay = dayLimit !== undefined ? Math.min(dayLimit, lastDayOfMonth) : lastDayOfMonth;
+  const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(effectiveDay).padStart(2, '0')}`;
   return { start, end };
 }
 
@@ -94,10 +95,18 @@ function monthBounds(year: number, month: number) {
 export async function loadMonthSnapshot(
   year: number,
   month: number,
-  options: { includeAdmins?: boolean; cityFilter?: 'lisbon' | 'porto' | 'all' } = {},
+  options: {
+    includeAdmins?: boolean;
+    cityFilter?: 'lisbon' | 'porto' | 'all';
+    /**
+     * אופציונלי: עד יום בחודש (1-31). שימושי להשוואה הוגנת לחודש קודם —
+     * אם היום הוא 3 במאי, נשווה רק 1-3 במאי מול 1-3 באפריל.
+     */
+    dayLimit?: number;
+  } = {},
 ): Promise<MonthSnapshot> {
-  const { includeAdmins = false, cityFilter = 'all' } = options;
-  const { start, end } = monthBounds(year, month);
+  const { includeAdmins = false, cityFilter = 'all', dayLimit } = options;
+  const { start, end } = monthBounds(year, month, dayLimit);
 
   // ─── שלב 1: כל המדריכים הפעילים ─────────────────────────────────────────
   let guidesQ = supabase
