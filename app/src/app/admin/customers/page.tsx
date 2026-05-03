@@ -172,6 +172,7 @@ function CustomersContent() {
   const insightTipSource = generateTipSourceInsight(tipBySource);
   const insightTipGuide = generateTipGuideInsight(tipsByGuide);
   const insightDayByTour = generateDayByTourInsight(dayByTour);
+  const insightDayByCustomer = generateDayByCustomerInsight(dayChart, dayChartTourType);
   const insightOccupancy = generateOccupancyInsight(occupancy);
   const insightPackage = generatePackageInsight(packageSplit);
 
@@ -278,6 +279,7 @@ function CustomersContent() {
               {/* Section 6 — יום בשבוע × קטגוריה */}
               <SectionBox
                 title="📅 קטגוריות לקוח: יום בשבוע × קטגוריה"
+                insight={insightDayByCustomer}
                 control={
                   <select
                     value={dayChartTourType}
@@ -1158,6 +1160,51 @@ function generateDayByTourInsight(data: DayByTourMap): string | null {
   }
   const tourLabel = TOUR_CAPACITY[topTour]?.label || topTour;
   return `יום עמוס במיוחד: "${DAY_NAMES_HE[topDay]} · ${tourLabel}" עם ${topVal} משתתפים. היום הכי עמוס בכלל: ${DAY_NAMES_HE[busyDay]} (${busyVal} משתתפים), הכי שקט: ${DAY_NAMES_HE[quietDay]} (${quietVal === Infinity ? 0 : quietVal}). שווה לחשוב על מבצע ל${DAY_NAMES_HE[quietDay]}.`;
+}
+
+function generateDayByCustomerInsight(data: DayMap, tourType: string): string | null {
+  // מוצא: היום הכי חזק לכל קטגוריה + הקטגוריה הכי דומיננטית ביום הכי עמוס
+  const totalsByCategory: Record<string, number> = {};
+  const totalsByDay: Record<number, number> = {};
+  for (const [dowStr, dayData] of Object.entries(data)) {
+    const dow = parseInt(dowStr);
+    for (const [cat, n] of Object.entries(dayData)) {
+      totalsByCategory[cat] = (totalsByCategory[cat] || 0) + n;
+      totalsByDay[dow] = (totalsByDay[dow] || 0) + n;
+    }
+  }
+  const total = Object.values(totalsByCategory).reduce((s, n) => s + n, 0);
+  if (total === 0) return null;
+
+  // הקטגוריה הכי גדולה
+  const topCategory = Object.entries(totalsByCategory).sort((a, b) => b[1] - a[1])[0];
+  if (!topCategory) return null;
+
+  // היום הכי חזק לקטגוריה הזו
+  let topCatDay = -1;
+  let topCatVal = 0;
+  for (let dow = 0; dow < 7; dow++) {
+    const v = data[dow]?.[topCategory[0]] || 0;
+    if (v > topCatVal) {
+      topCatVal = v;
+      topCatDay = dow;
+    }
+  }
+
+  // היום הכי עמוס בכלל + הקטגוריה הדומיננטית בו
+  const topDayEntry = Object.entries(totalsByDay).sort((a, b) => b[1] - a[1])[0];
+  if (!topDayEntry) return null;
+  const topDay = parseInt(topDayEntry[0]);
+  const topDayData = data[topDay] || {};
+  const topDayCategory = Object.entries(topDayData).sort((a, b) => b[1] - a[1])[0];
+
+  const tourLabel = tourType === 'all' ? '' : ` (סינון: ${TOUR_CAPACITY[tourType]?.label || tourType})`;
+
+  if (topCatDay === topDay && topDayCategory && topDayCategory[0] === topCategory[0]) {
+    // המוביל גם הכי גדול וגם הכי חזק ביום העמוס — הצגה מאוחדת
+    return `הקטגוריה המובילה "${topCategory[0]}" (${topCategory[1]} משתתפים) — מגיעה בעיקר ב${DAY_NAMES_HE[topCatDay]}${tourLabel}.`;
+  }
+  return `הקטגוריה המובילה: "${topCategory[0]}" (${topCategory[1]} משתתפים), מגיעה בעיקר ב${DAY_NAMES_HE[topCatDay]}. היום הכי עמוס: ${DAY_NAMES_HE[topDay]} — בעיקר ${topDayCategory ? `"${topDayCategory[0]}" (${topDayCategory[1]} משתתפים)` : 'מעורב'}${tourLabel}.`;
 }
 
 function generateOccupancyInsight(data: OccupancyRow[]): string | null {
