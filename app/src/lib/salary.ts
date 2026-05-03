@@ -73,6 +73,81 @@ export type SalaryBreakdown = {
 };
 
 // ============================================================================
+// Per-tour breakdown — לפירוט שכר פר-סיור (לתצוגה בעמוד המדריך)
+// ============================================================================
+
+export type PerTourSalary = {
+  tour_date: string;
+  tour_type: string;
+  category: 'classic' | 'fixed' | 'private' | 'other';
+  people: number;
+  /** שכר בסיס: לקלאסי = base לפי tier; לאחרים = שכר קבוע מהנוסחה */
+  base: number;
+  /** קלאסי בלבד: כסף שעובר לפורטוגו (paying × rate). 0 בשאר */
+  transfer: number;
+  /** קלאסי: price - transfer; אחרים: סכום ה-tip */
+  tips: number;
+  /** השכר שהמדריך מקבל סופית מהסיור הזה: base + tips */
+  salary: number;
+};
+
+/**
+ * מפרק את הסיורים לרשימה עם חישוב השכר לכל סיור בנפרד.
+ * שימוש: עמוד הבית של המדריך — דרופדאון "פירוט סיורים".
+ */
+export function calculatePerTourBreakdown(
+  tours: SalaryTour[],
+  transferPerPerson: number = 10,
+): PerTourSalary[] {
+  return tours.map((tour) => {
+    const totalPeople = (tour.bookings || []).reduce((s, b) => s + (b.people || 0), 0);
+    const totalKids = (tour.bookings || []).reduce((s, b) => s + (b.kids || 0), 0);
+    const totalPrice = (tour.bookings || []).reduce((s, b) => s + (b.price || 0), 0);
+    const totalTip = (tour.bookings || []).reduce((s, b) => s + (b.tip || 0), 0);
+
+    if (tour.category === 'classic') {
+      const { base, transfer } = calcClassicSalary(totalPeople, totalKids, transferPerPerson);
+      const tips = totalPrice - transfer; // הטיפים נטו של המדריך
+      return {
+        tour_date: tour.tour_date,
+        tour_type: tour.tour_type,
+        category: 'classic',
+        people: totalPeople,
+        base,
+        transfer,
+        tips,
+        salary: base + tips,
+      };
+    }
+    if (tour.category === 'private') {
+      const base = calcPrivateSalary(totalPeople, tour.notes || '');
+      return {
+        tour_date: tour.tour_date,
+        tour_type: tour.tour_type,
+        category: 'private',
+        people: totalPeople,
+        base,
+        transfer: 0,
+        tips: totalTip,
+        salary: base + totalTip,
+      };
+    }
+    // fixed או other — שניהם משתמשים בנוסחת fixed
+    const base = calcFixedSalary(tour.tour_type, totalPeople);
+    return {
+      tour_date: tour.tour_date,
+      tour_type: tour.tour_type,
+      category: tour.category === 'fixed' ? 'fixed' : 'other',
+      people: totalPeople,
+      base,
+      transfer: 0,
+      tips: totalTip,
+      salary: base + totalTip,
+    };
+  });
+}
+
+// ============================================================================
 // Classic tour formula
 // ============================================================================
 

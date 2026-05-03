@@ -4,7 +4,14 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
-import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
+import {
+  calculateMonthlySalary,
+  calculatePerTourBreakdown,
+  type SalaryBreakdown,
+  type SalaryTour,
+  type SalaryActivity,
+  type PerTourSalary,
+} from '@/lib/salary';
 import { useAuthGuard, logout } from '@/lib/auth';
 import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
 import PhotoPicker from '@/components/PhotoPicker';
@@ -111,6 +118,9 @@ function HomeContent() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [receiptError, setReceiptError] = useState('');
+  // פירוט שכר פר-סיור — נטען עם שאר הסיכום, מוצג בדרופדאון "פירוט סיורים"
+  const [perTourBreakdown, setPerTourBreakdown] = useState<PerTourSalary[]>([]);
+  const [showTourBreakdown, setShowTourBreakdown] = useState(false);
   // ברכות יומיות — אירועי לוח (חגים/שעון) + ימי הולדת של היום
   const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
   type TeamBirthday = { id: string; name: string; birthday: string };
@@ -228,6 +238,10 @@ function HomeContent() {
       });
 
       const salary = calculateMonthlySalary(guide, salaryTours, salaryActivities);
+      // פירוט פר-סיור לדרופדאון
+      setPerTourBreakdown(
+        calculatePerTourBreakdown(salaryTours, guide?.classic_transfer_per_person ?? 10),
+      );
 
       const expensesTotal = (expRes.data || []).reduce((s, e: { amount: number }) => s + (e.amount || 0), 0);
       let transfersTotal = 0;
@@ -820,6 +834,60 @@ function HomeContent() {
                     </div>
                   )}
                 </div>
+
+                {/* פירוט שכר פר-סיור — דרופדאון מתקפל. מציג רק אם יש סיורים */}
+                {perTourBreakdown.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <button
+                      onClick={() => setShowTourBreakdown(!showTourBreakdown)}
+                      className="w-full text-sm text-green-800 hover:text-green-900 font-medium flex items-center justify-center gap-1"
+                    >
+                      {showTourBreakdown
+                        ? '▲ הסתר.י פירוט שכר לפי סיור'
+                        : '▼ פירוט שכר לפי סיור'}
+                    </button>
+                    {showTourBreakdown && (
+                      <ul className="space-y-1.5 text-sm pt-2">
+                        {[...perTourBreakdown]
+                          .sort((a, b) => a.tour_date.localeCompare(b.tour_date))
+                          .map((t, idx) => {
+                            const dt = new Date(t.tour_date);
+                            const dateLabel = dt.toLocaleDateString('he-IL', {
+                              day: '2-digit',
+                              month: '2-digit',
+                            });
+                            // לקלאסי: "בסיס X€ + טיפים Y€" | ל-fixed/private: "בסיס X€ + טיפ Y€" (אם יש)
+                            const detail =
+                              t.category === 'classic'
+                                ? `בסיס ${t.base.toFixed(0)}€ + טיפים ${t.tips.toFixed(0)}€`
+                                : t.tips > 0
+                                  ? `בסיס ${t.base.toFixed(0)}€ + טיפ ${t.tips.toFixed(0)}€`
+                                  : `${t.base.toFixed(0)}€`;
+                            return (
+                              <li
+                                key={idx}
+                                className="flex justify-between items-center gap-2"
+                              >
+                                <span className="text-xs text-gray-500 font-mono shrink-0 w-12">
+                                  {dateLabel}
+                                </span>
+                                <span className="flex-1 min-w-0">
+                                  <div className="text-gray-700 truncate">{t.tour_type}</div>
+                                  <div className="text-[11px] text-gray-500">
+                                    {t.people} משתתפים · {detail}
+                                  </div>
+                                </span>
+                                <span className="font-semibold text-green-800 shrink-0">
+                                  {t.salary.toFixed(0)}€
+                                </span>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 {summary.salary.total_with_tips > 0 && (
                   <div className="mt-3 pt-3 border-t border-green-200 bg-green-50 -mx-2 px-3 py-2 rounded-lg space-y-1">
                     <div className="flex justify-between items-center">
