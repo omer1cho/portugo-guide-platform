@@ -856,34 +856,47 @@ function HomeContent() {
                               day: '2-digit',
                               month: '2-digit',
                             });
-                            // לקלאסי: "בסיס X€ + טיפים Y€" | ל-fixed/private: "בסיס X€ + טיפ Y€" (אם יש)
-                            const detail =
-                              t.category === 'classic'
-                                ? `בסיס ${t.base.toFixed(0)}€ + טיפים ${t.tips.toFixed(0)}€`
-                                : t.tips > 0
-                                  ? `בסיס ${t.base.toFixed(0)}€ + טיפ ${t.tips.toFixed(0)}€`
-                                  : `${t.base.toFixed(0)}€`;
                             // הצגת משתתפים: אם יש ילדים — ציון מפורש (קריטי לקלאסי
                             // כי ילדים לא משלמים → לא נכנסים ל-transfer ול-base tier)
                             const peopleLabel =
                               t.kids > 0
                                 ? `${t.people} משתתפים (כולל ${t.kids === 1 ? 'ילד' : `${t.kids} ילדים`})`
                                 : `${t.people} משתתפים`;
+                            const isClassic = t.category === 'classic';
+                            // בקלאסי: גם "נאסף + הופרש" וגם "בסיס + טיפ נטו"
+                            // בשאר: רק "בסיס + טיפ" (אם יש)
+                            const collected = isClassic ? t.tips + t.transfer : 0; // = totalPrice
                             return (
                               <li
                                 key={idx}
-                                className="flex justify-between items-center gap-2"
+                                className="flex justify-between items-start gap-2"
                               >
-                                <span className="text-xs text-gray-500 font-mono shrink-0 w-12">
+                                <span className="text-xs text-gray-500 font-mono shrink-0 w-12 pt-0.5">
                                   {dateLabel}
                                 </span>
                                 <span className="flex-1 min-w-0">
                                   <div className="text-gray-700 truncate">{t.tour_type}</div>
-                                  <div className="text-[11px] text-gray-500">
-                                    {peopleLabel} · {detail}
+                                  <div className="text-[11px] text-gray-500 leading-snug">
+                                    {peopleLabel}
                                   </div>
+                                  {isClassic ? (
+                                    <>
+                                      <div className="text-[11px] text-gray-500 leading-snug">
+                                        נאסף {collected.toFixed(0)}€ · הופרש {t.transfer.toFixed(0)}€ לפורטוגו
+                                      </div>
+                                      <div className="text-[11px] text-gray-500 leading-snug">
+                                        בסיס {t.base.toFixed(0)}€ + טיפ נטו {t.tips.toFixed(0)}€
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="text-[11px] text-gray-500 leading-snug">
+                                      {t.tips > 0
+                                        ? `בסיס ${t.base.toFixed(0)}€ + טיפ ${t.tips.toFixed(0)}€`
+                                        : `בסיס ${t.base.toFixed(0)}€`}
+                                    </div>
+                                  )}
                                 </span>
-                                <span className="font-semibold text-green-800 shrink-0">
+                                <span className="font-semibold text-green-800 shrink-0 pt-0.5">
                                   {t.salary.toFixed(0)}€
                                 </span>
                               </li>
