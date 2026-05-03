@@ -161,8 +161,19 @@ function CustomersContent() {
   const tipBySource = aggregateTipBySource(filtered);
   const tipsByGuide = aggregateTipsByGuide(classicBookings);
   const dayChart = aggregateByDayAndCustomer(filtered, dayChartTourType);
+  const dayByTour = aggregateDayByTourType(filtered);
   const occupancy = aggregateOccupancy(filtered);
   const packageSplit = aggregatePackageSplit(filtered);
+
+  // ─── Insights (תובנות אסטרטגיות אוטומטיות) ──────────────────────────
+  const insightSource = generateTopInsight(bySource, 'מקור');
+  const insightCustomer = generateTopInsight(byCustomer, 'קטגוריה');
+  const insightTipCategory = generateTipCategoryInsight(tipByCustomerAll, tipByCustomerClassic);
+  const insightTipSource = generateTipSourceInsight(tipBySource);
+  const insightTipGuide = generateTipGuideInsight(tipsByGuide);
+  const insightDayByTour = generateDayByTourInsight(dayByTour);
+  const insightOccupancy = generateOccupancyInsight(occupancy);
+  const insightPackage = generatePackageInsight(packageSplit);
 
   // סוגי סיור שיש להם נתונים בחודש (ל-dropdown)
   const availableTourTypes = Array.from(
@@ -209,8 +220,12 @@ function CustomersContent() {
       {!loading && !error && (
         <>
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-            <KpiCard label="סה״כ משתתפים" value={totalPeople.toLocaleString('he-IL')} />
-            <KpiCard label="ממוצע אנשים פר סיור" value={avgPerTour.toFixed(1)} sub={`${tourCount} סיורים`} />
+            <KpiCard label="סה״כ משתתפים" value={totalPeople.toLocaleString('he-IL')} sub={`${tourCount} סיורים`} />
+            <KpiCard
+              label="ממוצע אנשים פר סיור"
+              value={Math.round(avgPerTour).toString()}
+              sub={`${totalPeople} ÷ ${tourCount} = ${avgPerTour.toFixed(1)}`}
+            />
             <KpiCard
               label="ממוצע טיפ פר ראש (קלאסי)"
               value={fmtEuro(avgTipPerHead)}
@@ -227,34 +242,42 @@ function CustomersContent() {
             <>
               {/* Sections 1+2 — תרשימי עוגה side-by-side */}
               <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16 }}>
-                <SectionBox title="📍 מקורות לקוחות">
+                <SectionBox title="📍 מקורות לקוחות" insight={insightSource}>
                   <PieChart data={bySource} />
                 </SectionBox>
-                <SectionBox title="👥 קטגוריות לקוחות">
+                <SectionBox title="👥 קטגוריות לקוחות" insight={insightCustomer}>
                   <PieChart data={byCustomer} />
                 </SectionBox>
               </section>
 
               {/* Section 3 — טיפ ממוצע פר קטגוריה */}
-              <SectionBox title="💰 טיפ ממוצע פר קטגוריית לקוח">
+              <SectionBox title="💰 טיפ ממוצע פר קטגוריית לקוח" insight={insightTipCategory}>
                 <TipByCategoryTable classic={tipByCustomerClassic} all={tipByCustomerAll} />
               </SectionBox>
 
               {/* Section 4 — טיפ ממוצע פר מקור */}
-              <SectionBox title="📍 טיפ ממוצע פר מקור (קלאסי)">
+              <SectionBox title="📍 טיפ ממוצע פר מקור (קלאסי)" insight={insightTipSource}>
                 <TipBySourceTable data={tipBySource} />
               </SectionBox>
 
               {/* Section 5 — תרשים עמודות פר מדריך */}
               {tipsByGuide.length > 0 && (
-                <SectionBox title="🎯 ממוצע טיפ פר ראש לכל מדריך (קלאסי)">
+                <SectionBox title="🎯 ממוצע טיפ פר ראש לכל מדריך (קלאסי)" insight={insightTipGuide}>
                   <BarChart data={tipsByGuide} />
                 </SectionBox>
               )}
 
+              {/* Section חדש — ביקוש פר יום × סוג סיור */}
+              <SectionBox
+                title="🔥 ביקוש: יום בשבוע × סוג סיור"
+                insight={insightDayByTour}
+              >
+                <DayByTourHeatmap data={dayByTour} />
+              </SectionBox>
+
               {/* Section 6 — יום בשבוע × קטגוריה */}
               <SectionBox
-                title="📅 לקוחות לפי יום בשבוע × קטגוריה"
+                title="📅 קטגוריות לקוח: יום בשבוע × קטגוריה"
                 control={
                   <select
                     value={dayChartTourType}
@@ -272,13 +295,13 @@ function CustomersContent() {
               </SectionBox>
 
               {/* Section 7 — תפוסה */}
-              <SectionBox title="📦 תפוסה פר סוג סיור">
+              <SectionBox title="📦 תפוסה פר סוג סיור" insight={insightOccupancy}>
                 <OccupancyTable data={occupancy} />
               </SectionBox>
 
               {/* Section 8 — חבילה vs רגיל */}
               {packageSplit.total > 0 && (
-                <SectionBox title="🎁 חבילה vs רגיל (מי קיבל 5€ הנחה)">
+                <SectionBox title="🎁 חבילה vs רגיל (מי קיבל 5€ הנחה)" insight={insightPackage}>
                   <PackageSplitTable data={packageSplit} />
                 </SectionBox>
               )}
@@ -327,10 +350,12 @@ function CityToggle({ value, onChange }: { value: CityFilter; onChange: (v: City
 function SectionBox({
   title,
   control,
+  insight,
   children,
 }: {
   title: string;
   control?: React.ReactNode;
+  insight?: string | null;
   children: React.ReactNode;
 }) {
   return (
@@ -343,6 +368,23 @@ function SectionBox({
       </div>
       <div style={{ background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
         {children}
+        {insight && (
+          <div
+            style={{
+              marginTop: 14,
+              padding: '10px 12px',
+              background: ADMIN_COLORS.green50,
+              border: `1px solid ${ADMIN_COLORS.green600}`,
+              borderRadius: 8,
+              fontSize: 13,
+              color: ADMIN_COLORS.gray700,
+              lineHeight: 1.5,
+            }}
+          >
+            <span style={{ marginInlineEnd: 6 }}>💡</span>
+            {insight}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -412,9 +454,9 @@ function BarChart({ data }: { data: { name: string; avg: number; collected: numb
         style={{
           display: 'flex',
           alignItems: 'flex-end',
-          gap: 12,
-          height: chartHeight + 50,
-          padding: '20px 0 10px',
+          gap: 16,
+          height: chartHeight + 80, // +80 כדי שטקסט הסכום מעל ה-bar הגבוה ביותר ייכנס בנוחות
+          padding: '40px 8px 10px',
           borderBottom: `1px solid ${ADMIN_COLORS.gray100}`,
           overflowX: 'auto',
         }}
@@ -422,20 +464,43 @@ function BarChart({ data }: { data: { name: string; avg: number; collected: numb
         {data.map((d) => {
           const h = maxVal > 0 ? (d.avg / maxVal) * chartHeight : 0;
           return (
-            <div key={d.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 50, flex: '0 0 auto' }}>
-              <div style={{ fontSize: 12, color: ADMIN_COLORS.green800, fontWeight: 600, marginBottom: 4 }}>
+            <div
+              key={d.name}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 70, flex: '0 0 auto' }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  color: ADMIN_COLORS.green800,
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
+                }}
+              >
                 {fmtEuro(d.avg)}
               </div>
               <div
                 style={{
-                  width: 40,
+                  width: 44,
                   height: h,
                   background: ADMIN_COLORS.green800,
                   borderRadius: '4px 4px 0 0',
                   transition: 'height 200ms',
                 }}
               />
-              <div style={{ fontSize: 12, color: ADMIN_COLORS.gray700, marginTop: 6, textAlign: 'center', maxWidth: 70 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: ADMIN_COLORS.gray700,
+                  marginTop: 8,
+                  textAlign: 'center',
+                  maxWidth: 80,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 {d.name}
               </div>
             </div>
@@ -857,6 +922,22 @@ function aggregateOccupancy(bookings: RawBooking[]): OccupancyRow[] {
     .sort((a, b) => b.tours - a.tours);
 }
 
+type DayByTourMap = Record<number, Record<string, number>>;
+
+function aggregateDayByTourType(bookings: RawBooking[]): DayByTourMap {
+  const map: DayByTourMap = {};
+  for (const b of bookings) {
+    const date = b.tour?.tour_date;
+    const tourType = b.tour?.tour_type;
+    if (!date || !tourType) continue;
+    if (b.tour?.category === 'private') continue; // פרטיים — לא רלוונטיים לניתוח ביקוש
+    const dow = new Date(date + 'T12:00:00').getDay();
+    if (!map[dow]) map[dow] = {};
+    map[dow][tourType] = (map[dow][tourType] || 0) + (b.people || 0);
+  }
+  return map;
+}
+
 function aggregatePackageSplit(bookings: RawBooking[]): PackageSplit {
   // רק bookings בסיורים שיש להם מחיר חבילה (לא קלאסי, לא פרטי)
   let packageCount = 0;
@@ -892,6 +973,227 @@ function aggregatePackageSplit(bookings: RawBooking[]): PackageSplit {
       }))
       .sort((a, b) => b.total - a.total),
   };
+}
+
+// ===========================================================================
+// Heatmap: ימים × סוגי סיור
+// ===========================================================================
+
+function DayByTourHeatmap({ data }: { data: DayByTourMap }) {
+  const tourTypes = Array.from(
+    new Set(Object.values(data).flatMap((m) => Object.keys(m))),
+  ).sort();
+
+  if (tourTypes.length === 0) {
+    return <div style={{ color: ADMIN_COLORS.gray500, textAlign: 'center', padding: 20 }}>אין נתונים</div>;
+  }
+
+  // טווח ערכים לחישוב צבע
+  const allValues: number[] = [];
+  for (const dayData of Object.values(data)) {
+    for (const v of Object.values(dayData)) allValues.push(v);
+  }
+  const maxVal = Math.max(...allValues, 1);
+
+  // סה"כ פר סוג סיור
+  const totalsByTour: Record<string, number> = {};
+  for (const t of tourTypes) totalsByTour[t] = 0;
+  for (const dayData of Object.values(data)) {
+    for (const [t, n] of Object.entries(dayData)) {
+      totalsByTour[t] = (totalsByTour[t] || 0) + n;
+    }
+  }
+  // סה"כ פר יום
+  const totalsByDay: Record<number, number> = {};
+  for (let i = 0; i < 7; i++) {
+    totalsByDay[i] = Object.values(data[i] || {}).reduce((s, n) => s + n, 0);
+  }
+
+  function cellColor(v: number): string {
+    if (v === 0) return '#fff';
+    const intensity = Math.min(1, v / maxVal);
+    // ירוק עולה — מ-בהיר ל-כהה
+    const lightness = 95 - intensity * 50; // 95% (בהיר) → 45% (כהה)
+    return `hsl(140, 50%, ${lightness}%)`;
+  }
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ ...tableStyle, minWidth: 500 }}>
+        <thead>
+          <tr style={trHeadStyle}>
+            <th style={thStyle}>סיור \ יום</th>
+            {DAY_NAMES_HE.map((d, i) => (
+              <th key={i} style={{ ...thStyle, textAlign: 'center' }}>{d}</th>
+            ))}
+            <th style={{ ...thStyle, textAlign: 'center' }}>סה״כ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tourTypes.map((t) => (
+            <tr key={t} style={trBodyStyle}>
+              <td style={tdStyle}>{TOUR_CAPACITY[t]?.label || t}</td>
+              {DAY_NAMES_HE.map((_, i) => {
+                const v = data[i]?.[t] || 0;
+                return (
+                  <td
+                    key={i}
+                    style={{
+                      ...tdStyle,
+                      textAlign: 'center',
+                      background: cellColor(v),
+                      color: v / maxVal > 0.6 ? '#fff' : ADMIN_COLORS.gray700,
+                      fontWeight: v > 0 ? 600 : 400,
+                    }}
+                  >
+                    {v || ''}
+                  </td>
+                );
+              })}
+              <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 600 }}>{totalsByTour[t]}</td>
+            </tr>
+          ))}
+          <tr style={{ ...trBodyStyle, background: ADMIN_COLORS.gray50, fontWeight: 600 }}>
+            <td style={tdStyle}>סה״כ ביום</td>
+            {DAY_NAMES_HE.map((_, i) => (
+              <td key={i} style={{ ...tdStyle, textAlign: 'center' }}>{totalsByDay[i] || ''}</td>
+            ))}
+            <td style={{ ...tdStyle, textAlign: 'center', color: ADMIN_COLORS.green800 }}>
+              {Object.values(totalsByDay).reduce((s, n) => s + n, 0)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style={{ marginTop: 8, fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+        ככל שהתא ירוק יותר — יותר משתתפים. סיורים פרטיים לא נספרים.
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
+// Insights — תובנות אסטרטגיות אוטומטיות
+// ===========================================================================
+
+function generateTopInsight(data: AggregateRow[], type: 'מקור' | 'קטגוריה'): string | null {
+  if (data.length < 2) return null;
+  const total = data.reduce((s, d) => s + d.count, 0);
+  if (total === 0) return null;
+  const top = data[0];
+  const second = data[1];
+  const topPct = (top.count / total) * 100;
+  if (topPct >= 50) {
+    return `ה${type} המוביל: "${top.label}" עם ${topPct.toFixed(0)}% מהלקוחות. תלות גבוהה ב${type} אחד — שווה לחפש פיזור.`;
+  }
+  if (topPct >= 30) {
+    return `ה${type} המוביל: "${top.label}" (${topPct.toFixed(0)}%), אחריו "${second.label}" (${((second.count / total) * 100).toFixed(0)}%). פיזור בריא.`;
+  }
+  return `פיזור ${type} מאוזן יחסית. המוביל "${top.label}" עם ${topPct.toFixed(0)}% בלבד.`;
+}
+
+function generateTipCategoryInsight(
+  all: { category: string; avg: number; people: number }[],
+  classic: { category: string; avg: number; people: number }[],
+): string | null {
+  if (classic.length === 0) return null;
+  const top = classic[0];
+  const bottom = classic[classic.length - 1];
+  if (top.category === bottom.category) return null;
+  const overallAvg = classic.reduce((s, c) => s + c.avg * c.people, 0) / classic.reduce((s, c) => s + c.people, 0);
+  return `בקלאסי, "${top.category}" משאירים הכי הרבה (${fmtEuro(top.avg)} פר ראש), "${bottom.category}" הכי פחות (${fmtEuro(bottom.avg)}). הממוצע הכולל: ${fmtEuro(overallAvg)}.`;
+}
+
+function generateTipSourceInsight(
+  data: { source: string; avg: number; people: number; collected: number }[],
+): string | null {
+  if (data.length < 2) return null;
+  const top = data[0];
+  const bottom = data[data.length - 1];
+  return `המקור הכי משתלם: "${top.source}" — ממוצע ${fmtEuro(top.avg)} פר ראש (${top.people} משלמים). הכי נמוך: "${bottom.source}" עם ${fmtEuro(bottom.avg)}.`;
+}
+
+function generateTipGuideInsight(data: { name: string; avg: number; paying: number }[]): string | null {
+  if (data.length < 2) return null;
+  const top = data[0];
+  const bottom = data[data.length - 1];
+  const diff = top.avg - bottom.avg;
+  if (diff < 0.5) return `כל המדריכים בטווח דומה (${fmtEuro(bottom.avg)}–${fmtEuro(top.avg)}). אחידות יפה.`;
+  return `${top.name} מוביל.ה (${fmtEuro(top.avg)} פר ראש), ${bottom.name} בתחתית (${fmtEuro(bottom.avg)}). הפרש ${fmtEuro(diff)} פר ראש — שווה לבדוק מה ${top.name} עושה אחרת.`;
+}
+
+function generateDayByTourInsight(data: DayByTourMap): string | null {
+  // מצא את התא הכי "חם"
+  let topDay = -1;
+  let topTour = '';
+  let topVal = 0;
+  for (let dow = 0; dow < 7; dow++) {
+    const dayData = data[dow] || {};
+    for (const [tour, v] of Object.entries(dayData)) {
+      if (v > topVal) {
+        topVal = v;
+        topDay = dow;
+        topTour = tour;
+      }
+    }
+  }
+  if (topVal === 0) return null;
+  // ממוצע פר יום
+  const totalsByDay: Record<number, number> = {};
+  for (let i = 0; i < 7; i++) {
+    totalsByDay[i] = Object.values(data[i] || {}).reduce((s, n) => s + n, 0);
+  }
+  let busyDay = 0;
+  let busyVal = 0;
+  let quietDay = 0;
+  let quietVal = Infinity;
+  for (const [dow, v] of Object.entries(totalsByDay)) {
+    if (v > busyVal) {
+      busyVal = v;
+      busyDay = parseInt(dow);
+    }
+    if (v < quietVal && v > 0) {
+      quietVal = v;
+      quietDay = parseInt(dow);
+    }
+  }
+  const tourLabel = TOUR_CAPACITY[topTour]?.label || topTour;
+  return `יום עמוס במיוחד: "${DAY_NAMES_HE[topDay]} · ${tourLabel}" עם ${topVal} משתתפים. היום הכי עמוס בכלל: ${DAY_NAMES_HE[busyDay]} (${busyVal} משתתפים), הכי שקט: ${DAY_NAMES_HE[quietDay]} (${quietVal === Infinity ? 0 : quietVal}). שווה לחשוב על מבצע ל${DAY_NAMES_HE[quietDay]}.`;
+}
+
+function generateOccupancyInsight(data: OccupancyRow[]): string | null {
+  if (data.length === 0) return null;
+  const lowOccupancy = data.filter((d) => d.occupancyPct !== undefined && d.occupancyPct < 30);
+  const belowMin = data.filter((d) => d.belowMin > 0);
+  const parts: string[] = [];
+  if (belowMin.length > 0) {
+    const total = belowMin.reduce((s, d) => s + d.belowMin, 0);
+    const top = belowMin.sort((a, b) => b.belowMin - a.belowMin)[0];
+    parts.push(`${total} סיורים יצאו מתחת למינימום מותג (פוטנציאל הפסד) — בעיקר "${top.label}" (${top.belowMin}).`);
+  }
+  if (lowOccupancy.length > 0) {
+    const top = lowOccupancy.sort((a, b) => (a.occupancyPct || 0) - (b.occupancyPct || 0))[0];
+    parts.push(`"${top.label}" ב-${top.occupancyPct?.toFixed(0)}% תפוסה — יש מקום לעוד לקוחות, שווה שיווק ממוקד.`);
+  }
+  if (parts.length === 0) {
+    return 'התפוסה סבירה בכל הסיורים. אין סיורים שיצאו מתחת למינימום.';
+  }
+  return parts.join(' ');
+}
+
+function generatePackageInsight(data: PackageSplit): string | null {
+  if (data.total === 0) return null;
+  const overallPct = (data.packageCount / data.total) * 100;
+  if (data.byTour.length === 0) return null;
+  const sorted = [...data.byTour].sort((a, b) => b.pkgPct - a.pkgPct);
+  const top = sorted[0];
+  const bottom = sorted[sorted.length - 1];
+  if (overallPct >= 60) {
+    return `${overallPct.toFixed(0)}% מהמשתתפים לקחו חבילה — ההנחה עובדת חזק. שווה לבדוק אם 5€ הנחה גבוהה מדי או שזה הופך לתחושה של "מבצע קבוע".`;
+  }
+  if (overallPct < 30) {
+    return `רק ${overallPct.toFixed(0)}% לקחו חבילה — ה-5€ הנחה לא מניעה מספיק. שווה לחזק את שיווק החבילה (אולי בקלאסי יציעו את הסיור הנוסף).`;
+  }
+  return `${overallPct.toFixed(0)}% חבילה. "${top.label}" הכי מוצלח לחבילה (${top.pkgPct.toFixed(0)}%), "${bottom.label}" הכי פחות (${bottom.pkgPct.toFixed(0)}%).`;
 }
 
 // ===========================================================================
