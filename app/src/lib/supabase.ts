@@ -51,6 +51,16 @@ export type Guide = {
   target_change_balance?: number;
   /** יעד חיזוק מעטפת הוצאות בסוף חודש. ברירת מחדל 150€. 0 = לא לחזק. */
   target_expenses_balance?: number;
+  /** מייל לכניסה (Magic Link) */
+  email?: string;
+  /** האם המדריך פעיל. אם false — לא יכול להיכנס למערכת */
+  is_active?: boolean;
+  /** יום הולדת בפורמט "MM-DD" */
+  birthday?: string | null;
+  /** זמינות קבועה (טקסט חופשי) */
+  availability_notes?: string | null;
+  /** חופשות עתידיות (טקסט חופשי) */
+  vacation_notes?: string | null;
 };
 
 export type Tour = {
