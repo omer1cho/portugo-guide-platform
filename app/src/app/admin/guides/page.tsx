@@ -13,7 +13,7 @@
  * + כפתור "הוסיפי מדריך" שפותח מודאל עם השדות הבסיסיים.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
 import { supabase } from '@/lib/supabase';
 
@@ -249,11 +249,19 @@ function GuideCard({
   const [form, setForm] = useState<GuideRow>(guide);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // אם guide משתנה (אחרי load מחדש), מסנכרנים את הטופס
   useEffect(() => {
     setForm(guide);
   }, [guide]);
+
+  // כשפותחים כרטיס — לגלול אליו ברכות, כדי שלא יוצר תחושת "קפיצה"
+  useEffect(() => {
+    if (isOpen && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isOpen]);
 
   async function save() {
     setSaving(true);
@@ -296,12 +304,14 @@ function GuideCard({
 
   return (
     <div
+      ref={cardRef}
       style={{
         background: '#fff',
         borderRadius: 12,
         boxShadow: '0 1px 3px rgba(0,0,0,.06)',
         border: `1px solid ${ADMIN_COLORS.gray100}`,
         overflow: 'hidden',
+        scrollMarginTop: 20,
       }}
     >
       {/* כותרת — תמיד מוצגת */}
@@ -369,8 +379,18 @@ function GuideCard({
             <Field label="הפרשה לפורטוגו לראש בקלאסי">
               <input type="number" step="1" value={form.classic_transfer_per_person} onChange={(e) => setForm({ ...form, classic_transfer_per_person: parseFloat(e.target.value) || 0 })} style={inputStyle} />
             </Field>
-            <Toggle label="חייב מע&quot;מ (23%)" checked={form.has_vat} onChange={(v) => setForm({ ...form, has_vat: v })} />
-            <Toggle label="רכיב ניהול חודשי" checked={form.has_mgmt_bonus} onChange={(v) => setForm({ ...form, has_mgmt_bonus: v })} />
+            <Toggle
+              label='חייב מע"מ (23%)'
+              hint='אם כן — 23% מתווסף לסכום הקבלה ולמשיכת המשכורת'
+              checked={form.has_vat}
+              onChange={(v) => setForm({ ...form, has_vat: v })}
+            />
+            <Toggle
+              label="רכיב ניהול חודשי"
+              hint="תוספת קבועה למשכורת בכל חודש (לדוגמה — מאיה מקבלת רכיב ניהול)"
+              checked={form.has_mgmt_bonus}
+              onChange={(v) => setForm({ ...form, has_mgmt_bonus: v })}
+            />
             {form.has_mgmt_bonus && (
               <Field label="סכום רכיב ניהול (€)">
                 <input type="number" step="1" value={form.mgmt_bonus_amount} onChange={(e) => setForm({ ...form, mgmt_bonus_amount: parseFloat(e.target.value) || 0 })} style={inputStyle} />
@@ -404,10 +424,20 @@ function GuideCard({
             </Field>
           </FormSection>
 
-          {/* 5. מנהלי */}
-          <FormSection title="⚙️ מנהלי">
-            <Toggle label="פעיל (יכול להיכנס למערכת)" checked={form.is_active} onChange={(v) => setForm({ ...form, is_active: v })} />
-            <Toggle label="אדמין (גישה לדשבורד ניהול)" checked={form.is_admin} onChange={(v) => setForm({ ...form, is_admin: v })} />
+          {/* 5. הגדרות */}
+          <FormSection title="⚙️ הגדרות">
+            <Toggle
+              label="פעיל"
+              hint="אם לא מסומן — המדריך לא יכול להיכנס לאפליקציה. ההיסטוריה שלו (סיורים, הוצאות) נשמרת"
+              checked={form.is_active}
+              onChange={(v) => setForm({ ...form, is_active: v })}
+            />
+            <Toggle
+              label="אדמין"
+              hint="גישה לדשבורד ניהול /admin (הצד הזה). מדריכים רגילים לא רואים את הדשבורד הזה"
+              checked={form.is_admin}
+              onChange={(v) => setForm({ ...form, is_admin: v })}
+            />
           </FormSection>
 
           {saveError && (
@@ -530,7 +560,12 @@ function AddGuideModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           <Field label="הפרשה לפורטוגו לראש בקלאסי">
             <input type="number" step="1" value={form.classic_transfer_per_person} onChange={(e) => setForm({ ...form, classic_transfer_per_person: parseFloat(e.target.value) || 0 })} style={inputStyle} />
           </Field>
-          <Toggle label="חייב מע&quot;מ" checked={form.has_vat} onChange={(v) => setForm({ ...form, has_vat: v })} />
+          <Toggle
+            label='חייב מע"מ (23%)'
+            hint="אפשר לעדכן גם בהמשך"
+            checked={form.has_vat}
+            onChange={(v) => setForm({ ...form, has_vat: v })}
+          />
         </FormSection>
 
         {saveError && (
@@ -589,11 +624,42 @@ function Field({
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ width: 16, height: 16, accentColor: ADMIN_COLORS.green800 }} />
-      <span style={{ color: ADMIN_COLORS.gray700 }}>{label}</span>
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        fontSize: 13,
+        cursor: 'pointer',
+        padding: '10px 12px',
+        background: checked ? ADMIN_COLORS.green50 : ADMIN_COLORS.gray50,
+        border: `1px solid ${checked ? ADMIN_COLORS.green800 : ADMIN_COLORS.gray300}`,
+        borderRadius: 6,
+        transition: 'all 150ms',
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ width: 18, height: 18, accentColor: ADMIN_COLORS.green800, marginTop: 1, flexShrink: 0 }}
+      />
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ color: ADMIN_COLORS.gray700, fontWeight: 500 }}>{label}</span>
+        {hint && <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>{hint}</span>}
+      </span>
     </label>
   );
 }
