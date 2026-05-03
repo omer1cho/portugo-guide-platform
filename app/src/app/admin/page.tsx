@@ -417,7 +417,7 @@ function MonthlyReceiptsReport({
                           {fmtEuro(g.salary.receipt_amount)}
                         </span>
                         <InlineConfirmButton
-                          label="✓ סמן.י כהוצאה"
+                          label="✓ סמן.י כהופקה"
                           confirmLabel="בטוח.ה?"
                           onConfirm={() => approveManually(g.guide.id)}
                         />
