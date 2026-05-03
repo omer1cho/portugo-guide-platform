@@ -26,7 +26,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'דשבורד ראשי', icon: '🏠' },
   { href: '/admin/guides', label: 'מדריכים', icon: '👥' },
-  { href: '/admin/customers', label: 'ניתוח לקוחות', icon: '📊', comingSoon: true },
+  { href: '/admin/customers', label: 'ניתוח לקוחות', icon: '📊' },
   { href: '/admin/shifts', label: 'מעקב משמרות', icon: '🗓️', comingSoon: true },
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
 ];
