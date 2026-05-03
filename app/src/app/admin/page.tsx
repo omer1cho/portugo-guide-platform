@@ -29,6 +29,7 @@ function AdminMainContent() {
   const cityFilter = (searchParams.get('city') as 'all' | 'lisbon' | 'porto') || 'all';
 
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
+  const [prevSnapshot, setPrevSnapshot] = useState<MonthSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadCounter, setReloadCounter] = useState(0);
@@ -37,9 +38,19 @@ function AdminMainContent() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    loadMonthSnapshot(year, month, { cityFilter })
-      .then((data) => {
-        if (!cancelled) setSnapshot(data);
+
+    // החודש הקודם — לחישוב השוואות
+    const prevY = month === 0 ? year - 1 : year;
+    const prevM = month === 0 ? 11 : month - 1;
+
+    Promise.all([
+      loadMonthSnapshot(year, month, { cityFilter }),
+      loadMonthSnapshot(prevY, prevM, { cityFilter }),
+    ])
+      .then(([current, prev]) => {
+        if (cancelled) return;
+        setSnapshot(current);
+        setPrevSnapshot(prev);
       })
       .catch((err) => {
         if (!cancelled) setError(err.message || 'משהו השתבש בטעינה');
@@ -53,6 +64,12 @@ function AdminMainContent() {
   }, [year, month, cityFilter, reloadCounter]);
 
   const handleReload = () => setReloadCounter((c) => c + 1);
+
+  // === Helpers להשוואה לחודש קודם ===
+  function pctChange(current: number, prev: number): number | null {
+    if (prev === 0) return current === 0 ? 0 : null; // לא מציגים אם הקודם 0 (אין בסיס)
+    return ((current - prev) / prev) * 100;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -107,53 +124,95 @@ function AdminMainContent() {
 
       {!loading && !error && snapshot && (
         <>
-          {/* KPIs עליונים */}
-          <section
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 16,
-            }}
-          >
-            <KpiCard label="סה״כ סיורים" value={snapshot.totals.tours} />
-            <KpiCard label="סה״כ משתתפים" value={snapshot.totals.people.toLocaleString('he-IL')} />
-            <KpiCard
-              label="סה״כ קופה (כל המדריכים)"
-              value={fmtEuro(snapshot.totals.cash_collected)}
-              sub="כסף שנאסף בסיורים"
-            />
-            <KpiCard
-              label="סה״כ הוצאות"
-              value={fmtEuro(snapshot.totals.expenses)}
-              variant="red"
-              sub="ששילמו המדריכים"
-            />
-            <KpiCard
-              label="סה״כ משכורות"
-              value={fmtEuro(snapshot.totals.salary_total_with_tips)}
-              sub="כולל טיפים"
-            />
-            <KpiCard
-              label="להעברה לפורטוגו"
-              value={fmtEuro(snapshot.totals.salary_to_pay)}
-              sub="מה שצריך לשלם בנטו"
-            />
-            {snapshot.totals.pending_total > 0 && (
+          {/* ─── שכבה 1: 🚨 Inbox — מה צריך תשומת לב עכשיו ─── */}
+          <InboxAlerts snapshot={snapshot} />
+
+          {/* ─── שכבה 2: 📊 Pulse — KPIs מרכזיים עם השוואה לחודש קודם ─── */}
+          <section>
+            <SectionHeader title="📊 איך אנחנו החודש" subtitle="השוואה לחודש הקודם" />
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 16,
+              }}
+            >
               <KpiCard
-                label="ממתין להפקדה (כל המדריכים)"
-                value={fmtEuro(snapshot.totals.pending_total)}
+                label="🎫 סיורים"
+                value={snapshot.totals.tours}
+                delta={prevSnapshot ? pctChange(snapshot.totals.tours, prevSnapshot.totals.tours) : null}
+                deltaLabel="מהחודש הקודם"
+                sub={prevSnapshot ? `קודם: ${prevSnapshot.totals.tours}` : undefined}
+              />
+              <KpiCard
+                label="👥 משתתפים"
+                value={snapshot.totals.people.toLocaleString('he-IL')}
+                delta={prevSnapshot ? pctChange(snapshot.totals.people, prevSnapshot.totals.people) : null}
+                deltaLabel="מהחודש הקודם"
+                sub={prevSnapshot ? `קודם: ${prevSnapshot.totals.people}` : undefined}
+              />
+              <KpiCard
+                label="🎯 ממוצע משתתפים פר סיור"
+                value={
+                  snapshot.totals.tours > 0
+                    ? Math.round(snapshot.totals.people / snapshot.totals.tours).toString()
+                    : '0'
+                }
+                delta={
+                  prevSnapshot && prevSnapshot.totals.tours > 0 && snapshot.totals.tours > 0
+                    ? pctChange(
+                        snapshot.totals.people / snapshot.totals.tours,
+                        prevSnapshot.totals.people / prevSnapshot.totals.tours,
+                      )
+                    : null
+                }
+                deltaLabel="מהחודש הקודם"
+                sub={
+                  snapshot.totals.tours > 0
+                    ? `${snapshot.totals.people} ÷ ${snapshot.totals.tours} = ${(snapshot.totals.people / snapshot.totals.tours).toFixed(1)}`
+                    : undefined
+                }
+              />
+              <KpiCard
+                label="💰 סה״כ קופה"
+                value={fmtEuro(snapshot.totals.cash_collected)}
+                delta={prevSnapshot ? pctChange(snapshot.totals.cash_collected, prevSnapshot.totals.cash_collected) : null}
+                deltaLabel="מהחודש הקודם"
+                sub="כסף שנאסף בסיורים"
+              />
+            </div>
+          </section>
+
+          {/* ─── שכבה 3: ✨ Highlights — תובנות אסטרטגיות ─── */}
+          <Highlights snapshot={snapshot} prevSnapshot={prevSnapshot} pctChange={pctChange} />
+
+          {/* ─── סקציה משנית: 💼 KPIs פיננסיים תפעוליים ─── */}
+          <section>
+            <SectionHeader title="💼 פיננסי" subtitle="להעברה ללא רווח/הפסד — מודל התמחור עוד בעבודה" />
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 16,
+              }}
+            >
+              <KpiCard
+                label="סה״כ משכורות"
+                value={fmtEuro(snapshot.totals.salary_total_with_tips)}
+                sub="כולל טיפים"
+              />
+              <KpiCard
+                label="להעברה לפורטוגו"
+                value={fmtEuro(snapshot.totals.salary_to_pay)}
+                sub="מה שצריך לשלם בנטו"
+              />
+              <KpiCard
+                label="הוצאות"
+                value={fmtEuro(snapshot.totals.expenses)}
                 variant="red"
-                sub="כסף שטרם הופקד פיזית"
+                sub="ששילמו המדריכים"
               />
-            )}
-            {snapshot.totals.missing_photos_total > 0 && (
-              <KpiCard
-                label="תמונות חסרות"
-                value={snapshot.totals.missing_photos_total}
-                variant="yellow"
-                sub="סיורים בלי תמונה"
-              />
-            )}
+            </div>
           </section>
 
           {/* סטטוס מדריכים */}
@@ -208,6 +267,253 @@ function AdminMainContent() {
         </>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 🚨 Inbox — alerts קצרים על דברים שצריכים תשומת לב מיידית
+// ---------------------------------------------------------------------------
+
+function InboxAlerts({ snapshot }: { snapshot: MonthSnapshot }) {
+  const alerts: { icon: string; text: string; color: 'red' | 'yellow' }[] = [];
+
+  // קבלות חסרות (מדריכים שהיה להם receipt_amount > 0 ואין ack)
+  const missingReceipts = snapshot.guides.filter(
+    (g) =>
+      g.salary.receipt_amount > 0 &&
+      (g.receipt_ack === null || g.receipt_ack.acknowledged_at === null),
+  );
+  if (missingReceipts.length > 0) {
+    alerts.push({
+      icon: '🧾',
+      text: `${missingReceipts.length} מדריכים לא הוציאו קבלה — סה״כ ${
+        missingReceipts.reduce((s, g) => s + g.salary.receipt_amount, 0).toFixed(0)
+      }€`,
+      color: 'red',
+    });
+  }
+
+  // הפקדות מחכות
+  if (snapshot.totals.pending_total > 0) {
+    const guidesWithPending = snapshot.guides.filter((g) => g.pending_total > 0).length;
+    alerts.push({
+      icon: '💰',
+      text: `${guidesWithPending} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toFixed(0)}€`,
+      color: 'red',
+    });
+  }
+
+  // תמונות חסרות
+  if (snapshot.totals.missing_photos_total > 0) {
+    alerts.push({
+      icon: '📷',
+      text: `${snapshot.totals.missing_photos_total} סיורים בלי תמונה`,
+      color: 'yellow',
+    });
+  }
+
+  // מדריכים פתוחים — עבדו ולא סגרו את החודש (open status)
+  if (snapshot.totals.open_count > 0) {
+    alerts.push({
+      icon: '⏳',
+      text: `${snapshot.totals.open_count} מדריכים עוד לא סגרו את החודש`,
+      color: 'yellow',
+    });
+  }
+
+  if (alerts.length === 0) return null;
+
+  return (
+    <section>
+      <h2
+        style={{
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#991b1b',
+          margin: '0 0 10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        🚨 צריך תשומת לב
+      </h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {alerts.map((a, i) => {
+          const bg = a.color === 'red' ? '#fee2e2' : '#fef9c3';
+          const border = a.color === 'red' ? '#fca5a5' : '#fde047';
+          const fg = a.color === 'red' ? '#991b1b' : '#854d0e';
+          return (
+            <div
+              key={i}
+              style={{
+                background: bg,
+                border: `1px solid ${border}`,
+                color: fg,
+                padding: '10px 14px',
+                borderRadius: 8,
+                fontSize: 14,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{a.icon}</span>
+              <span style={{ flex: 1 }}>{a.text}</span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ✨ Highlights — תובנות אסטרטגיות אוטומטיות
+// ---------------------------------------------------------------------------
+
+function Highlights({
+  snapshot,
+  prevSnapshot,
+  pctChange,
+}: {
+  snapshot: MonthSnapshot;
+  prevSnapshot: MonthSnapshot | null;
+  pctChange: (current: number, prev: number) => number | null;
+}) {
+  // 1. המדריך המוביל (ממוצע משתתפים פר סיור הכי גבוה — מאשר לפחות 2 סיורים)
+  const guideStats = snapshot.guides
+    .filter((g) => g.tours_count >= 2)
+    .map((g) => ({
+      name: g.guide.name,
+      avgPerTour: g.people_count / g.tours_count,
+      tours: g.tours_count,
+      people: g.people_count,
+    }))
+    .sort((a, b) => b.avgPerTour - a.avgPerTour);
+  const topGuide = guideStats[0];
+
+  // 2-3. סוגי סיור — ממוצע משתתפים פר סיור (להזדהות מוביל וחלש)
+  const byTourType = new Map<string, { tours: number; people: number }>();
+  for (const g of snapshot.guides) {
+    // אין לנו פירוט פר סיור פר סוג ב-snapshot. נשתמש בtours_count + people_count לכל מדריך,
+    // אבל זה לא יודע סוגים. במקום, נשתמש ב-classic vs non-classic מסיכום השכר:
+    // (לא הכי מדויק, אבל הכי קרוב למידע שיש לנו ב-snapshot.)
+    // אם יש סיורים — ממוצע פר מדריך
+    if (g.tours_count > 0) {
+      // נחלק לפי קלאסי vs כל השאר על בסיס classic_people
+      const classicPeople = g.salary.classic_people;
+      const otherPeople = g.people_count - classicPeople;
+      const classicCollected = g.salary.classic_collected;
+      void classicCollected;
+      void otherPeople;
+    }
+  }
+  void byTourType;
+
+  // 4. מגמה כללית — האם החודש טוב יותר מהקודם?
+  let trendText = '';
+  let trendColor: string = ADMIN_COLORS.gray700;
+  if (prevSnapshot) {
+    const toursPct = pctChange(snapshot.totals.tours, prevSnapshot.totals.tours);
+    const peoplePct = pctChange(snapshot.totals.people, prevSnapshot.totals.people);
+    if (toursPct !== null && peoplePct !== null) {
+      if (toursPct > 0 && peoplePct > 0) {
+        trendText = `מגמה חיובית — סיורים +${toursPct.toFixed(0)}%, משתתפים +${peoplePct.toFixed(0)}%. צמיחה!`;
+        trendColor = '#15803d';
+      } else if (toursPct < 0 && peoplePct < 0) {
+        trendText = `ירידה — סיורים ${toursPct.toFixed(0)}%, משתתפים ${peoplePct.toFixed(0)}%. שווה לחקור.`;
+        trendColor = '#b91c1c';
+      } else {
+        trendText = `מעורב — סיורים ${toursPct >= 0 ? '+' : ''}${toursPct.toFixed(0)}%, משתתפים ${peoplePct >= 0 ? '+' : ''}${peoplePct.toFixed(0)}%.`;
+        trendColor = '#a37b00';
+      }
+    }
+  }
+
+  // 5. סיור עם תפוסה ממוצעת הכי גבוהה / נמוכה
+  // נחשב ממוצע משתתפים פר סיור ומשווה למינימום מותג של אותו סיור
+  // (קיבולות מתוך סקיל התמחור - ראה /admin/customers TOUR_CAPACITY)
+  // למניעת כפל קוד, נציג רק טקסט פשוט בהליילייטס.
+
+  const cards: { icon: string; title: string; text: string; color?: string }[] = [];
+
+  if (topGuide) {
+    cards.push({
+      icon: '🌟',
+      title: 'המדריך המוביל',
+      text: `${topGuide.name} — ממוצע ${topGuide.avgPerTour.toFixed(1)} אנשים פר סיור (${topGuide.tours} סיורים, ${topGuide.people} משתתפים סה״כ).`,
+    });
+  }
+
+  if (trendText) {
+    cards.push({
+      icon: '📈',
+      title: 'מגמה כללית',
+      text: trendText,
+      color: trendColor,
+    });
+  }
+
+  // ממוצע משתתפים פר סיור — מול חודש קודם
+  if (prevSnapshot && snapshot.totals.tours > 0 && prevSnapshot.totals.tours > 0) {
+    const currentAvg = snapshot.totals.people / snapshot.totals.tours;
+    const prevAvg = prevSnapshot.totals.people / prevSnapshot.totals.tours;
+    const diff = currentAvg - prevAvg;
+    if (Math.abs(diff) > 0.5) {
+      cards.push({
+        icon: diff > 0 ? '✅' : '⚠️',
+        title: diff > 0 ? 'הסיורים מתמלאים יותר' : 'הסיורים מתמלאים פחות',
+        text: `ממוצע משתתפים פר סיור: ${currentAvg.toFixed(1)} (חודש קודם: ${prevAvg.toFixed(1)}, ${diff > 0 ? '+' : ''}${diff.toFixed(1)}).`,
+        color: diff > 0 ? '#15803d' : '#b91c1c',
+      });
+    }
+  }
+
+  // מדריכים שעבדו אבל לא סיימו אישור קבלה — תזכורת אסטרטגית
+  const notClosedAndOverdue = snapshot.guides.filter(
+    (g) => g.tours_count > 0 && g.status === 'open',
+  );
+  if (notClosedAndOverdue.length > 0) {
+    cards.push({
+      icon: '⏳',
+      title: 'מדריכים שעוד לא סגרו',
+      text: `${notClosedAndOverdue.length} מדריכים — ${notClosedAndOverdue.map((g) => g.guide.name).slice(0, 3).join(', ')}${notClosedAndOverdue.length > 3 ? '...' : ''}`,
+    });
+  }
+
+  if (cards.length === 0) return null;
+
+  return (
+    <section>
+      <SectionHeader title="✨ היילייטס" subtitle="התובנות החשובות של החודש" />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 12,
+        }}
+      >
+        {cards.map((c, i) => (
+          <div
+            key={i}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+              borderRight: `4px solid ${c.color || ADMIN_COLORS.green700}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 18 }}>{c.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: c.color || ADMIN_COLORS.green800 }}>{c.title}</span>
+            </div>
+            <div style={{ fontSize: 13, color: ADMIN_COLORS.gray700, lineHeight: 1.5 }}>{c.text}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
