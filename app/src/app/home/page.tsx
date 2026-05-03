@@ -863,6 +863,12 @@ function HomeContent() {
                                 : t.tips > 0
                                   ? `בסיס ${t.base.toFixed(0)}€ + טיפ ${t.tips.toFixed(0)}€`
                                   : `${t.base.toFixed(0)}€`;
+                            // הצגת משתתפים: אם יש ילדים — ציון מפורש (קריטי לקלאסי
+                            // כי ילדים לא משלמים → לא נכנסים ל-transfer ול-base tier)
+                            const peopleLabel =
+                              t.kids > 0
+                                ? `${t.people} משתתפים (כולל ${t.kids === 1 ? 'ילד' : `${t.kids} ילדים`})`
+                                : `${t.people} משתתפים`;
                             return (
                               <li
                                 key={idx}
@@ -874,7 +880,7 @@ function HomeContent() {
                                 <span className="flex-1 min-w-0">
                                   <div className="text-gray-700 truncate">{t.tour_type}</div>
                                   <div className="text-[11px] text-gray-500">
-                                    {t.people} משתתפים · {detail}
+                                    {peopleLabel} · {detail}
                                   </div>
                                 </span>
                                 <span className="font-semibold text-green-800 shrink-0">

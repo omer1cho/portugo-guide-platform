@@ -81,6 +81,8 @@ export type PerTourSalary = {
   tour_type: string;
   category: 'classic' | 'fixed' | 'private' | 'other';
   people: number;
+  /** ילדים — חשוב במיוחד לקלאסי כי ילדים לא משלמים, ה-paying = people - kids */
+  kids: number;
   /** שכר בסיס: לקלאסי = base לפי tier; לאחרים = שכר קבוע מהנוסחה */
   base: number;
   /** קלאסי בלבד: כסף שעובר לפורטוגו (paying × rate). 0 בשאר */
@@ -113,6 +115,7 @@ export function calculatePerTourBreakdown(
         tour_type: tour.tour_type,
         category: 'classic',
         people: totalPeople,
+        kids: totalKids,
         base,
         transfer,
         tips,
@@ -126,6 +129,7 @@ export function calculatePerTourBreakdown(
         tour_type: tour.tour_type,
         category: 'private',
         people: totalPeople,
+        kids: totalKids,
         base,
         transfer: 0,
         tips: totalTip,
@@ -139,6 +143,7 @@ export function calculatePerTourBreakdown(
       tour_type: tour.tour_type,
       category: tour.category === 'fixed' ? 'fixed' : 'other',
       people: totalPeople,
+      kids: totalKids,
       base,
       transfer: 0,
       tips: totalTip,
