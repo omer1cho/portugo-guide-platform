@@ -387,7 +387,7 @@ function GuideCard({
             />
             <Toggle
               label="רכיב ניהול חודשי"
-              hint="תוספת קבועה למשכורת בכל חודש (לדוגמה — מאיה מקבלת רכיב ניהול)"
+              hint="תוספת קבועה למשכורת בכל חודש"
               checked={form.has_mgmt_bonus}
               onChange={(v) => setForm({ ...form, has_mgmt_bonus: v })}
             />
@@ -643,18 +643,21 @@ function Toggle({
         gap: 10,
         fontSize: 13,
         cursor: 'pointer',
-        padding: '10px 12px',
-        background: checked ? ADMIN_COLORS.green50 : ADMIN_COLORS.gray50,
-        border: `1px solid ${checked ? ADMIN_COLORS.green800 : ADMIN_COLORS.gray300}`,
-        borderRadius: 6,
-        transition: 'all 150ms',
+        padding: '4px 0',
       }}
     >
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        style={{ width: 18, height: 18, accentColor: ADMIN_COLORS.green800, marginTop: 1, flexShrink: 0 }}
+        style={{
+          width: 18,
+          height: 18,
+          accentColor: ADMIN_COLORS.green800,
+          marginTop: 1,
+          flexShrink: 0,
+          cursor: 'pointer',
+        }}
       />
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ color: ADMIN_COLORS.gray700, fontWeight: 500 }}>{label}</span>
