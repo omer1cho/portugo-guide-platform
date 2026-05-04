@@ -79,14 +79,29 @@ export async function loadShiftsForWeek(weekStart: Date, cityFilter: 'all' | 'li
 
 /** טוען את כל המדריכים הפעילים (לשימוש ב-dropdown) */
 export async function loadAvailableGuides(): Promise<Guide[]> {
-  const { data, error } = await supabase
+  const SAFE = 'id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person';
+  const FULL = `${SAFE}, vacations`;
+
+  // ננסה עם vacations; אם העמודה לא קיימת ב-DB עדיין — נחזור בלי שהדף ייקרס
+  const first = await supabase
     .from('guides')
-    .select('id, name, city, is_admin, is_active, availability_notes, vacation_notes, vacations, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person')
+    .select(FULL)
     .eq('is_active', true)
     .eq('is_admin', false)
     .order('name');
-  if (error) throw error;
-  return (data || []) as Guide[];
+  if (!first.error) return (first.data || []) as Guide[];
+
+  if (first.error.message?.toLowerCase().includes('vacations')) {
+    const fallback = await supabase
+      .from('guides')
+      .select(SAFE)
+      .eq('is_active', true)
+      .eq('is_admin', false)
+      .order('name');
+    if (fallback.error) throw fallback.error;
+    return (fallback.data || []) as Guide[];
+  }
+  throw first.error;
 }
 
 /** האם מדריך בחופש בתאריך נתון? */
