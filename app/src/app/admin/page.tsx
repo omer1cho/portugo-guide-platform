@@ -138,6 +138,7 @@ function AdminMainContent() {
             snapshot={snapshot}
             isCurrentMonth={year === now.getFullYear() && month === now.getMonth()}
             outstandingReceipts={outstandingReceipts}
+            onChange={handleReload}
           />
 
           {/* ─── שכבה 2: 📊 Pulse — KPIs מרכזיים עם השוואה לחודש קודם ─── */}
@@ -269,19 +270,8 @@ function AdminMainContent() {
             </section>
           )}
 
-          {/* דוח קבלות חודשיות — חוצה-חודשים, מציג רק אם יש קבלות חסרות מחודשים שהסתיימו */}
-          {outstandingReceipts.length > 0 && (
-            <section id="section-receipts">
-              <MonthlyReceiptsReport outstanding={outstandingReceipts} onChange={handleReload} />
-            </section>
-          )}
-
-          {/* דוח הפקדות שמחכות — מתקפל, מציג רק אם יש מדריכים עם סכום ממתין */}
-          {snapshot.totals.pending_total > 0 && (
-            <section id="section-pending-deposits">
-              <PendingDepositsReport snapshot={snapshot} onChange={handleReload} />
-            </section>
-          )}
+          {/* דוחות קבלות + הפקדות — מוטמעים inline ב-InboxAlerts למעלה.
+              לא נדרשת סקציה נפרדת כאן (הוסרה כדי למנוע כפילות). */}
 
           {/* טבלת סיכום משכורות */}
           {snapshot.guides.length > 0 && (
@@ -407,20 +397,35 @@ function InboxAlerts({
   snapshot,
   isCurrentMonth,
   outstandingReceipts,
+  onChange,
 }: {
   snapshot: MonthSnapshot;
   isCurrentMonth: boolean;
   outstandingReceipts: OutstandingReceipt[];
+  onChange: () => void;
 }) {
-  const alerts: { icon: string; text: string; color: 'red' | 'yellow'; targetId: string }[] = [];
+  // איזה alert פתוח כרגע (אם יש). null = כולם סגורים.
+  // עבור receipts/pending — פתיחה מציגה רשימה inline מתחת לכותרת.
+  // עבור photos/open — פתיחה גוללת לסקציה הקיימת למטה (תוכן מורכב יותר).
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  // קבלות חסרות — חוצה-חודשים, לא תלוי בחודש הנבחר
+  type AlertKind = 'receipts' | 'pending' | 'photos' | 'open';
+  type Alert = {
+    kind: AlertKind;
+    icon: string;
+    text: string;
+    color: 'red' | 'yellow';
+    /** אם הוגדר — לחיצה גוללת לסקציה (תוכן מורכב, לא inline) */
+    scrollTarget?: string;
+    /** אם הוגדר — לחיצה פותחת/סוגרת אקורדיון inline */
+    inlineContent?: React.ReactNode;
+  };
+  const alerts: Alert[] = [];
+
+  // קבלות חסרות — חוצה-חודשים
   if (outstandingReceipts.length > 0) {
     const totalAmount = outstandingReceipts.reduce((s, o) => s + o.receipt_amount, 0);
-    // סופרים מדריכים יחודיים (ייתכן ולמדריך אחד יש כמה חודשים פתוחים)
     const uniqueGuides = new Set(outstandingReceipts.map((o) => o.guide.id)).size;
-    // סופרים חודשים יחודיים. אם יש רק חודש אחד — להציג את שמו במפורש
-    // ("4 קבלות חסרות על אפריל"), אחרת לתת ספירה ("4 קבלות חסרות מ-2 חודשים")
     const uniqueMonths = new Set(outstandingReceipts.map((o) => `${o.year}-${o.month}`));
     let scope: string;
     if (uniqueMonths.size === 1) {
@@ -430,50 +435,61 @@ function InboxAlerts({
       scope = `מ-${uniqueMonths.size} חודשים`;
     }
     alerts.push({
+      kind: 'receipts',
       icon: '🧾',
       text: `${uniqueGuides} מדריכים לא הוציאו קבלה ${scope} — סה״כ ${totalAmount.toFixed(0)}€`,
       color: 'red',
-      targetId: 'section-receipts',
+      inlineContent: (
+        <ReceiptsInlineList outstanding={outstandingReceipts} onChange={onChange} />
+      ),
     });
   }
 
   // הפקדות מחכות
   if (snapshot.totals.pending_total > 0) {
-    const guidesWithPending = snapshot.guides.filter((g) => g.pending_total > 0).length;
+    const guidesWithPending = snapshot.guides.filter((g) => g.pending_total > 0);
     alerts.push({
+      kind: 'pending',
       icon: '💰',
-      text: `${guidesWithPending} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toFixed(0)}€`,
+      text: `${guidesWithPending.length} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toFixed(0)}€`,
       color: 'red',
-      targetId: 'section-pending-deposits',
+      inlineContent: (
+        <PendingInlineList guides={guidesWithPending} onChange={onChange} />
+      ),
     });
   }
 
-  // תמונות חסרות
+  // תמונות חסרות — נשאר scroll (תוכן מורכב יותר)
   if (snapshot.totals.missing_photos_total > 0) {
     alerts.push({
+      kind: 'photos',
       icon: '📷',
       text: `${snapshot.totals.missing_photos_total} סיורים בלי תמונה`,
       color: 'yellow',
-      targetId: 'section-missing-photos',
+      scrollTarget: 'section-missing-photos',
     });
   }
 
-  // מדריכים פתוחים — עבדו ולא סגרו את החודש (open status)
-  // מציג רק לחודשים שכבר הסתיימו (בחודש הנוכחי "פתוח" זה מצב תקין)
+  // מדריכים פתוחים — נשאר scroll
   if (!isCurrentMonth && snapshot.totals.open_count > 0) {
     alerts.push({
+      kind: 'open',
       icon: '⏳',
       text: `${snapshot.totals.open_count} מדריכים עוד לא סגרו את החודש`,
       color: 'yellow',
-      targetId: 'section-open-guides',
+      scrollTarget: 'section-open-guides',
     });
   }
 
   if (alerts.length === 0) return null;
 
-  function scrollToSection(id: string) {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  function handleClick(a: Alert) {
+    if (a.inlineContent) {
+      setExpanded((curr) => (curr === a.kind ? null : a.kind));
+    } else if (a.scrollTarget) {
+      const el = document.getElementById(a.scrollTarget);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   return (
@@ -492,46 +508,187 @@ function InboxAlerts({
         🚨 צריך תשומת לב
       </h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {alerts.map((a, i) => {
+        {alerts.map((a) => {
           const bg = a.color === 'red' ? '#fee2e2' : '#fef9c3';
           const border = a.color === 'red' ? '#fca5a5' : '#fde047';
           const fg = a.color === 'red' ? '#991b1b' : '#854d0e';
+          const isOpen = expanded === a.kind;
+          const isAccordion = !!a.inlineContent;
           return (
-            <button
-              key={i}
-              onClick={() => scrollToSection(a.targetId)}
+            <div
+              key={a.kind}
               style={{
                 background: bg,
                 border: `1px solid ${border}`,
-                color: fg,
-                padding: '10px 14px',
                 borderRadius: 8,
-                fontSize: 14,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                textAlign: 'right',
-                width: '100%',
-                transition: 'background 150ms',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  a.color === 'red' ? '#fecaca' : '#fef08a';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = bg;
+                overflow: 'hidden',
               }}
             >
-              <span style={{ fontSize: 18 }}>{a.icon}</span>
-              <span style={{ flex: 1 }}>{a.text}</span>
-              <span style={{ fontSize: 12, opacity: 0.7 }}>← לפירוט</span>
-            </button>
+              <button
+                onClick={() => handleClick(a)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: fg,
+                  padding: '10px 14px',
+                  fontSize: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  textAlign: 'right',
+                  width: '100%',
+                  transition: 'background 150ms',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    a.color === 'red' ? '#fecaca' : '#fef08a';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                <span style={{ fontSize: 18 }}>{a.icon}</span>
+                <span style={{ flex: 1 }}>{a.text}</span>
+                <span style={{ fontSize: 12, opacity: 0.7 }}>
+                  {isAccordion ? (isOpen ? '▲ סגרי' : '▼ הצג.י פירוט') : '← לפירוט'}
+                </span>
+              </button>
+              {isAccordion && isOpen && (
+                <div style={{ background: '#fff', padding: '12px 14px', borderTop: `1px solid ${border}` }}>
+                  {a.inlineContent}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
     </section>
+  );
+}
+
+// ─── רשימת קבלות שלא הוצאו (להצגה inline ב-Inbox) ───
+function ReceiptsInlineList({
+  outstanding,
+  onChange,
+}: {
+  outstanding: OutstandingReceipt[];
+  onChange: () => void;
+}) {
+  async function approveManually(guideId: string, year: number, month: number) {
+    const { error } = await supabase.from('receipt_acknowledgements').insert({
+      guide_id: guideId,
+      year,
+      month: month + 1,
+    });
+    if (error) {
+      alert('משהו השתבש: ' + error.message);
+      return;
+    }
+    onChange();
+  }
+
+  return (
+    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {outstanding.map((o) => (
+        <li
+          key={`${o.guide.id}-${o.year}-${o.month}`}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 12px',
+            background: '#fef2f2',
+            borderRadius: 6,
+            fontSize: 14,
+            color: ADMIN_COLORS.gray700,
+          }}
+        >
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontWeight: 600 }}>{o.guide.name}</span>
+            <span style={{ fontSize: 12, color: ADMIN_COLORS.gray500 }}>
+              {monthName(o.year, o.month)}
+            </span>
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {o.admin_notified_at && (
+              <span style={{ fontSize: 11, color: '#a37b00' }}>📨 נשלחה התראה</span>
+            )}
+            <span style={{ color: '#991b1b', fontWeight: 600 }}>
+              {fmtEuro(o.receipt_amount)}
+            </span>
+            <InlineConfirmButton
+              label="✓ סמן.י כהופקה"
+              confirmLabel="בטוח.ה?"
+              onConfirm={() => approveManually(o.guide.id, o.year, o.month)}
+            />
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ─── רשימת הפקדות שמחכות (להצגה inline ב-Inbox) ───
+function PendingInlineList({
+  guides,
+  onChange,
+}: {
+  guides: MonthSnapshot['guides'];
+  onChange: () => void;
+}) {
+  const sorted = [...guides].sort((a, b) => b.pending_total - a.pending_total);
+
+  async function settleManually(guideId: string) {
+    const { error } = await supabase
+      .from('transfers')
+      .update({ is_pending_deposit: false })
+      .eq('guide_id', guideId)
+      .eq('transfer_type', 'to_portugo')
+      .eq('is_pending_deposit', true);
+    if (error) {
+      alert('משהו השתבש: ' + error.message);
+      return;
+    }
+    onChange();
+  }
+
+  return (
+    <>
+      <div style={{ fontSize: 12, color: ADMIN_COLORS.gray500, marginBottom: 8 }}>
+        סכומים שצריכים להיכנס לחשבון פורטוגו (מצטבר על פני חודשים)
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {sorted.map((g) => (
+          <li
+            key={g.guide.id}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '8px 12px',
+              background: '#fef2f2',
+              borderRadius: 6,
+              fontSize: 14,
+              color: ADMIN_COLORS.gray700,
+            }}
+          >
+            <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: '#991b1b', fontWeight: 600 }}>
+                {fmtEuro(g.pending_total)}
+              </span>
+              <InlineConfirmButton
+                label="✓ סמן.י כהופקד"
+                confirmLabel="בטוח.ה?"
+                onConfirm={() => settleManually(g.guide.id)}
+              />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -784,235 +941,6 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// דוח קבלות חודשיות — מי הוציא ומי לא, עם קישור לאסמכתא
-// ---------------------------------------------------------------------------
-
-function MonthlyReceiptsReport({
-  outstanding,
-  onChange,
-}: {
-  outstanding: OutstandingReceipt[];
-  onChange: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  // אישור ידני: יוצר שורה ב-receipt_acknowledgements ללא receipt_url
-  // (המשמעות: עומר אישרה שהמדריך הוציא קבלה מחוץ למערכת — אין תמונה)
-  async function approveManually(guideId: string, year: number, month: number) {
-    const { error } = await supabase.from('receipt_acknowledgements').insert({
-      guide_id: guideId,
-      year,
-      month: month + 1, // ל-DB 1-indexed
-    });
-    if (error) {
-      alert('משהו השתבש: ' + error.message);
-      return;
-    }
-    onChange();
-  }
-
-  if (outstanding.length === 0) return null;
-
-  const totalAmount = outstanding.reduce((s, o) => s + o.receipt_amount, 0);
-
-  return (
-    <div
-      style={{
-        background: '#fff',
-        borderRadius: 12,
-        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
-        border: '1px solid #fecaca',
-      }}
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: '100%',
-          padding: '14px 16px',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          textAlign: 'right',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}
-      >
-        <span style={{ fontSize: 16, fontWeight: 600, color: '#991b1b' }}>
-          🧾 קבלות שלא הוצאו ({outstanding.length} · {fmtEuro(totalAmount)})
-        </span>
-        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
-          {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
-        </span>
-      </button>
-      {open && (
-        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fecaca' }}>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray500, marginBottom: 8 }}>
-              קבלות מחודשים שהסתיימו — מציג רק חודשים קודמים, לא את החודש הנוכחי
-            </div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {outstanding.map((o) => (
-                <li
-                  key={`${o.guide.id}-${o.year}-${o.month}`}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '8px 12px',
-                    background: '#fef2f2',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    color: ADMIN_COLORS.gray700,
-                  }}
-                >
-                  <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontWeight: 600 }}>{o.guide.name}</span>
-                    <span style={{ fontSize: 12, color: ADMIN_COLORS.gray500 }}>
-                      {monthName(o.year, o.month)}
-                    </span>
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {o.admin_notified_at && (
-                      <span style={{ fontSize: 11, color: '#a37b00' }}>📨 נשלחה התראה</span>
-                    )}
-                    <span style={{ color: '#991b1b', fontWeight: 600 }}>
-                      {fmtEuro(o.receipt_amount)}
-                    </span>
-                    <InlineConfirmButton
-                      label="✓ סמן.י כהופקה"
-                      confirmLabel="בטוח.ה?"
-                      onConfirm={() => approveManually(o.guide.id, o.year, o.month)}
-                    />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// דוח הפקדות שמחכות — מי לא הפקיד עדיין, חוצה חודשים
-// ---------------------------------------------------------------------------
-
-function PendingDepositsReport({
-  snapshot,
-  onChange,
-}: {
-  snapshot: MonthSnapshot;
-  onChange: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const guidesWithPending = snapshot.guides
-    .filter((g) => g.pending_total > 0)
-    .sort((a, b) => b.pending_total - a.pending_total);
-
-  if (guidesWithPending.length === 0) return null;
-
-  // שחרור ידני של הפקדה: מסמן את כל ה-pending של המדריך כ-"הופקד" בלי אסמכתא
-  async function settleManually(guideId: string) {
-    const { error } = await supabase
-      .from('transfers')
-      .update({ is_pending_deposit: false })
-      .eq('guide_id', guideId)
-      .eq('transfer_type', 'to_portugo')
-      .eq('is_pending_deposit', true);
-    if (error) {
-      alert('משהו השתבש: ' + error.message);
-      return;
-    }
-    onChange();
-  }
-
-  return (
-    <div
-      style={{
-        background: '#fff',
-        borderRadius: 12,
-        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
-        border: '1px solid #fecaca',
-      }}
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: '100%',
-          padding: '14px 16px',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          textAlign: 'right',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}
-      >
-        <span style={{ fontSize: 16, fontWeight: 600, color: '#991b1b' }}>
-          💰 הפקדות מחכות ({guidesWithPending.length} מדריכים · {fmtEuro(snapshot.totals.pending_total)})
-        </span>
-        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
-          {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
-        </span>
-      </button>
-      {open && (
-        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fecaca' }}>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray500, marginBottom: 8 }}>
-              סכומים שצריכים להיכנס לחשבון פורטוגו (מצטבר על פני חודשים)
-            </div>
-            <ul
-              style={{
-                listStyle: 'none',
-                padding: 0,
-                margin: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-              }}
-            >
-              {guidesWithPending.map((g) => (
-                <li
-                  key={g.guide.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '8px 12px',
-                    background: '#fef2f2',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    color: ADMIN_COLORS.gray700,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ color: '#991b1b', fontWeight: 600 }}>
-                      {fmtEuro(g.pending_total)}
-                    </span>
-                    <InlineConfirmButton
-                      label="✓ סמן.י כהופקד"
-                      confirmLabel="בטוח.ה?"
-                      onConfirm={() => settleManually(g.guide.id)}
-                    />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // כפתור עם אישור inline — לחיצה ראשונה הופכת לשני כפתורים (אישור/ביטול),
