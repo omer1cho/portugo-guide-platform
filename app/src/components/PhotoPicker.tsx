@@ -15,6 +15,8 @@ type Props = {
   className?: string;
   /** מצב ישן — אם true, מציג רק כפתור מצלמה (לא בשימוש כרגע, נשאר ל-tabbed compat) */
   cameraOnly?: boolean;
+  /** אם true — כפתור הגלריה מקבל גם PDF, ובתצוגה המקדימה תוצג כרטיסיית קובץ במקום img */
+  acceptPdf?: boolean;
 };
 
 /**
@@ -30,13 +32,16 @@ export default function PhotoPicker({
   onChange,
   value,
   className = '',
+  acceptPdf = false,
 }: Props) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const isPdf = !!value && value.type === 'application/pdf';
+
   useEffect(() => {
-    if (!value) {
+    if (!value || value.type === 'application/pdf') {
       setPreviewUrl(null);
       return;
     }
@@ -74,12 +79,42 @@ export default function PhotoPicker({
       <input
         ref={galleryRef}
         type="file"
-        accept="image/*"
+        accept={acceptPdf ? 'image/*,application/pdf' : 'image/*'}
         onChange={handleSelect}
         className="hidden"
       />
 
-      {previewUrl ? (
+      {value && isPdf ? (
+        <div className="relative inline-block w-full">
+          <div className="w-full bg-red-50 border-2 border-red-200 rounded-lg p-4 flex items-center gap-3">
+            <span className="text-4xl">📄</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-gray-900 truncate">
+                {value.name}
+              </div>
+              <div className="text-xs text-gray-500">
+                PDF · {(value.size / 1024).toFixed(0)} KB
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <button
+              type="button"
+              onClick={handleReplace}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-lg py-2 text-sm font-medium"
+            >
+              ↻ החלף.י
+            </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="px-4 bg-red-50 hover:bg-red-100 active:scale-98 transition-all text-red-700 rounded-lg py-2 text-sm font-medium"
+            >
+              הסר.י
+            </button>
+          </div>
+        </div>
+      ) : previewUrl ? (
         <div className="relative inline-block w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

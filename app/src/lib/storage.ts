@@ -180,18 +180,24 @@ export async function uploadMonthlyReceipt(opts: {
   receiptYear: number;
   receiptMonth: number; // 1-12
 }): Promise<string> {
-  const compressed = await compressImage(opts.file);
+  const isPdf = opts.file.type === 'application/pdf';
+  // PDF — להעלות כמו שהוא (אסמכתא חשבונאית, לא לדחוס).
+  // תמונה — לדחוס לפני העלאה.
+  const payload = isPdf ? opts.file : await compressImage(opts.file);
+  const ext = isPdf ? 'pdf' : 'jpg';
+  const contentType = isPdf ? 'application/pdf' : 'image/jpeg';
+
   const today = new Date();
   const uploadYear = today.getFullYear();
   const uploadMonthIdx = today.getMonth(); // 0-11
   const mm = String(uploadMonthIdx + 1).padStart(2, '0');
   const folderMonth = `${mm}-${EN_MONTH_SLUGS[uploadMonthIdx]}`;
   const periodMm = String(opts.receiptMonth).padStart(2, '0');
-  const path = `${uploadYear}/${folderMonth}/${opts.guideId}_for_${opts.receiptYear}-${periodMm}.jpg`;
+  const path = `${uploadYear}/${folderMonth}/${opts.guideId}_for_${opts.receiptYear}-${periodMm}.${ext}`;
 
   const { error } = await supabase.storage
     .from('monthly-receipts')
-    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    .upload(path, payload, { upsert: true, contentType });
 
   if (error) throw error;
 

@@ -1086,7 +1086,7 @@ function HomeContent() {
               <label className="block text-sm font-semibold mb-2">
                 צרף.י קבלה <span className="text-red-600">*</span>
               </label>
-              <PhotoPicker value={receiptFile} onChange={setReceiptFile} label="" emoji="" />
+              <PhotoPicker value={receiptFile} onChange={setReceiptFile} label="" emoji="" acceptPdf />
             </div>
 
             {receiptError && (
