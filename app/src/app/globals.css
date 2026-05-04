@@ -58,3 +58,57 @@ input[type="number"]::-webkit-outer-spin-button {
 select {
   background-position: left 0.5rem center;
 }
+
+/* ===================================================================
+   Admin dashboard — mobile responsive overrides
+   הסיידבר נסתר במובייל ונפתח דרך כפתור hamburger.
+   ה-overrides דורסים את ה-inline styles עם !important.
+   =================================================================== */
+@media (max-width: 767px) {
+  /* Sidebar — נסתר כברירת מחדל, מוצג כשפתוח.
+     משתמש ב-visibility+opacity בלי transition כי transition על
+     position/transform עם יחידות תלויות רוחב מתנהג בצורה מוזרה
+     (Chromium quirk שמשאיר אנימציה תקועה). */
+  aside[data-admin-sidebar] {
+    width: min(280px, 85vw) !important;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 150ms ease, visibility 0s linear 150ms;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+  }
+  aside[data-admin-sidebar][data-open="true"] {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 150ms ease, visibility 0s linear 0s;
+  }
+  /* Overlay fade */
+  div[data-admin-overlay] {
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  div[data-admin-overlay][data-visible="true"] {
+    opacity: 1;
+  }
+
+  /* Main content — בלי marginRight, padding מצומצם */
+  main[data-admin-main] {
+    margin-right: 0 !important;
+    padding: 16px !important;
+    padding-top: 64px !important; /* מקום לכפתור hamburger */
+  }
+
+  /* Hamburger — מוצג */
+  button[data-admin-hamburger] {
+    display: flex !important;
+  }
+
+  /* כפתור סגירה בתוך הסיידבר — מוצג */
+  button[data-admin-close] {
+    display: flex !important;
+  }
+
+  /* Overlay — מוצג רק כשהתפריט פתוח */
+  div[data-admin-overlay][data-visible="true"] {
+    display: block !important;
+  }
+}

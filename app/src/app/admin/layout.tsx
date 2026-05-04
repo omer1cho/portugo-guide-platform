@@ -75,6 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div style={{ minHeight: '100vh', background: ADMIN_COLORS.gray50 }}>
       <AdminSidebar />
       <main
+        data-admin-main
         style={{
           marginRight: ADMIN_SPACING.sidebarWidth,
           padding: ADMIN_SPACING.contentPadding,
