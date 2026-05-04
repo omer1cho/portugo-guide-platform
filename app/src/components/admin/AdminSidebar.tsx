@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/customers', label: 'ניתוח לקוחות', icon: '📊' },
   { href: '/admin/shifts', label: 'מעקב משמרות', icon: '🗓️', comingSoon: true },
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
+  { href: '/admin/pricing-validation', label: 'רווחיות סיורים יומיים', icon: '💰' },
 ];
 
 export default function AdminSidebar() {
