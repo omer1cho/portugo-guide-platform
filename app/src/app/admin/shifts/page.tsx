@@ -96,28 +96,29 @@ function fmtVacation(v: GuideVacation): string {
 type PortoSlot = {
   dayOfWeek: number;
   tour_type: string;
-  time: string;
+  /** שעה ספציפית; אם undefined — מתאים לכל פורטו_1/דורו/וכו' באותו יום (גמיש) */
+  time?: string;
   guide_name: string;
   notes?: string;
   /** שם מדריך נוסף שיווצר על אותו slot כשיבוץ-גיבוי (manual) */
   secondary?: { guide_name: string; notes: string };
 };
 const PORTO_ROSTER: PortoSlot[] = [
-  { dayOfWeek: 0, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
-  { dayOfWeek: 1, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
-  { dayOfWeek: 2, tour_type: 'פורטו_1', time: '09:45', guide_name: 'דותן' },
-  { dayOfWeek: 2, tour_type: 'טעימות', time: '14:30', guide_name: 'דותן' },
-  { dayOfWeek: 3, tour_type: 'דורו', time: '08:20', guide_name: 'תום' },
+  { dayOfWeek: 0, tour_type: 'פורטו_1', guide_name: 'תום' },
+  { dayOfWeek: 1, tour_type: 'פורטו_1', guide_name: 'תום' },
+  { dayOfWeek: 2, tour_type: 'פורטו_1', guide_name: 'דותן' },
+  { dayOfWeek: 2, tour_type: 'טעימות', guide_name: 'דותן' },
+  { dayOfWeek: 3, tour_type: 'דורו', guide_name: 'תום' },
   {
-    dayOfWeek: 3, tour_type: 'פורטו_1', time: '09:45',
+    dayOfWeek: 3, tour_type: 'פורטו_1',
     guide_name: 'דותן', notes: 'אם הדורו יוצא',
     secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
   },
-  { dayOfWeek: 4, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
-  { dayOfWeek: 4, tour_type: 'טעימות', time: '14:30', guide_name: 'תום' },
-  { dayOfWeek: 5, tour_type: 'דורו', time: '08:20', guide_name: 'תום' },
+  { dayOfWeek: 4, tour_type: 'פורטו_1', guide_name: 'תום' },
+  { dayOfWeek: 4, tour_type: 'טעימות', guide_name: 'תום' },
+  { dayOfWeek: 5, tour_type: 'דורו', guide_name: 'תום' },
   {
-    dayOfWeek: 5, tour_type: 'פורטו_1', time: '10:30',
+    dayOfWeek: 5, tour_type: 'פורטו_1',
     guide_name: 'דותן', notes: 'אם הדורו יוצא',
     secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
   },
@@ -149,7 +150,7 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): P
     const dow = new Date(s.shift_date + 'T00:00:00').getDay();
     const time = shortTime(s.shift_time);
     const slot = PORTO_ROSTER.find(
-      (r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && r.time === time,
+      (r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && (!r.time || r.time === time),
     );
     if (!slot) continue;
     const primary = guideByName.get(slot.guide_name);
@@ -184,7 +185,7 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): P
     const dow = new Date(s.shift_date + 'T00:00:00').getDay();
     const time = shortTime(s.shift_time);
     const slot = PORTO_ROSTER.find(
-      (r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && r.time === time,
+      (r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && (!r.time || r.time === time),
     );
     if (!slot || !slot.secondary) continue;
     const sec = guideByName.get(slot.secondary.guide_name);
@@ -362,13 +363,13 @@ function ShiftsContent() {
         </div>
       </header>
 
-      {/* Week switcher */}
+      {/* Week switcher — בעברית: ימין=שבוע קודם (חזרה אחורה), שמאל=שבוע הבא (קדימה) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
-        <button onClick={() => setWeekStart(addDays(weekStart, 7))} style={navBtnStyle}>שבוע הבא ▶</button>
+        <button onClick={() => setWeekStart(addDays(weekStart, -7))} style={navBtnStyle}>▶ שבוע קודם</button>
         <div style={{ minWidth: 200, textAlign: 'center', fontSize: 16, fontWeight: 600, color: ADMIN_COLORS.gray700 }}>
           {fmtWeekRange(weekStart)}
         </div>
-        <button onClick={() => setWeekStart(addDays(weekStart, -7))} style={navBtnStyle}>◀ שבוע קודם</button>
+        <button onClick={() => setWeekStart(addDays(weekStart, 7))} style={navBtnStyle}>שבוע הבא ◀</button>
         <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={{ ...navBtnStyle, marginRight: 12 }}>
           השבוע
         </button>
@@ -585,7 +586,7 @@ function DayColumn({
         ))}
       </div>
 
-      {/* שורה 3 — אזור חופשות מדריכים (גובה אחיד) */}
+      {/* שורה 3 — אזור חופשות מדריכים (גובה אחיד, עיצוב בולט) */}
       <div
         style={{
           minHeight: vacationsAreaMinHeight,
@@ -600,19 +601,23 @@ function DayColumn({
             <div
               key={i}
               style={{
-                fontSize: 9,
-                background: '#fef9c3',
-                color: '#713f12',
-                padding: '2px 5px',
-                borderRadius: 3,
+                fontSize: 10,
+                background: '#fde68a',
+                color: '#78350f',
+                padding: '3px 5px',
+                borderRadius: 4,
                 textAlign: 'center',
-                fontWeight: 600,
+                fontWeight: 700,
                 lineHeight: 1.3,
-                borderRight: c ? `3px solid ${c.border}` : undefined,
+                border: '1px solid #f59e0b',
+                borderRight: c ? `4px solid ${c.border}` : '1px solid #f59e0b',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
-              title={v.label || `${v.guide.name} בחופש`}
+              title={`${v.guide.name} בחופש${v.label ? ` — ${v.label}` : ''}`}
             >
-              🌴 {v.guide.name}{v.label ? ` · ${v.label}` : ''}
+              🌴 <span style={{ textDecoration: 'none' }}>{v.guide.name}</span> בחופש
             </div>
           );
         })}
@@ -659,7 +664,7 @@ function CitySection({
   onChange: () => void;
 }) {
   return (
-    <div style={{ background: color, borderRadius: 6, padding: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <div style={{ background: color, borderRadius: 6, padding: 4, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: labelColor, letterSpacing: 0.3 }}>
         {label}
       </div>
@@ -689,6 +694,16 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   const currentGuide = guides.find((g) => g.id === shift.guide_id);
   const guideClr = guideColor(shift.guide_id, guides);
   const isPrivate = PRIVATE_TOUR_TYPES.has(shift.tour_type);
+
+  // לסיור פרטי — שולפים את ה-detail (חלק ראשון לפני "·") מתוך notes
+  // ומציגים אותו כ"<detail> פרטי". השאר בהערה.
+  let privateDetail: string | null = null;
+  let restNotes: string | null = null;
+  if (isPrivate && shift.notes) {
+    const parts = shift.notes.split(' · ');
+    privateDetail = parts[0] || null;
+    restNotes = parts.slice(1).join(' · ') || null;
+  }
 
   async function handleAssign(guideId: string | null) {
     setBusy(true);
@@ -727,8 +742,13 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     cardBorder = '#93c5fd';
   }
 
-  // לסיור פרטי — שם הסיור הוא "סיור פרטי" והפרטים בהערות
-  const displayTourName = isPrivate ? 'סיור פרטי' : tourTypeLabel(shift.tour_type);
+  // לסיור פרטי — שם הסיור = "<detail> פרטי" (למשל "אראבידה פרטי", "ליסבון הקלאסית פרטי")
+  // אם אין detail — נופלים לסיור פרטי (ליסבון/פורטו)
+  const displayTourName = isPrivate
+    ? (privateDetail ? `${privateDetail} פרטי` : tourTypeLabel(shift.tour_type))
+    : tourTypeLabel(shift.tour_type);
+  // ההערה התחתונה: לסיור פרטי — רק שם לקוח/מספר אנשים. לרגיל — כל ה-notes.
+  const displayNotes = isPrivate ? restNotes : shift.notes;
 
   return (
     <div
@@ -739,24 +759,38 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         padding: '4px 5px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
         position: 'relative',
+        minWidth: 0,
       }}
     >
       {/* שורה 1: שעה + סוג סיור + כפתורים */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 3 }}>
-        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 3, minWidth: 0 }}>
+        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700, flexShrink: 0 }}>
           {shortTime(shift.shift_time)}
         </span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: ADMIN_COLORS.gray900, flex: 1, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: ADMIN_COLORS.gray900,
+            flex: '1 1 0',
+            minWidth: 0,
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={displayTourName}
+        >
           {displayTourName}
         </span>
         {shift.status === 'published' && (
-          <span title="פורסם" style={{ fontSize: 9 }}>📤</span>
+          <span title="פורסם" style={{ fontSize: 9, flexShrink: 0 }}>📤</span>
         )}
         <button
           onClick={() => setEditOpen(true)}
           disabled={busy}
           title="ערכי משמרת"
-          style={iconBtnStyle}
+          style={{ ...iconBtnStyle, flexShrink: 0 }}
         >
           ✏️
         </button>
@@ -764,7 +798,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           onClick={handleDeleteShift}
           disabled={busy}
           title="מחקי משמרת"
-          style={{ ...iconBtnStyle, color: '#991b1b' }}
+          style={{ ...iconBtnStyle, color: '#991b1b', flexShrink: 0 }}
         >
           🗑️
         </button>
@@ -821,9 +855,9 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
       )}
 
       {/* הערות אופציונליות */}
-      {shift.notes && shift.status !== 'cancelled' && (
-        <div style={{ fontSize: 9, color: '#a37b00', marginTop: 2, fontStyle: 'italic', lineHeight: 1.3 }}>
-          {shift.notes}
+      {displayNotes && shift.status !== 'cancelled' && (
+        <div style={{ fontSize: 9, color: '#a37b00', marginTop: 2, fontStyle: 'italic', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {displayNotes}
         </div>
       )}
 
@@ -936,8 +970,28 @@ function GuidesPanel({ guides, onClose, onChanged }: { guides: Guide[]; onClose:
           <button onClick={onClose} style={navBtnStyle}>סגור</button>
         </div>
         <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
-          זמינות וסיורים שכל מדריך מוסמך — לחיצה על &quot;ערכי&quot; תאפשר עדכון מהיר.
+          זמינות, חופשות וסיורים שכל מדריך מוסמך — לחיצה על &quot;ערכי&quot; תאפשר עדכון מהיר.
         </p>
+        <div
+          style={{
+            background: '#fffbeb',
+            border: '1px solid #fcd34d',
+            borderRadius: 8,
+            padding: '8px 10px',
+            fontSize: 12,
+            color: '#78350f',
+            display: 'flex',
+            gap: 6,
+            alignItems: 'flex-start',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>🌴</span>
+          <span>
+            <strong>חופשה?</strong> לחצי על &quot;ערכי&quot; ליד המדריך, ובחלון העריכה תופיע סקציית
+            &quot;חופשות&quot; עם תאריך התחלה–סיום. לאחר שמירה, היא תוצג בלוח השיבוצים בכל יום
+            רלוונטי, והמדריך לא יופיע ב-dropdown של שיבוץ.
+          </span>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {guides.map((g) => (
             <GuideCardRow
