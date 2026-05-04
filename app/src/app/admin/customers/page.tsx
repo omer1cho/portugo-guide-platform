@@ -220,7 +220,7 @@ function CustomersContent() {
 
       {!loading && !error && (
         <>
-          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+          <section data-kpi-grid style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
             <KpiCard label="סה״כ משתתפים" value={totalPeople.toLocaleString('he-IL')} sub={`${tourCount} סיורים`} />
             <KpiCard
               label="ממוצע אנשים פר סיור"

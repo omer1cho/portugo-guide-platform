@@ -140,6 +140,7 @@ function AdminMainContent() {
           <section>
             <SectionHeader title="📊 איך אנחנו החודש" subtitle="השוואה לחודש הקודם" />
             <div
+              data-kpi-grid
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -199,6 +200,7 @@ function AdminMainContent() {
           <section>
             <SectionHeader title="💼 פיננסי" subtitle="להעברה ללא רווח/הפסד — מודל התמחור עוד בעבודה" />
             <div
+              data-kpi-grid
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',

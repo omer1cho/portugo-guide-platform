@@ -44,6 +44,7 @@ export default function KpiCard({ label, value, sub, variant = 'default', delta,
 
   return (
     <div
+      data-kpi-card
       style={{
         background: '#fff',
         borderRadius: 12,

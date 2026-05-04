@@ -111,4 +111,17 @@ select {
   div[data-admin-overlay][data-visible="true"] {
     display: block !important;
   }
+
+  /* KPI grids — 2 עמודות במקום עמודה רחבה ריקה */
+  div[data-kpi-grid],
+  section[data-kpi-grid] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* KpiCard — padding ו-minHeight מצומצמים שמתאימים לרוחב צר */
+  div[data-kpi-card] {
+    padding: 14px 12px !important;
+    min-height: auto !important;
+  }
 }
