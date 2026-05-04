@@ -65,6 +65,15 @@ export type Guide = {
   requires_pre_approval?: boolean;
   /** רשימת tour_type שהמדריך מוסמך להוביל. ריק [] = לא הוגדר (לאפשר הכל). */
   qualified_tours?: string[];
+  /** טווחי חופשות מובנים — חוסמים שיבוץ במהלך הטווח */
+  vacations?: GuideVacation[];
+};
+
+/** חופשת מדריך — טווח תאריכים סגור (כולל) + תיאור אופציונלי */
+export type GuideVacation = {
+  start: string; // YYYY-MM-DD
+  end: string;   // YYYY-MM-DD (כולל)
+  label?: string;
 };
 
 export type Tour = {

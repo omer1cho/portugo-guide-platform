@@ -11,7 +11,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import type { Guide } from '@/lib/supabase';
+import type { Guide, GuideVacation } from '@/lib/supabase';
 
 export type Shift = {
   id: string;
@@ -81,12 +81,24 @@ export async function loadShiftsForWeek(weekStart: Date, cityFilter: 'all' | 'li
 export async function loadAvailableGuides(): Promise<Guide[]> {
   const { data, error } = await supabase
     .from('guides')
-    .select('id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person')
+    .select('id, name, city, is_admin, is_active, availability_notes, vacation_notes, vacations, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person')
     .eq('is_active', true)
     .eq('is_admin', false)
     .order('name');
   if (error) throw error;
   return (data || []) as Guide[];
+}
+
+/** האם מדריך בחופש בתאריך נתון? */
+export function isGuideOnVacation(guide: Guide, isoDate: string): boolean {
+  if (!guide.vacations || guide.vacations.length === 0) return false;
+  return guide.vacations.some((v) => isoDate >= v.start && isoDate <= v.end);
+}
+
+/** מחזיר את החופשה של המדריך בתאריך נתון, או null */
+export function getGuideVacationForDate(guide: Guide, isoDate: string): GuideVacation | null {
+  if (!guide.vacations) return null;
+  return guide.vacations.find((v) => isoDate >= v.start && isoDate <= v.end) || null;
 }
 
 /** משבץ מדריך לשיבוץ (או null = להסיר שיבוץ) */
@@ -173,6 +185,18 @@ export async function updateGuideAvailability(
   updates: { availability_notes?: string | null; qualified_tours?: string[] },
 ): Promise<void> {
   const { error } = await supabase.from('guides').update(updates).eq('id', guideId);
+  if (error) throw error;
+}
+
+/** מעדכן רשימת חופשות של מדריך */
+export async function updateGuideVacations(
+  guideId: string,
+  vacations: GuideVacation[],
+): Promise<void> {
+  const { error } = await supabase
+    .from('guides')
+    .update({ vacations })
+    .eq('id', guideId);
   if (error) throw error;
 }
 
