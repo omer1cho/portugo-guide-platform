@@ -61,6 +61,10 @@ export type Guide = {
   availability_notes?: string | null;
   /** חופשות עתידיות (טקסט חופשי) */
   vacation_notes?: string | null;
+  /** אם true — שיבוץ דורש אישור מראש לפני פרסום (מתגברים, חצי-משרה) */
+  requires_pre_approval?: boolean;
+  /** רשימת tour_type שהמדריך מוסמך להוביל. ריק [] = לא הוגדר (לאפשר הכל). */
+  qualified_tours?: string[];
 };
 
 export type Tour = {

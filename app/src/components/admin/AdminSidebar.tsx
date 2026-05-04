@@ -32,7 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'דשבורד ראשי', icon: '🏠' },
   { href: '/admin/guides', label: 'מדריכים', icon: '👥' },
   { href: '/admin/customers', label: 'ניתוח לקוחות', icon: '📊' },
-  { href: '/admin/shifts', label: 'מעקב משמרות', icon: '🗓️', comingSoon: true },
+  { href: '/admin/shifts', label: 'לוח שיבוצים', icon: '🗓️' },
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
   { href: '/admin/pricing-validation', label: 'רווחיות סיורים יומיים', icon: '💰' },
 ];

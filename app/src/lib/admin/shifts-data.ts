@@ -1,0 +1,177 @@
+/**
+ * Shifts data layer — שכבת data ל-/admin/shifts.
+ *
+ * הtable shifts מתאכלסת אוטומטית מהאתר (cron יומי דרך
+ * /api/cron/sync-shifts). הפונקציות כאן מאפשרות לעומר:
+ *   - לטעון שיבוצים של שבוע נתון
+ *   - לשבץ/לבטל מדריך
+ *   - להוסיף שיבוץ ידני (פרטי / חד-פעמי)
+ *   - לפרסם שבוע (כל ה-draft → published)
+ *   - למחוק שיבוץ
+ */
+
+import { supabase } from '@/lib/supabase';
+import type { Guide } from '@/lib/supabase';
+
+export type Shift = {
+  id: string;
+  shift_date: string;       // YYYY-MM-DD
+  shift_time: string;       // HH:MM:SS
+  tour_type: string;
+  city: 'lisbon' | 'porto';
+  guide_id: string | null;
+  status: 'draft' | 'published' | 'cancelled';
+  source: 'website' | 'manual';
+  website_tour_id: string | null;
+  notes: string | null;
+  manually_edited: boolean;
+  requires_guide_approval: boolean;
+  guide_approval: 'pending' | 'approved' | 'rejected' | null;
+  guide_responded_at: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * מחזיר את תחילת השבוע (יום ראשון) של תאריך נתון.
+ * עברית: השבוע מתחיל ביום ראשון (יום 0 ב-JS).
+ */
+export function weekStartOf(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const dayOfWeek = d.getDay(); // 0=Sun, 6=Sat
+  d.setDate(d.getDate() - dayOfWeek);
+  return d;
+}
+
+export function toIsoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function addDays(d: Date, days: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + days);
+  return r;
+}
+
+/** טוען shifts לשבוע (ראשון-שבת) ולעיר אופציונלית */
+export async function loadShiftsForWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' | 'porto' = 'all'): Promise<Shift[]> {
+  const start = toIsoDate(weekStart);
+  const end = toIsoDate(addDays(weekStart, 6));
+
+  let q = supabase
+    .from('shifts')
+    .select('*')
+    .gte('shift_date', start)
+    .lte('shift_date', end)
+    .order('shift_date', { ascending: true })
+    .order('shift_time', { ascending: true });
+
+  if (cityFilter !== 'all') {
+    q = q.eq('city', cityFilter);
+  }
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data || []) as Shift[];
+}
+
+/** טוען את כל המדריכים הפעילים (לשימוש ב-dropdown) */
+export async function loadAvailableGuides(): Promise<Guide[]> {
+  const { data, error } = await supabase
+    .from('guides')
+    .select('id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person')
+    .eq('is_active', true)
+    .eq('is_admin', false)
+    .order('name');
+  if (error) throw error;
+  return (data || []) as Guide[];
+}
+
+/** משבץ מדריך לשיבוץ (או null = להסיר שיבוץ) */
+export async function assignGuide(shiftId: string, guideId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('shifts')
+    .update({ guide_id: guideId, manually_edited: true })
+    .eq('id', shiftId);
+  if (error) throw error;
+}
+
+/** מפרסם את כל ה-draft shifts בשבוע (status: draft → published) */
+export async function publishWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' | 'porto' = 'all'): Promise<number> {
+  const start = toIsoDate(weekStart);
+  const end = toIsoDate(addDays(weekStart, 6));
+
+  let q = supabase
+    .from('shifts')
+    .update({ status: 'published', published_at: new Date().toISOString() })
+    .eq('status', 'draft')
+    .gte('shift_date', start)
+    .lte('shift_date', end);
+
+  if (cityFilter !== 'all') {
+    q = q.eq('city', cityFilter);
+  }
+
+  const { data, error } = await q.select('id');
+  if (error) throw error;
+  return (data || []).length;
+}
+
+/** יוצר שיבוץ ידני (לסיור פרטי / חד-פעמי שלא באתר) */
+export async function createManualShift(opts: {
+  shift_date: string;
+  shift_time: string;        // HH:MM (יישמר כ-HH:MM:00)
+  tour_type: string;
+  city: 'lisbon' | 'porto';
+  guide_id?: string | null;
+  notes?: string;
+}): Promise<Shift> {
+  const time = opts.shift_time.length === 5 ? `${opts.shift_time}:00` : opts.shift_time;
+  const { data, error } = await supabase
+    .from('shifts')
+    .insert({
+      shift_date: opts.shift_date,
+      shift_time: time,
+      tour_type: opts.tour_type,
+      city: opts.city,
+      guide_id: opts.guide_id || null,
+      notes: opts.notes || null,
+      source: 'manual',
+      status: 'draft',
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as Shift;
+}
+
+/** מוחק שיבוץ */
+export async function deleteShift(shiftId: string): Promise<void> {
+  const { error } = await supabase.from('shifts').delete().eq('id', shiftId);
+  if (error) throw error;
+}
+
+/** מחזיר תווית קריאה לסוג סיור (למשל 'קלאסי_1' → 'ליסבון הקלאסית') */
+export function tourTypeLabel(tourType: string): string {
+  const map: Record<string, string> = {
+    'קלאסי_1': 'ליסבון הקלאסית',
+    'פורטו_1': 'פורטו הקלאסית',
+    'בלם_1': 'בלם',
+    'סינטרה': 'סינטרה',
+    'אראבידה': 'אראבידה',
+    'אובידוש': 'אובידוש',
+    'קולינרי': 'קולינרי',
+    'טעימות': 'טעימות פורטו',
+    'דורו': 'דורו',
+    'פרטי_1': 'פרטי (ליסבון)',
+    'פרטי_2': 'פרטי (פורטו)',
+  };
+  return map[tourType] || tourType;
+}
+
+/** מחזיר HH:MM מתוך HH:MM:SS */
+export function shortTime(t: string): string {
+  return t.slice(0, 5);
+}
