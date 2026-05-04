@@ -376,8 +376,15 @@ export async function loadMonthSnapshot(
 // הדוח של "קבלות שלא הוצאו" צריך להיות עצמאי מהחודש שעומר צופה בו —
 // המדריכים מוציאים קבלה רק בסוף החודש, אז אין טעם להציג קבלות של
 // החודש הנוכחי או של חודש עתידי. הפונקציה הזו מחזירה את רשימת הקבלות
-// שעדיין לא הוצאו מ-N החודשים האחרונים שכבר הסתיימו.
+// שעדיין לא הוצאו מהחודשים שכבר הסתיימו.
 // ---------------------------------------------------------------------------
+
+/**
+ * החודש הראשון בו המערכת חיה עם נתונים אמיתיים.
+ * אפריל 2026 (month=3, 0-indexed). כל חודש לפני זה לא רלוונטי
+ * לבדיקת קבלות — לא היו סיורים אמיתיים, רק נתוני בדיקה/הסטוריה ריקה.
+ */
+const FIRST_ACTIVE_MONTH = { year: 2026, month: 3 };
 
 export type OutstandingReceipt = {
   guide: { id: string; name: string };
@@ -393,20 +400,28 @@ export type OutstandingReceipt = {
 
 export async function loadOutstandingMonthlyReceipts(options: {
   cityFilter?: 'lisbon' | 'porto' | 'all';
-  /** כמה חודשים אחורה לטעון. ברירת מחדל: 3 (החודשים שהסתיימו) */
+  /** כמה חודשים אחורה לבדוק (מקסימום). ברירת מחדל: 6 — בפועל ייטענו רק חודשים שהיו פעילים */
   monthsBack?: number;
 } = {}): Promise<OutstandingReceipt[]> {
-  const monthsBack = options.monthsBack ?? 3;
+  const monthsBack = options.monthsBack ?? 6;
   const cityFilter = options.cityFilter ?? 'all';
 
   // החודש הנוכחי לא נכלל — רק חודשים שהסתיימו.
-  // אם היום הוא 4.5, מסתכלים על אפריל, מרץ, פברואר.
+  // וגם — לא מסתכלים לפני FIRST_ACTIVE_MONTH (אפריל 2026), כי שם
+  // אין נתונים אמיתיים. כך אם היום מאי, נטען רק את אפריל.
   const today = new Date();
   const monthsToLoad: { year: number; month: number }[] = [];
   for (let i = 1; i <= monthsBack; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    monthsToLoad.push({ year: d.getFullYear(), month: d.getMonth() });
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    // עצירה מוקדמת — לא לפני החודש הראשון הפעיל
+    if (y < FIRST_ACTIVE_MONTH.year) break;
+    if (y === FIRST_ACTIVE_MONTH.year && m < FIRST_ACTIVE_MONTH.month) break;
+    monthsToLoad.push({ year: y, month: m });
   }
+
+  if (monthsToLoad.length === 0) return [];
 
   const snapshots = await Promise.all(
     monthsToLoad.map(({ year, month }) =>
