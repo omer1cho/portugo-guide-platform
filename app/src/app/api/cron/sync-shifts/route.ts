@@ -68,7 +68,7 @@ async function fetchWebsiteShifts(maxDaysAhead: number): Promise<WebsiteShift[]>
   if (!res.ok) throw new Error(`Website fetch failed: ${res.status}`);
   const html = await res.text();
 
-  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (!match) throw new Error('__NEXT_DATA__ not found in HTML');
 
   const blob = JSON.parse(match[1]);
