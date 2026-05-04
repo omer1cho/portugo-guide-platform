@@ -25,6 +25,8 @@ import {
   publishWeek,
   createManualShift,
   deleteShift,
+  updateShift,
+  updateGuideAvailability,
   weekStartOf,
   toIsoDate,
   addDays,
@@ -35,6 +37,9 @@ import {
 import type { Guide } from '@/lib/supabase';
 import { TOUR_TYPES } from '@/lib/supabase';
 import { getCalendarEventsForDate } from '@/lib/calendar-events';
+
+// סוגי סיור פרטיים — מוצגים אחרת בכרטיס (פוקוס על שם הלקוח/סוג, לא על "פרטי_1")
+const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
 
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -69,20 +74,122 @@ function fmtWeekRange(weekStart: Date): string {
 
 // ─── Porto permanent roster (קבע מאי-יולי לפי הקובץ של עומר) ───
 // dayOfWeek: 0=ראשון, 1=שני, 2=שלישי, 3=רביעי, 4=חמישי, 5=שישי, 6=שבת
-type PortoSlot = { dayOfWeek: number; tour_type: string; time: string; guide_name: string };
+//
+// בימי רביעי ושישי, הסיור הקלאסי 9:45 (רביעי) / 10:30 (שישי) הוא תלוי-דורו:
+// במקרה שהדורו יוצא — דותן מוביל. במקרה שלא — תום מוביל.
+// לכן לאותו slot יש שתי רשומות: ה-"primary" יישב על השיבוץ הקיים מהאתר,
+// וה-"secondary" ייוצר כשיבוץ ידני נוסף, כך ששני המדריכים יראו אותו במשמרות שלהם.
+type PortoSlot = {
+  dayOfWeek: number;
+  tour_type: string;
+  time: string;
+  guide_name: string;
+  notes?: string;
+  /** שם מדריך נוסף שיווצר על אותו slot כשיבוץ-גיבוי (manual) */
+  secondary?: { guide_name: string; notes: string };
+};
 const PORTO_ROSTER: PortoSlot[] = [
   { dayOfWeek: 0, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
   { dayOfWeek: 1, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
   { dayOfWeek: 2, tour_type: 'פורטו_1', time: '09:45', guide_name: 'דותן' },
   { dayOfWeek: 2, tour_type: 'טעימות', time: '14:30', guide_name: 'דותן' },
   { dayOfWeek: 3, tour_type: 'דורו', time: '08:20', guide_name: 'תום' },
-  { dayOfWeek: 3, tour_type: 'פורטו_1', time: '09:45', guide_name: 'דותן' },
+  {
+    dayOfWeek: 3, tour_type: 'פורטו_1', time: '09:45',
+    guide_name: 'דותן', notes: 'אם הדורו יוצא',
+    secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
+  },
   { dayOfWeek: 4, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
   { dayOfWeek: 4, tour_type: 'טעימות', time: '14:30', guide_name: 'תום' },
   { dayOfWeek: 5, tour_type: 'דורו', time: '08:20', guide_name: 'תום' },
-  { dayOfWeek: 5, tour_type: 'פורטו_1', time: '10:30', guide_name: 'דותן' },
+  {
+    dayOfWeek: 5, tour_type: 'פורטו_1', time: '10:30',
+    guide_name: 'דותן', notes: 'אם הדורו יוצא',
+    secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
+  },
   // שבת — מתחלפים תום/דותן לפי שבוע, אז לא בקבע אוטומטי
 ];
+
+/**
+ * אוטופיל שקט של קבע פורטו, רץ בכל טעינה של שבוע.
+ *
+ * עבור כל slot ב-PORTO_ROSTER:
+ *   - אם יש shift מתאים (יום+שעה+סוג סיור) ללא מדריך — נקצה את המדריך הראשי
+ *     ונסמן את ה-notes (אם יש) כדי שעומר תראה "אם הדורו יוצא".
+ *   - אם ל-slot יש secondary (תום בגיבוי) — ניצור shift ידני נוסף עם המדריך
+ *     הגיבוי, אלא אם כבר קיים אחד כזה. שני המדריכים יראו את עצמם משובצים.
+ *
+ * מחזיר את כמות הפעולות שבוצעו — אם > 0, הקורא ירענן.
+ */
+async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): Promise<number> {
+  let actions = 0;
+  const guideByName = new Map<string, Guide>();
+  for (const g of allGuides) guideByName.set(g.name, g);
+
+  // נבדוק רק שיבוצי פורטו של השבוע הזה
+  const portoShifts = allShifts.filter((s) => s.city === 'porto' && s.status !== 'cancelled');
+  if (portoShifts.length === 0) return 0;
+
+  // שלב 1: שיבוץ ראשי לכל shift פורטו ללא מדריך
+  for (const s of portoShifts) {
+    if (s.guide_id) continue;
+    const dow = new Date(s.shift_date + 'T00:00:00').getDay();
+    const time = shortTime(s.shift_time);
+    const slot = PORTO_ROSTER.find(
+      (r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && r.time === time,
+    );
+    if (!slot) continue;
+    const g = guideByName.get(slot.guide_name);
+    if (!g) continue;
+    try {
+      await assignGuide(s.id, g.id);
+      // אם יש notes ולא הוגדר עדיין על ה-shift, נכתוב גם אותם
+      if (slot.notes && !s.notes) {
+        await updateShift(s.id, { notes: slot.notes });
+      }
+      actions++;
+    } catch {
+      // אם נכשל — לא חוסמים, רק לא מתקדמים
+    }
+  }
+
+  // שלב 2: ליצור secondary shifts (תום-גיבוי) על כל slot שיש לו secondary
+  // ב-portoShifts יש כל הסיורים — חיפוש לפי תאריך+שעה+סוג ידעת אם כבר קיים secondary
+  for (const s of portoShifts) {
+    const dow = new Date(s.shift_date + 'T00:00:00').getDay();
+    const time = shortTime(s.shift_time);
+    const slot = PORTO_ROSTER.find(
+      (r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && r.time === time,
+    );
+    if (!slot || !slot.secondary) continue;
+    const sec = guideByName.get(slot.secondary.guide_name);
+    if (!sec) continue;
+    // האם כבר קיים secondary shift על אותו תאריך+שעה+סוג עם המדריך הזה?
+    const exists = allShifts.some(
+      (x) =>
+        x.shift_date === s.shift_date &&
+        shortTime(x.shift_time) === time &&
+        x.tour_type === s.tour_type &&
+        x.guide_id === sec.id,
+    );
+    if (exists) continue;
+    try {
+      await createManualShift({
+        shift_date: s.shift_date,
+        shift_time: time,
+        tour_type: s.tour_type,
+        city: 'porto',
+        guide_id: sec.id,
+        notes: slot.secondary.notes,
+      });
+      actions++;
+    } catch {
+      // skip silently
+    }
+  }
+
+  return actions;
+}
 
 export default function AdminShiftsPage() {
   return (
@@ -102,7 +209,6 @@ function ShiftsContent() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGuidesPanel, setShowGuidesPanel] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [autofilling, setAutofilling] = useState(false);
   const [reloadCounter, setReloadCounter] = useState(0);
 
   function reload() { setReloadCounter((c) => c + 1); }
@@ -112,9 +218,19 @@ function ShiftsContent() {
     setLoading(true);
     setError(null);
     Promise.all([loadShiftsForWeek(weekStart, cityFilter), loadAvailableGuides()])
-      .then(([s, g]) => {
+      .then(async ([s, g]) => {
         if (cancelled) return;
-        setShifts(s);
+        // אוטופיל שקט של קבע פורטו: אם נמצאו שיבוצים ללא מדריך או secondary חסר,
+        // נחיל את הקבע ונטען שוב. בלי הודעה, בלי כפתור.
+        const applied = await silentApplyPortoRoster(s, g);
+        if (cancelled) return;
+        if (applied > 0) {
+          const fresh = await loadShiftsForWeek(weekStart, cityFilter);
+          if (cancelled) return;
+          setShifts(fresh);
+        } else {
+          setShifts(s);
+        }
         setGuides(g);
       })
       .catch((e) => !cancelled && setError(e.message || 'משהו השתבש'))
@@ -154,47 +270,8 @@ function ShiftsContent() {
     }
   }
 
-  async function handleAutofillPorto() {
-    // מקצים מדריכים לפי PORTO_ROSTER לכל shift של פורטו שאין לו מדריך
-    const tomGuide = guides.find((g) => g.name === 'תום');
-    const dotanGuide = guides.find((g) => g.name === 'דותן');
-    if (!tomGuide || !dotanGuide) {
-      alert('לא נמצאו תום או דותן ברשימת המדריכים');
-      return;
-    }
-    const portoShifts = shifts.filter((s) => s.city === 'porto' && !s.guide_id && s.status === 'draft');
-    if (portoShifts.length === 0) {
-      alert('אין שיבוצי פורטו ללא מדריך השבוע');
-      return;
-    }
-    const matches: { shift: Shift; guideId: string; guideName: string }[] = [];
-    for (const s of portoShifts) {
-      const dt = new Date(s.shift_date + 'T00:00:00');
-      const dow = dt.getDay();
-      const time = shortTime(s.shift_time);
-      const slot = PORTO_ROSTER.find((r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && r.time === time);
-      if (!slot) continue;
-      const g = slot.guide_name === 'תום' ? tomGuide : dotanGuide;
-      matches.push({ shift: s, guideId: g.id, guideName: slot.guide_name });
-    }
-    if (matches.length === 0) {
-      alert('לא נמצאו שיבוצים שתואמים את הקבע. השוואה לפי יום+שעה+סוג סיור.');
-      return;
-    }
-    if (!confirm(`להקצות ${matches.length} מדריכים לפי קבע פורטו?\n(שבת מתחלפת ולא נכלל באוטו.)`)) return;
-    setAutofilling(true);
-    try {
-      for (const m of matches) {
-        await assignGuide(m.shift.id, m.guideId);
-      }
-      alert(`הוקצו ${matches.length} שיבוצים`);
-      reload();
-    } catch (e) {
-      alert('שיבוץ נכשל: ' + (e instanceof Error ? e.message : ''));
-    } finally {
-      setAutofilling(false);
-    }
-  }
+  // ה-autofill עבר להיות שקט ואוטומטי — ראי silentApplyPortoRoster למעלה.
+  // עומר תמיד יכולה לערוך/למחוק/להוסיף ידנית בלוח עצמו.
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }} dir="rtl">
@@ -212,9 +289,6 @@ function ShiftsContent() {
           <CitySwitcher value={cityFilter} onChange={setCityFilter} />
           <button onClick={() => setShowGuidesPanel(true)} style={secondaryBtnStyle}>
             👥 פרטי מדריכים
-          </button>
-          <button onClick={handleAutofillPorto} disabled={autofilling} style={secondaryBtnStyle}>
-            🤖 מלאי קבע פורטו
           </button>
           <button onClick={() => setShowAddModal(true)} style={secondaryBtnStyle}>
             + הוסיפי שיבוץ
@@ -313,7 +387,11 @@ function ShiftsContent() {
         />
       )}
       {showGuidesPanel && (
-        <GuidesPanel guides={guides} onClose={() => setShowGuidesPanel(false)} />
+        <GuidesPanel
+          guides={guides}
+          onClose={() => setShowGuidesPanel(false)}
+          onChanged={reload}
+        />
       )}
     </div>
   );
@@ -441,8 +519,9 @@ function DayColumn({ date, shifts, guides, onChange }: { date: Date; shifts: Shi
       {/* ליסבון */}
       {hasLisbon && (
         <CitySection
-          label="🇵🇹 ליסבון"
+          label="ליסבון"
           color="#f0fdf4"
+          labelColor={ADMIN_COLORS.green800}
           morning={lisbonMorning}
           afternoon={lisbonAfternoon}
           guides={guides}
@@ -453,8 +532,9 @@ function DayColumn({ date, shifts, guides, onChange }: { date: Date; shifts: Shi
       {/* פורטו (תמיד מתחת לליסבון) */}
       {hasPorto && (
         <CitySection
-          label="🏛️ פורטו"
+          label="פורטו"
           color="#fef3c7"
+          labelColor="#92400e"
           morning={portoMorning}
           afternoon={portoAfternoon}
           guides={guides}
@@ -466,10 +546,11 @@ function DayColumn({ date, shifts, guides, onChange }: { date: Date; shifts: Shi
 }
 
 function CitySection({
-  label, color, morning, afternoon, guides, onChange,
+  label, color, labelColor, morning, afternoon, guides, onChange,
 }: {
   label: string;
   color: string;
+  labelColor: string;
   morning: Shift[];
   afternoon: Shift[];
   guides: Guide[];
@@ -477,14 +558,14 @@ function CitySection({
 }) {
   return (
     <div style={{ background: color, borderRadius: 6, padding: 5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: ADMIN_COLORS.gray700, opacity: 0.8 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: labelColor, letterSpacing: 0.3 }}>
         {label}
       </div>
       {morning.length > 0 && (
-        <TimeSlotGroup label="🌅" shifts={morning} guides={guides} onChange={onChange} />
+        <TimeSlotGroup label="בוקר · עד 13:00" shifts={morning} guides={guides} onChange={onChange} />
       )}
       {afternoon.length > 0 && (
-        <TimeSlotGroup label="☀️" shifts={afternoon} guides={guides} onChange={onChange} />
+        <TimeSlotGroup label="צהריים · מ-13:00" shifts={afternoon} guides={guides} onChange={onChange} />
       )}
     </div>
   );
@@ -493,16 +574,29 @@ function CitySection({
 function TimeSlotGroup({ label, shifts, guides, onChange }: { label: string; shifts: Shift[]; guides: Guide[]; onChange: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div
+        style={{
+          fontSize: 9,
+          fontWeight: 600,
+          color: ADMIN_COLORS.gray500,
+          textTransform: 'none',
+          paddingRight: 2,
+          marginTop: 2,
+        }}
+      >
+        {label}
+      </div>
       {shifts.map((s) => (
-        <ShiftCard key={s.id} shift={s} guides={guides} onChange={onChange} timeSlotIcon={label} />
+        <ShiftCard key={s.id} shift={s} guides={guides} onChange={onChange} />
       ))}
     </div>
   );
 }
 
-function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; guides: Guide[]; onChange: () => void; timeSlotIcon: string }) {
+function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[]; onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const eligibleGuides = useMemo(() => {
     return guides.filter((g) => {
@@ -515,6 +609,7 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
 
   const currentGuide = guides.find((g) => g.id === shift.guide_id);
   const guideClr = guideColor(shift.guide_id, guides);
+  const isPrivate = PRIVATE_TOUR_TYPES.has(shift.tour_type);
 
   async function handleAssign(guideId: string | null) {
     setBusy(true);
@@ -529,8 +624,9 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
     }
   }
 
-  async function handleDelete() {
-    if (!confirm(`למחוק את השיבוץ של ${tourTypeLabel(shift.tour_type)} ב-${shortTime(shift.shift_time)}?`)) return;
+  async function handleDeleteShift() {
+    const tourLabel = isPrivate ? 'סיור פרטי' : tourTypeLabel(shift.tour_type);
+    if (!confirm(`למחוק את המשמרת של ${tourLabel} ב-${shortTime(shift.shift_time)}?\nהשיבוץ ייעלם מהלוח לחלוטין.`)) return;
     setBusy(true);
     try {
       await deleteShift(shift.id);
@@ -552,6 +648,9 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
     cardBorder = '#93c5fd';
   }
 
+  // לסיור פרטי — שם הסיור הוא "סיור פרטי" והפרטים בהערות
+  const displayTourName = isPrivate ? 'סיור פרטי' : tourTypeLabel(shift.tour_type);
+
   return (
     <div
       style={{
@@ -563,20 +662,33 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
         position: 'relative',
       }}
     >
-      {/* שורה 1: סוג סיור (גדול ובולט) + שעה (קטנה לצד) + סטטוס */}
+      {/* שורה 1: סוג סיור (גדול ובולט) + שעה (קטנה לצד) + כפתורי פעולה */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: ADMIN_COLORS.gray900, flex: 1, lineHeight: 1.2 }}>
-          {tourTypeLabel(shift.tour_type)}
+          {displayTourName}
         </span>
-        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap' }}>
-          {timeSlotIcon} {shortTime(shift.shift_time)}
+        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 600 }}>
+          {shortTime(shift.shift_time)}
         </span>
-        {shift.source === 'manual' && (
-          <span title="הוסף ידנית" style={{ fontSize: 10 }}>✏️</span>
-        )}
         {shift.status === 'published' && (
           <span title="פורסם" style={{ fontSize: 10 }}>📤</span>
         )}
+        <button
+          onClick={() => setEditOpen(true)}
+          disabled={busy}
+          title="ערכי משמרת"
+          style={iconBtnStyle}
+        >
+          ✏️
+        </button>
+        <button
+          onClick={handleDeleteShift}
+          disabled={busy}
+          title="מחקי משמרת"
+          style={{ ...iconBtnStyle, color: '#991b1b' }}
+        >
+          🗑️
+        </button>
       </div>
 
       {/* שורה 2: מדריך כצ'יפ צבעוני, או placeholder */}
@@ -629,11 +741,11 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
       {/* הערות אופציונליות */}
       {shift.notes && shift.status !== 'cancelled' && (
         <div style={{ fontSize: 10, color: '#a37b00', marginTop: 3, fontStyle: 'italic' }}>
-          ℹ️ {shift.notes}
+          {shift.notes}
         </div>
       )}
 
-      {/* Picker dropdown — מופיע מעל הכרטיס */}
+      {/* Picker dropdown — בחירת מדריך */}
       {pickerOpen && (
         <div
           style={{
@@ -656,7 +768,7 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
             disabled={busy}
             style={pickerItemStyle({ bg: '#fff', fg: ADMIN_COLORS.gray500, border: 'transparent' }, true)}
           >
-            — להסיר שיבוץ —
+            — להסיר מדריך —
           </button>
           {eligibleGuides.map((g) => {
             const c = guideColor(g.id, guides);
@@ -671,22 +783,30 @@ function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; gu
               </button>
             );
           })}
-          <button
-            onClick={handleDelete}
-            disabled={busy}
-            style={{
-              ...pickerItemStyle({ bg: '#fff', fg: '#991b1b', border: 'transparent' }, true),
-              borderTop: `1px solid ${ADMIN_COLORS.gray300}`,
-              fontSize: 11,
-            }}
-          >
-            🗑️ מחקי שיבוץ
-          </button>
         </div>
+      )}
+
+      {/* Edit modal */}
+      {editOpen && (
+        <EditShiftModal
+          shift={shift}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => { setEditOpen(false); onChange(); }}
+        />
       )}
     </div>
   );
 }
+
+const iconBtnStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: 11,
+  padding: '0 2px',
+  fontFamily: 'inherit',
+  lineHeight: 1,
+};
 
 function pickerItemStyle(c: { bg: string; fg: string; border: string }, italic = false): React.CSSProperties {
   return {
@@ -706,7 +826,9 @@ function pickerItemStyle(c: { bg: string; fg: string; border: string }, italic =
   };
 }
 
-function GuidesPanel({ guides, onClose }: { guides: Guide[]; onClose: () => void }) {
+function GuidesPanel({ guides, onClose, onChanged }: { guides: Guide[]; onClose: () => void; onChanged: () => void }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   return (
     <div
       style={{
@@ -720,7 +842,7 @@ function GuidesPanel({ guides, onClose }: { guides: Guide[]; onClose: () => void
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#fff', borderRadius: 12, padding: 20,
-          width: '100%', maxWidth: 600, maxHeight: '85vh', overflowY: 'auto',
+          width: '100%', maxWidth: 640, maxHeight: '85vh', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', gap: 12,
         }}
         dir="rtl"
@@ -732,65 +854,192 @@ function GuidesPanel({ guides, onClose }: { guides: Guide[]; onClose: () => void
           <button onClick={onClose} style={navBtnStyle}>סגור</button>
         </div>
         <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
-          זמינות, חופשות, וסיורים שכל מדריך מוסמך להוביל
+          זמינות וסיורים שכל מדריך מוסמך — לחיצה על &quot;ערכי&quot; תאפשר עדכון מהיר.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {guides.map((g) => {
-            const c = guideColor(g.id, guides);
-            return (
-              <div
-                key={g.id}
-                style={{
-                  background: '#f9fafb',
-                  border: `1px solid ${ADMIN_COLORS.gray100}`,
-                  borderRadius: 8,
-                  padding: 12,
-                  borderRight: c ? `4px solid ${c.border}` : undefined,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  {c && (
-                    <span
-                      style={{
-                        background: c.bg,
-                        color: c.fg,
-                        padding: '2px 10px',
-                        borderRadius: 12,
-                        fontSize: 13,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {g.name}
-                    </span>
-                  )}
-                  <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
-                    {g.city === 'lisbon' ? 'ליסבון' : 'פורטו'}
-                  </span>
-                  {g.requires_pre_approval && (
-                    <span style={{ fontSize: 11, color: '#a37b00' }}>⚠️ דורש אישור מראש</span>
-                  )}
-                </div>
-                {g.availability_notes && (
-                  <div style={{ fontSize: 12, color: ADMIN_COLORS.gray700, marginBottom: 4 }}>
-                    <strong>זמינות:</strong> {g.availability_notes}
-                  </div>
-                )}
-                {g.vacation_notes && (
-                  <div style={{ fontSize: 12, color: '#a37b00', marginBottom: 4 }}>
-                    <strong>חופשות:</strong> {g.vacation_notes}
-                  </div>
-                )}
-                {g.qualified_tours && g.qualified_tours.length > 0 && (
-                  <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
-                    <strong>סיורים:</strong>{' '}
-                    {g.qualified_tours.map((t) => tourTypeLabel(t)).join(' · ')}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {guides.map((g) => (
+            <GuideCardRow
+              key={g.id}
+              guide={g}
+              guides={guides}
+              isEditing={editingId === g.id}
+              onEdit={() => setEditingId(g.id)}
+              onCancel={() => setEditingId(null)}
+              onSaved={() => { setEditingId(null); onChanged(); }}
+            />
+          ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function GuideCardRow({
+  guide, guides, isEditing, onEdit, onCancel, onSaved,
+}: {
+  guide: Guide;
+  guides: Guide[];
+  isEditing: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const c = guideColor(guide.id, guides);
+  const [availability, setAvailability] = useState(guide.availability_notes || '');
+  const [qualified, setQualified] = useState<string[]>(guide.qualified_tours || []);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  // איפוס שדות אם פתחנו עריכה מחדש
+  useEffect(() => {
+    if (isEditing) {
+      setAvailability(guide.availability_notes || '');
+      setQualified(guide.qualified_tours || []);
+      setErr('');
+    }
+  }, [isEditing, guide.availability_notes, guide.qualified_tours]);
+
+  const tourOptions = TOUR_TYPES[guide.city];
+
+  function toggleTour(value: string) {
+    setQualified((prev) => prev.includes(value) ? prev.filter((t) => t !== value) : [...prev, value]);
+  }
+
+  async function handleSave() {
+    setErr('');
+    setSaving(true);
+    try {
+      await updateGuideAvailability(guide.id, {
+        availability_notes: availability || null,
+        qualified_tours: qualified,
+      });
+      onSaved();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'משהו השתבש');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        background: '#f9fafb',
+        border: `1px solid ${ADMIN_COLORS.gray100}`,
+        borderRadius: 8,
+        padding: 12,
+        borderRight: c ? `4px solid ${c.border}` : undefined,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        {c && (
+          <span
+            style={{
+              background: c.bg,
+              color: c.fg,
+              padding: '2px 10px',
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {guide.name}
+          </span>
+        )}
+        <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+          {guide.city === 'lisbon' ? 'ליסבון' : 'פורטו'}
+        </span>
+        {guide.requires_pre_approval && (
+          <span style={{ fontSize: 11, color: '#a37b00' }}>⚠️ דורש אישור מראש</span>
+        )}
+        <div style={{ marginRight: 'auto' }}>
+          {!isEditing && (
+            <button onClick={onEdit} style={{ ...navBtnStyle, fontSize: 11, padding: '4px 10px' }}>
+              ✏️ ערכי
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!isEditing ? (
+        <>
+          {guide.availability_notes && (
+            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray700, marginBottom: 4 }}>
+              <strong>זמינות:</strong> {guide.availability_notes}
+            </div>
+          )}
+          {guide.vacation_notes && (
+            <div style={{ fontSize: 12, color: '#a37b00', marginBottom: 4 }}>
+              <strong>חופשות:</strong> {guide.vacation_notes}
+            </div>
+          )}
+          {guide.qualified_tours && guide.qualified_tours.length > 0 && (
+            <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+              <strong>סיורים:</strong>{' '}
+              {guide.qualified_tours.map((t) => tourTypeLabel(t)).join(' · ')}
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          <label style={labelStyle}>זמינות (טקסט חופשי)
+            <textarea
+              value={availability}
+              onChange={(e) => setAvailability(e.target.value)}
+              placeholder="לדוגמה: לא בשבת, מעדיפה ימי קיץ"
+              style={{ ...inputStyle, minHeight: 50, resize: 'vertical' }}
+            />
+          </label>
+          <div style={labelStyle}>
+            סיורים מוסמכים ({guide.city === 'lisbon' ? 'ליסבון' : 'פורטו'})
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+              {tourOptions.map((t) => {
+                const active = qualified.includes(t.value);
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => toggleTour(t.value)}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: 11,
+                      borderRadius: 12,
+                      border: `1px solid ${active ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
+                      background: active ? ADMIN_COLORS.green700 : '#fff',
+                      color: active ? '#fff' : ADMIN_COLORS.gray700,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+            <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, marginTop: 4 }}>
+              ריק = לא הוגדר. סיורים שלא מסומנים לא יופיעו ב-dropdown של שיבוץ.
+            </span>
+          </div>
+          {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+            <button onClick={onCancel} disabled={saving} style={{ ...navBtnStyle, fontSize: 12 }}>
+              ביטול
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                padding: '6px 14px', background: ADMIN_COLORS.green700, color: '#fff',
+                border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {saving ? 'שומרת...' : 'שמירה'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -809,10 +1058,14 @@ function ManualAddModal({
   const [tourType, setTourType] = useState('פרטי_1');
   const [guideId, setGuideId] = useState<string>('');
   const [notes, setNotes] = useState('');
+  // שדות מיוחדים לסיור פרטי
+  const [privateDetail, setPrivateDetail] = useState('');
+  const [privateCustomer, setPrivateCustomer] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
   const tourOptions = TOUR_TYPES[city];
+  const isPrivate = PRIVATE_TOUR_TYPES.has(tourType);
   const eligibleGuides = useMemo(
     () => guides.filter((g) => g.city === city && (!g.qualified_tours?.length || g.qualified_tours.includes(tourType))),
     [guides, city, tourType],
@@ -824,6 +1077,14 @@ function ManualAddModal({
       setErr('צריך תאריך, שעה וסוג סיור');
       return;
     }
+    // לסיור פרטי — בונים את ההערה אוטומטית מסוג הסיור + שם הלקוח
+    let finalNotes: string | undefined = notes || undefined;
+    if (isPrivate) {
+      const parts: string[] = [];
+      if (privateDetail.trim()) parts.push(privateDetail.trim());
+      if (privateCustomer.trim()) parts.push(privateCustomer.trim());
+      if (parts.length > 0) finalNotes = parts.join(' · ');
+    }
     setSaving(true);
     try {
       await createManualShift({
@@ -832,7 +1093,7 @@ function ManualAddModal({
         city,
         tour_type: tourType,
         guide_id: guideId || null,
-        notes: notes || undefined,
+        notes: finalNotes,
       });
       onCreated();
     } catch (e) {
@@ -855,7 +1116,8 @@ function ManualAddModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#fff', borderRadius: 12, padding: 20,
-          width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 12,
+          width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 12,
+          maxHeight: '90vh', overflowY: 'auto',
         }}
         dir="rtl"
       >
@@ -872,7 +1134,20 @@ function ManualAddModal({
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={inputStyle} />
         </label>
         <label style={labelStyle}>עיר
-          <select value={city} onChange={(e) => { setCity(e.target.value as 'lisbon' | 'porto'); setTourType(e.target.value === 'lisbon' ? 'פרטי_1' : 'פרטי_2'); }} style={inputStyle}>
+          <select
+            value={city}
+            onChange={(e) => {
+              const newCity = e.target.value as 'lisbon' | 'porto';
+              setCity(newCity);
+              // אם בחרת פרטי קודם — נמשיך עם פרטי בעיר החדשה
+              if (isPrivate) {
+                setTourType(newCity === 'lisbon' ? 'פרטי_1' : 'פרטי_2');
+              } else {
+                setTourType(TOUR_TYPES[newCity][0].value);
+              }
+            }}
+            style={inputStyle}
+          >
             <option value="lisbon">ליסבון</option>
             <option value="porto">פורטו</option>
           </select>
@@ -882,15 +1157,52 @@ function ManualAddModal({
             {tourOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </label>
-        <label style={labelStyle}>מדריך (אופציונלי)
+
+        {isPrivate && (
+          <>
+            <label style={labelStyle}>פירוט הסיור
+              <input
+                type="text"
+                value={privateDetail}
+                onChange={(e) => setPrivateDetail(e.target.value)}
+                placeholder="לדוגמה: סינטרה פרטי, טעימות פרטי בליסבון"
+                style={inputStyle}
+              />
+            </label>
+            <label style={labelStyle}>שם הלקוח / מספר אנשים
+              <input
+                type="text"
+                value={privateCustomer}
+                onChange={(e) => setPrivateCustomer(e.target.value)}
+                placeholder="לדוגמה: משפחת כהן · 4 אנשים"
+                style={inputStyle}
+              />
+            </label>
+            <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500, marginTop: -4 }}>
+              ב-לוח יוצג: <strong>סיור פרטי</strong> · {privateDetail || '...'} · {privateCustomer || '...'}
+            </span>
+          </>
+        )}
+
+        <label style={labelStyle}>מדריך {isPrivate ? '' : '(אופציונלי)'}
           <select value={guideId} onChange={(e) => setGuideId(e.target.value)} style={inputStyle}>
             <option value="">— ללא שיבוץ עדיין —</option>
             {eligibleGuides.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </label>
-        <label style={labelStyle}>הערה (אופציונלי)
-          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="לדוג': משפחת כהן, 4 אנשים" style={inputStyle} />
-        </label>
+
+        {!isPrivate && (
+          <label style={labelStyle}>הערה (אופציונלי)
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="הערה חופשית"
+              style={inputStyle}
+            />
+          </label>
+        )}
+
         {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <button onClick={onClose} disabled={saving} style={{ ...navBtnStyle, flex: 1 }}>ביטול</button>
@@ -919,3 +1231,105 @@ const inputStyle: React.CSSProperties = {
   padding: '8px 10px', fontSize: 13, borderRadius: 6,
   border: `1px solid ${ADMIN_COLORS.gray300}`, fontFamily: 'inherit',
 };
+
+// ─── עריכת משמרת קיימת (תאריך / שעה / סוג / הערות) ───
+function EditShiftModal({
+  shift, onClose, onSaved,
+}: {
+  shift: Shift;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [date, setDate] = useState(shift.shift_date);
+  const [time, setTime] = useState(shortTime(shift.shift_time));
+  const [tourType, setTourType] = useState(shift.tour_type);
+  const [notes, setNotes] = useState(shift.notes || '');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const tourOptions = TOUR_TYPES[shift.city];
+
+  async function handleSave() {
+    setErr('');
+    if (!date || !time || !tourType) {
+      setErr('צריך תאריך, שעה וסוג סיור');
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateShift(shift.id, {
+        shift_date: date,
+        shift_time: time,
+        tour_type: tourType,
+        notes: notes || null,
+      });
+      onSaved();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'משהו השתבש');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 50, padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: 12, padding: 20,
+          width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 12,
+        }}
+        dir="rtl"
+      >
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: ADMIN_COLORS.green900 }}>
+          עריכת משמרת
+        </h3>
+        <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
+          עיר: {shift.city === 'lisbon' ? 'ליסבון' : 'פורטו'} · {shift.source === 'manual' ? 'נוסף ידנית' : 'מהאתר'}
+        </p>
+        <label style={labelStyle}>תאריך
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={labelStyle}>שעה
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={labelStyle}>סוג סיור
+          <select value={tourType} onChange={(e) => setTourType(e.target.value)} style={inputStyle}>
+            {tourOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </label>
+        <label style={labelStyle}>הערה
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="הערה חופשית"
+            style={inputStyle}
+          />
+        </label>
+        {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button onClick={onClose} disabled={saving} style={{ ...navBtnStyle, flex: 1 }}>ביטול</button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              flex: 2, padding: '8px 14px', background: ADMIN_COLORS.green700, color: '#fff',
+              border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600,
+              cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {saving ? 'שומרת...' : 'שמירה'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

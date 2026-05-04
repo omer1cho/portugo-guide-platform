@@ -153,6 +153,29 @@ export async function deleteShift(shiftId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** מעדכן שדות בשיבוץ (תאריך, שעה, סוג, הערות) */
+export async function updateShift(
+  shiftId: string,
+  updates: Partial<Pick<Shift, 'shift_date' | 'shift_time' | 'tour_type' | 'city' | 'notes'>>,
+): Promise<void> {
+  const payload: Record<string, unknown> = { ...updates, manually_edited: true };
+  // אם הזמן הגיע כ-HH:MM נמיר ל-HH:MM:00
+  if (typeof payload.shift_time === 'string' && (payload.shift_time as string).length === 5) {
+    payload.shift_time = `${payload.shift_time}:00`;
+  }
+  const { error } = await supabase.from('shifts').update(payload).eq('id', shiftId);
+  if (error) throw error;
+}
+
+/** מעדכן זמינות וסיורים מוסמכים של מדריך (מתוך מודאל הפרטים בשיבוצים) */
+export async function updateGuideAvailability(
+  guideId: string,
+  updates: { availability_notes?: string | null; qualified_tours?: string[] },
+): Promise<void> {
+  const { error } = await supabase.from('guides').update(updates).eq('id', guideId);
+  if (error) throw error;
+}
+
 /** מחזיר תווית קריאה לסוג סיור (למשל 'קלאסי_1' → 'ליסבון הקלאסית') */
 export function tourTypeLabel(tourType: string): string {
   const map: Record<string, string> = {
