@@ -3,15 +3,17 @@
 /**
  * /admin/shifts — לוח שיבוצים שבועי.
  *
- * שלב A:
- *   - שיבוצים מסונכרנים אוטומטית מהאתר (cron יומי)
- *   - עומר משבצת מדריכים מ-dropdown לכל שיבוץ
- *   - המדריכים בdropdown מסוננים לפי עיר ו-qualified_tours
- *   - "פרסמי שבוע" — הופך את כל ה-draft של השבוע ל-published
- *   - "+ הוסיפי שיבוץ ידני" — לסיורים פרטיים / חד-פעמיים
- *   - תווית availability_notes ליד כל מדריך ב-dropdown
+ * עיצוב:
+ *   - 7 ימים מימין לשמאל (ראשון-שבת); היום הנוכחי מודגש
+ *   - בכל יום: חגים למעלה, ואז ליסבון בוקר → ליסבון צהריים → פורטו בוקר → פורטו צהריים
+ *   - כל שיבוץ: שם הסיור הוא הכי בולט, השעה קטנה לצד, מדריך כצ׳יפ צבעוני
+ *   - לכל מדריך צבע ייחודי לזיהוי מהיר
+ *   - הtooltip של המדריך מציג את ה-availability_notes
  *
- * צד מדריך (שלב B): "המשמרות שלי" עם אישור/דחייה — לא בקובץ זה.
+ * פעולות:
+ *   - "פרסמי שבוע" — draft → published
+ *   - "הוסיפי שיבוץ ידני" — לסיורים פרטיים
+ *   - "מלאי קבע פורטו" — תום/דותן לפי הקבע
  */
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
@@ -32,18 +34,55 @@ import {
 } from '@/lib/admin/shifts-data';
 import type { Guide } from '@/lib/supabase';
 import { TOUR_TYPES } from '@/lib/supabase';
+import { getCalendarEventsForDate } from '@/lib/calendar-events';
 
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
+// Palette צבעים נעימה למדריכים — 8 צבעים עם ניגודיות טקסט גבוהה
+const GUIDE_PALETTE: Array<{ bg: string; fg: string; border: string }> = [
+  { bg: '#fce7f3', fg: '#9d174d', border: '#f9a8d4' }, // ורוד
+  { bg: '#dbeafe', fg: '#1e40af', border: '#93c5fd' }, // כחול
+  { bg: '#fef3c7', fg: '#92400e', border: '#fcd34d' }, // צהוב-חום
+  { bg: '#d1fae5', fg: '#065f46', border: '#6ee7b7' }, // ירוק
+  { bg: '#e9d5ff', fg: '#6b21a8', border: '#c4b5fd' }, // סגול
+  { bg: '#fed7aa', fg: '#9a3412', border: '#fdba74' }, // כתום
+  { bg: '#cffafe', fg: '#155e75', border: '#67e8f9' }, // טורקיז
+  { bg: '#fecaca', fg: '#991b1b', border: '#fca5a5' }, // אדום
+];
+
+function guideColor(guideId: string | null, guides: Guide[]): { bg: string; fg: string; border: string } | null {
+  if (!guideId) return null;
+  const idx = guides.findIndex((g) => g.id === guideId);
+  if (idx < 0) return null;
+  return GUIDE_PALETTE[idx % GUIDE_PALETTE.length];
+}
+
 function fmtDayLabel(d: Date): string {
   const dow = DAY_NAMES[d.getDay()];
-  return `${dow} ${d.getDate()}/${d.getMonth() + 1}`;
+  return `${dow} · ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
 function fmtWeekRange(weekStart: Date): string {
   const end = addDays(weekStart, 6);
   return `${weekStart.getDate()}/${weekStart.getMonth() + 1} – ${end.getDate()}/${end.getMonth() + 1}`;
 }
+
+// ─── Porto permanent roster (קבע מאי-יולי לפי הקובץ של עומר) ───
+// dayOfWeek: 0=ראשון, 1=שני, 2=שלישי, 3=רביעי, 4=חמישי, 5=שישי, 6=שבת
+type PortoSlot = { dayOfWeek: number; tour_type: string; time: string; guide_name: string };
+const PORTO_ROSTER: PortoSlot[] = [
+  { dayOfWeek: 0, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 1, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 2, tour_type: 'פורטו_1', time: '09:45', guide_name: 'דותן' },
+  { dayOfWeek: 2, tour_type: 'טעימות', time: '14:30', guide_name: 'דותן' },
+  { dayOfWeek: 3, tour_type: 'דורו', time: '08:20', guide_name: 'תום' },
+  { dayOfWeek: 3, tour_type: 'פורטו_1', time: '09:45', guide_name: 'דותן' },
+  { dayOfWeek: 4, tour_type: 'פורטו_1', time: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 4, tour_type: 'טעימות', time: '14:30', guide_name: 'תום' },
+  { dayOfWeek: 5, tour_type: 'דורו', time: '08:20', guide_name: 'תום' },
+  { dayOfWeek: 5, tour_type: 'פורטו_1', time: '10:30', guide_name: 'דותן' },
+  // שבת — מתחלפים תום/דותן לפי שבוע, אז לא בקבע אוטומטי
+];
 
 export default function AdminShiftsPage() {
   return (
@@ -61,7 +100,9 @@ function ShiftsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showGuidesPanel, setShowGuidesPanel] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [autofilling, setAutofilling] = useState(false);
   const [reloadCounter, setReloadCounter] = useState(0);
 
   function reload() { setReloadCounter((c) => c + 1); }
@@ -95,8 +136,8 @@ function ShiftsContent() {
     return map;
   }, [shifts, weekStart]);
 
-  const draftCount = shifts.filter((s) => s.status === 'draft' && s.guide_id).length;
   const totalDraftCount = shifts.filter((s) => s.status === 'draft').length;
+  const assignedDraftCount = shifts.filter((s) => s.status === 'draft' && s.guide_id).length;
   const unassignedCount = shifts.filter((s) => !s.guide_id && s.status !== 'cancelled').length;
 
   async function handlePublishWeek() {
@@ -110,6 +151,48 @@ function ShiftsContent() {
       alert('פרסום נכשל: ' + (e instanceof Error ? e.message : ''));
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function handleAutofillPorto() {
+    // מקצים מדריכים לפי PORTO_ROSTER לכל shift של פורטו שאין לו מדריך
+    const tomGuide = guides.find((g) => g.name === 'תום');
+    const dotanGuide = guides.find((g) => g.name === 'דותן');
+    if (!tomGuide || !dotanGuide) {
+      alert('לא נמצאו תום או דותן ברשימת המדריכים');
+      return;
+    }
+    const portoShifts = shifts.filter((s) => s.city === 'porto' && !s.guide_id && s.status === 'draft');
+    if (portoShifts.length === 0) {
+      alert('אין שיבוצי פורטו ללא מדריך השבוע');
+      return;
+    }
+    const matches: { shift: Shift; guideId: string; guideName: string }[] = [];
+    for (const s of portoShifts) {
+      const dt = new Date(s.shift_date + 'T00:00:00');
+      const dow = dt.getDay();
+      const time = shortTime(s.shift_time);
+      const slot = PORTO_ROSTER.find((r) => r.dayOfWeek === dow && r.tour_type === s.tour_type && r.time === time);
+      if (!slot) continue;
+      const g = slot.guide_name === 'תום' ? tomGuide : dotanGuide;
+      matches.push({ shift: s, guideId: g.id, guideName: slot.guide_name });
+    }
+    if (matches.length === 0) {
+      alert('לא נמצאו שיבוצים שתואמים את הקבע. השוואה לפי יום+שעה+סוג סיור.');
+      return;
+    }
+    if (!confirm(`להקצות ${matches.length} מדריכים לפי קבע פורטו?\n(שבת מתחלפת ולא נכלל באוטו.)`)) return;
+    setAutofilling(true);
+    try {
+      for (const m of matches) {
+        await assignGuide(m.shift.id, m.guideId);
+      }
+      alert(`הוקצו ${matches.length} שיבוצים`);
+      reload();
+    } catch (e) {
+      alert('שיבוץ נכשל: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setAutofilling(false);
     }
   }
 
@@ -127,21 +210,14 @@ function ShiftsContent() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <CitySwitcher value={cityFilter} onChange={setCityFilter} />
-          <button
-            onClick={() => setShowAddModal(true)}
-            style={{
-              padding: '8px 14px',
-              background: '#fff',
-              border: `1px solid ${ADMIN_COLORS.green700}`,
-              color: ADMIN_COLORS.green700,
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            + הוסיפי שיבוץ ידני
+          <button onClick={() => setShowGuidesPanel(true)} style={secondaryBtnStyle}>
+            👥 פרטי מדריכים
+          </button>
+          <button onClick={handleAutofillPorto} disabled={autofilling} style={secondaryBtnStyle}>
+            🤖 מלאי קבע פורטו
+          </button>
+          <button onClick={() => setShowAddModal(true)} style={secondaryBtnStyle}>
+            + הוסיפי שיבוץ
           </button>
           <button
             onClick={handlePublishWeek}
@@ -176,9 +252,9 @@ function ShiftsContent() {
       </div>
 
       {/* Summary chips */}
-      {!loading && (
+      {!loading && shifts.length > 0 && (
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: ADMIN_COLORS.gray700 }}>
-          <Chip color="green" label={`${draftCount} משובצים`} />
+          <Chip color="green" label={`${assignedDraftCount} משובצים`} />
           {unassignedCount > 0 && <Chip color="yellow" label={`${unassignedCount} ממתינים לשיבוץ`} />}
           {shifts.filter((s) => s.status === 'published').length > 0 && (
             <Chip color="blue" label={`${shifts.filter((s) => s.status === 'published').length} פורסמו`} />
@@ -220,7 +296,6 @@ function ShiftsContent() {
         </div>
       )}
 
-      {/* Mobile note: a 7-column grid is too narrow on phone, so on small screens we stack */}
       <style jsx>{`
         @media (max-width: 900px) {
           [data-shifts-board] {
@@ -229,7 +304,6 @@ function ShiftsContent() {
         }
       `}</style>
 
-      {/* Manual add modal */}
       {showAddModal && (
         <ManualAddModal
           weekStart={weekStart}
@@ -238,19 +312,21 @@ function ShiftsContent() {
           onCreated={() => { setShowAddModal(false); reload(); }}
         />
       )}
+      {showGuidesPanel && (
+        <GuidesPanel guides={guides} onClose={() => setShowGuidesPanel(false)} />
+      )}
     </div>
   );
 }
 
 const navBtnStyle: React.CSSProperties = {
-  padding: '6px 12px',
-  background: '#fff',
-  border: `1px solid ${ADMIN_COLORS.gray300}`,
-  borderRadius: 6,
-  fontSize: 13,
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-  color: ADMIN_COLORS.gray700,
+  padding: '6px 12px', background: '#fff', border: `1px solid ${ADMIN_COLORS.gray300}`,
+  borderRadius: 6, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: ADMIN_COLORS.gray700,
+};
+const secondaryBtnStyle: React.CSSProperties = {
+  padding: '8px 14px', background: '#fff', border: `1px solid ${ADMIN_COLORS.gray300}`,
+  borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+  fontFamily: 'inherit', color: ADMIN_COLORS.gray700,
 };
 
 function Chip({ color, label }: { color: 'green' | 'yellow' | 'red' | 'blue'; label: string }) {
@@ -284,10 +360,7 @@ function CitySwitcher({ value, onChange }: { value: 'all' | 'lisbon' | 'porto'; 
             padding: '6px 12px',
             background: value === o.v ? ADMIN_COLORS.green700 : 'transparent',
             color: value === o.v ? '#fff' : ADMIN_COLORS.gray700,
-            border: 'none',
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
+            border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
           {o.label}
@@ -299,6 +372,17 @@ function CitySwitcher({ value, onChange }: { value: 'all' | 'lisbon' | 'porto'; 
 
 function DayColumn({ date, shifts, guides, onChange }: { date: Date; shifts: Shift[]; guides: Guide[]; onChange: () => void }) {
   const isToday = toIsoDate(date) === toIsoDate(new Date());
+  const events = getCalendarEventsForDate(toIsoDate(date)).filter((e) => e.category === 'israel' || e.category === 'portugal');
+
+  // קיבוץ: city × time-slot
+  const lisbonMorning = shifts.filter((s) => s.city === 'lisbon' && parseInt(s.shift_time) < 13);
+  const lisbonAfternoon = shifts.filter((s) => s.city === 'lisbon' && parseInt(s.shift_time) >= 13);
+  const portoMorning = shifts.filter((s) => s.city === 'porto' && parseInt(s.shift_time) < 13);
+  const portoAfternoon = shifts.filter((s) => s.city === 'porto' && parseInt(s.shift_time) >= 13);
+
+  const hasLisbon = lisbonMorning.length > 0 || lisbonAfternoon.length > 0;
+  const hasPorto = portoMorning.length > 0 || portoAfternoon.length > 0;
+
   return (
     <div
       style={{
@@ -308,10 +392,11 @@ function DayColumn({ date, shifts, guides, onChange }: { date: Date; shifts: Shi
         padding: 8,
         display: 'flex',
         flexDirection: 'column',
-        gap: 6,
-        minHeight: 120,
+        gap: 8,
+        minHeight: 140,
       }}
     >
+      {/* כותרת היום */}
       <div
         style={{
           fontSize: 13,
@@ -324,33 +409,116 @@ function DayColumn({ date, shifts, guides, onChange }: { date: Date; shifts: Shi
       >
         {fmtDayLabel(date)}
       </div>
-      {shifts.length === 0 ? (
+
+      {/* חגים */}
+      {events.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {events.map((e, i) => (
+            <div
+              key={i}
+              style={{
+                fontSize: 10,
+                background: e.category === 'israel' ? '#fef3c7' : '#dbeafe',
+                color: e.category === 'israel' ? '#854d0e' : '#1e40af',
+                padding: '3px 6px',
+                borderRadius: 4,
+                textAlign: 'center',
+                fontWeight: 600,
+              }}
+              title={e.text}
+            >
+              {e.text}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* אם אין שיבוצים בכלל */}
+      {!hasLisbon && !hasPorto && (
         <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500, textAlign: 'center', padding: '12px 0' }}>—</div>
-      ) : (
-        shifts.map((s) => <ShiftCard key={s.id} shift={s} guides={guides} onChange={onChange} />)
+      )}
+
+      {/* ליסבון */}
+      {hasLisbon && (
+        <CitySection
+          label="🇵🇹 ליסבון"
+          color="#f0fdf4"
+          morning={lisbonMorning}
+          afternoon={lisbonAfternoon}
+          guides={guides}
+          onChange={onChange}
+        />
+      )}
+
+      {/* פורטו (תמיד מתחת לליסבון) */}
+      {hasPorto && (
+        <CitySection
+          label="🏛️ פורטו"
+          color="#fef3c7"
+          morning={portoMorning}
+          afternoon={portoAfternoon}
+          guides={guides}
+          onChange={onChange}
+        />
       )}
     </div>
   );
 }
 
-function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[]; onChange: () => void }) {
-  const [busy, setBusy] = useState(false);
+function CitySection({
+  label, color, morning, afternoon, guides, onChange,
+}: {
+  label: string;
+  color: string;
+  morning: Shift[];
+  afternoon: Shift[];
+  guides: Guide[];
+  onChange: () => void;
+}) {
+  return (
+    <div style={{ background: color, borderRadius: 6, padding: 5, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: ADMIN_COLORS.gray700, opacity: 0.8 }}>
+        {label}
+      </div>
+      {morning.length > 0 && (
+        <TimeSlotGroup label="🌅" shifts={morning} guides={guides} onChange={onChange} />
+      )}
+      {afternoon.length > 0 && (
+        <TimeSlotGroup label="☀️" shifts={afternoon} guides={guides} onChange={onChange} />
+      )}
+    </div>
+  );
+}
 
-  // סינון מדריכים מתאימים
+function TimeSlotGroup({ label, shifts, guides, onChange }: { label: string; shifts: Shift[]; guides: Guide[]; onChange: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {shifts.map((s) => (
+        <ShiftCard key={s.id} shift={s} guides={guides} onChange={onChange} timeSlotIcon={label} />
+      ))}
+    </div>
+  );
+}
+
+function ShiftCard({ shift, guides, onChange, timeSlotIcon }: { shift: Shift; guides: Guide[]; onChange: () => void; timeSlotIcon: string }) {
+  const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   const eligibleGuides = useMemo(() => {
     return guides.filter((g) => {
       if (g.city !== shift.city) return false;
       const qt = g.qualified_tours || [];
-      // אם רשימה ריקה — לא הוגדר, לאפשר הכל. אחרת — לבדוק שהsiור ברשימה.
       if (qt.length > 0 && !qt.includes(shift.tour_type)) return false;
       return true;
     });
   }, [guides, shift.city, shift.tour_type]);
 
   const currentGuide = guides.find((g) => g.id === shift.guide_id);
+  const guideClr = guideColor(shift.guide_id, guides);
 
   async function handleAssign(guideId: string | null) {
     setBusy(true);
+    setPickerOpen(false);
     try {
       await assignGuide(shift.id, guideId);
       onChange();
@@ -374,105 +542,261 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     }
   }
 
-  // צבע רקע לפי סטטוס
-  let bg: string = '#fff';
-  let borderColor: string = ADMIN_COLORS.gray300;
+  // מסגרת לכרטיס לפי סטטוס
+  let cardBg: string = '#fff';
+  let cardBorder: string = ADMIN_COLORS.gray300;
   if (shift.status === 'cancelled') {
-    bg = '#fef2f2';
-    borderColor = '#fca5a5';
+    cardBg = '#fef2f2';
+    cardBorder = '#fca5a5';
   } else if (shift.status === 'published') {
-    bg = '#dbeafe';
-    borderColor = '#93c5fd';
-  } else if (shift.guide_id) {
-    bg = '#f0fdf4';
-    borderColor = '#86efac';
+    cardBorder = '#93c5fd';
   }
 
   return (
     <div
       style={{
-        background: bg,
-        border: `1px solid ${borderColor}`,
-        borderRadius: 8,
-        padding: 6,
-        fontSize: 12,
+        background: cardBg,
+        border: `1px solid ${cardBorder}`,
+        borderRadius: 6,
+        padding: '5px 7px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
+        position: 'relative',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-        <span style={{ fontWeight: 700, color: ADMIN_COLORS.gray900 }}>{shortTime(shift.shift_time)}</span>
-        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500 }}>
-          {shift.source === 'manual' ? '✏️' : ''}
-          {shift.status === 'published' ? '📤' : ''}
-          {shift.status === 'cancelled' ? '❌' : ''}
+      {/* שורה 1: סוג סיור (גדול ובולט) + שעה (קטנה לצד) + סטטוס */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: ADMIN_COLORS.gray900, flex: 1, lineHeight: 1.2 }}>
+          {tourTypeLabel(shift.tour_type)}
         </span>
+        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap' }}>
+          {timeSlotIcon} {shortTime(shift.shift_time)}
+        </span>
+        {shift.source === 'manual' && (
+          <span title="הוסף ידנית" style={{ fontSize: 10 }}>✏️</span>
+        )}
+        {shift.status === 'published' && (
+          <span title="פורסם" style={{ fontSize: 10 }}>📤</span>
+        )}
       </div>
-      <div style={{ marginBottom: 6, color: ADMIN_COLORS.gray700, fontSize: 11 }}>{tourTypeLabel(shift.tour_type)}</div>
 
+      {/* שורה 2: מדריך כצ'יפ צבעוני, או placeholder */}
       {shift.status === 'cancelled' ? (
         <div style={{ fontSize: 10, color: '#991b1b', fontStyle: 'italic' }}>
           {shift.notes || 'בוטל'}
         </div>
+      ) : currentGuide && guideClr ? (
+        <button
+          onClick={() => setPickerOpen(!pickerOpen)}
+          disabled={busy}
+          title={currentGuide.availability_notes || ''}
+          style={{
+            background: guideClr.bg,
+            color: guideClr.fg,
+            border: `1px solid ${guideClr.border}`,
+            borderRadius: 4,
+            padding: '3px 8px',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            width: '100%',
+            textAlign: 'right',
+          }}
+        >
+          {currentGuide.name}
+        </button>
       ) : (
-        <>
-          <select
-            value={shift.guide_id || ''}
-            onChange={(e) => handleAssign(e.target.value || null)}
+        <button
+          onClick={() => setPickerOpen(!pickerOpen)}
+          disabled={busy}
+          style={{
+            background: '#fff',
+            color: ADMIN_COLORS.gray500,
+            border: `1px dashed ${ADMIN_COLORS.gray300}`,
+            borderRadius: 4,
+            padding: '3px 8px',
+            fontSize: 11,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            width: '100%',
+            textAlign: 'right',
+          }}
+        >
+          + לשבץ מדריך
+        </button>
+      )}
+
+      {/* הערות אופציונליות */}
+      {shift.notes && shift.status !== 'cancelled' && (
+        <div style={{ fontSize: 10, color: '#a37b00', marginTop: 3, fontStyle: 'italic' }}>
+          ℹ️ {shift.notes}
+        </div>
+      )}
+
+      {/* Picker dropdown — מופיע מעל הכרטיס */}
+      {pickerOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            left: 0,
+            marginTop: 2,
+            background: '#fff',
+            border: `1px solid ${ADMIN_COLORS.gray300}`,
+            borderRadius: 6,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 5,
+            maxHeight: 200,
+            overflowY: 'auto',
+          }}
+        >
+          <button
+            onClick={() => handleAssign(null)}
             disabled={busy}
-            style={{
-              width: '100%',
-              padding: '4px 6px',
-              fontSize: 11,
-              borderRadius: 4,
-              border: `1px solid ${ADMIN_COLORS.gray300}`,
-              fontFamily: 'inherit',
-              background: '#fff',
-            }}
+            style={pickerItemStyle({ bg: '#fff', fg: ADMIN_COLORS.gray500, border: 'transparent' }, true)}
           >
-            <option value="">— בחרי מדריך —</option>
-            {eligibleGuides.map((g) => (
-              <option key={g.id} value={g.id}>
+            — להסיר שיבוץ —
+          </button>
+          {eligibleGuides.map((g) => {
+            const c = guideColor(g.id, guides);
+            return (
+              <button
+                key={g.id}
+                onClick={() => handleAssign(g.id)}
+                disabled={busy}
+                style={pickerItemStyle(c || { bg: '#fff', fg: '#000', border: 'transparent' })}
+              >
                 {g.name}{g.requires_pre_approval ? ' ⚠️' : ''}
-              </option>
-            ))}
-          </select>
-          {currentGuide?.availability_notes && (
-            <div style={{ fontSize: 10, color: ADMIN_COLORS.gray500, marginTop: 4, lineHeight: 1.3 }}>
-              {currentGuide.availability_notes}
-            </div>
-          )}
-          {shift.notes && (
-            <div style={{ fontSize: 10, color: '#a37b00', marginTop: 4, fontStyle: 'italic' }}>
-              ℹ️ {shift.notes}
-            </div>
-          )}
+              </button>
+            );
+          })}
           <button
             onClick={handleDelete}
             disabled={busy}
             style={{
-              fontSize: 10,
-              color: '#991b1b',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 2,
-              marginTop: 2,
-              fontFamily: 'inherit',
+              ...pickerItemStyle({ bg: '#fff', fg: '#991b1b', border: 'transparent' }, true),
+              borderTop: `1px solid ${ADMIN_COLORS.gray300}`,
+              fontSize: 11,
             }}
           >
-            מחק
+            🗑️ מחקי שיבוץ
           </button>
-        </>
+        </div>
       )}
     </div>
   );
 }
 
+function pickerItemStyle(c: { bg: string; fg: string; border: string }, italic = false): React.CSSProperties {
+  return {
+    display: 'block',
+    width: '100%',
+    padding: '6px 10px',
+    background: c.bg,
+    color: c.fg,
+    border: 'none',
+    borderBottom: `1px solid ${ADMIN_COLORS.gray100}`,
+    fontSize: 12,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textAlign: 'right',
+    fontStyle: italic ? 'italic' : 'normal',
+    fontWeight: italic ? 400 : 600,
+  };
+}
+
+function GuidesPanel({ guides, onClose }: { guides: Guide[]; onClose: () => void }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 50, padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: 12, padding: 20,
+          width: '100%', maxWidth: 600, maxHeight: '85vh', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 12,
+        }}
+        dir="rtl"
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: ADMIN_COLORS.green900 }}>
+            👥 פרטי מדריכים
+          </h3>
+          <button onClick={onClose} style={navBtnStyle}>סגור</button>
+        </div>
+        <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
+          זמינות, חופשות, וסיורים שכל מדריך מוסמך להוביל
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {guides.map((g) => {
+            const c = guideColor(g.id, guides);
+            return (
+              <div
+                key={g.id}
+                style={{
+                  background: '#f9fafb',
+                  border: `1px solid ${ADMIN_COLORS.gray100}`,
+                  borderRadius: 8,
+                  padding: 12,
+                  borderRight: c ? `4px solid ${c.border}` : undefined,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  {c && (
+                    <span
+                      style={{
+                        background: c.bg,
+                        color: c.fg,
+                        padding: '2px 10px',
+                        borderRadius: 12,
+                        fontSize: 13,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {g.name}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+                    {g.city === 'lisbon' ? 'ליסבון' : 'פורטו'}
+                  </span>
+                  {g.requires_pre_approval && (
+                    <span style={{ fontSize: 11, color: '#a37b00' }}>⚠️ דורש אישור מראש</span>
+                  )}
+                </div>
+                {g.availability_notes && (
+                  <div style={{ fontSize: 12, color: ADMIN_COLORS.gray700, marginBottom: 4 }}>
+                    <strong>זמינות:</strong> {g.availability_notes}
+                  </div>
+                )}
+                {g.vacation_notes && (
+                  <div style={{ fontSize: 12, color: '#a37b00', marginBottom: 4 }}>
+                    <strong>חופשות:</strong> {g.vacation_notes}
+                  </div>
+                )}
+                {g.qualified_tours && g.qualified_tours.length > 0 && (
+                  <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+                    <strong>סיורים:</strong>{' '}
+                    {g.qualified_tours.map((t) => tourTypeLabel(t)).join(' · ')}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ManualAddModal({
-  weekStart,
-  guides,
-  onClose,
-  onCreated,
+  weekStart, guides, onClose, onCreated,
 }: {
   weekStart: Date;
   guides: Guide[];
@@ -541,7 +865,6 @@ function ManualAddModal({
         <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
           לסיורים פרטיים או חד-פעמיים שלא מסונכרנים מהאתר
         </p>
-
         <label style={labelStyle}>תאריך
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
         </label>
@@ -568,9 +891,7 @@ function ManualAddModal({
         <label style={labelStyle}>הערה (אופציונלי)
           <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="לדוג': משפחת כהן, 4 אנשים" style={inputStyle} />
         </label>
-
         {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
-
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <button onClick={onClose} disabled={saving} style={{ ...navBtnStyle, flex: 1 }}>ביטול</button>
           <button
