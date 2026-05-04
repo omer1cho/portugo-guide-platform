@@ -419,9 +419,19 @@ function InboxAlerts({
     const totalAmount = outstandingReceipts.reduce((s, o) => s + o.receipt_amount, 0);
     // סופרים מדריכים יחודיים (ייתכן ולמדריך אחד יש כמה חודשים פתוחים)
     const uniqueGuides = new Set(outstandingReceipts.map((o) => o.guide.id)).size;
+    // סופרים חודשים יחודיים. אם יש רק חודש אחד — להציג את שמו במפורש
+    // ("4 קבלות חסרות על אפריל"), אחרת לתת ספירה ("4 קבלות חסרות מ-2 חודשים")
+    const uniqueMonths = new Set(outstandingReceipts.map((o) => `${o.year}-${o.month}`));
+    let scope: string;
+    if (uniqueMonths.size === 1) {
+      const o = outstandingReceipts[0];
+      scope = `על ${monthName(o.year, o.month)}`;
+    } else {
+      scope = `מ-${uniqueMonths.size} חודשים`;
+    }
     alerts.push({
       icon: '🧾',
-      text: `${uniqueGuides} מדריכים לא הוציאו קבלה (${outstandingReceipts.length} חודשים) — סה״כ ${totalAmount.toFixed(0)}€`,
+      text: `${uniqueGuides} מדריכים לא הוציאו קבלה ${scope} — סה״כ ${totalAmount.toFixed(0)}€`,
       color: 'red',
       targetId: 'section-receipts',
     });
