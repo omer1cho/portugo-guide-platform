@@ -369,3 +369,73 @@ export async function loadMonthSnapshot(
 
   return { year, month, guides: summaries, totals };
 }
+
+// ---------------------------------------------------------------------------
+// Outstanding monthly receipts — חוצה-חודשים
+//
+// הדוח של "קבלות שלא הוצאו" צריך להיות עצמאי מהחודש שעומר צופה בו —
+// המדריכים מוציאים קבלה רק בסוף החודש, אז אין טעם להציג קבלות של
+// החודש הנוכחי או של חודש עתידי. הפונקציה הזו מחזירה את רשימת הקבלות
+// שעדיין לא הוצאו מ-N החודשים האחרונים שכבר הסתיימו.
+// ---------------------------------------------------------------------------
+
+export type OutstandingReceipt = {
+  guide: { id: string; name: string };
+  /** השנה של חודש המשכורת (לא של ההעלאה) */
+  year: number;
+  /** 0-indexed (ינואר=0) — להציג עם monthName() */
+  month: number;
+  /** הסכום שצריך להוציא עליו קבלה (משכורת ללא טיפים, מעוגל) */
+  receipt_amount: number;
+  /** האם נשלחה התראה לאדמין על איחור (אחרי גרייס פריוד) */
+  admin_notified_at: string | null;
+};
+
+export async function loadOutstandingMonthlyReceipts(options: {
+  cityFilter?: 'lisbon' | 'porto' | 'all';
+  /** כמה חודשים אחורה לטעון. ברירת מחדל: 3 (החודשים שהסתיימו) */
+  monthsBack?: number;
+} = {}): Promise<OutstandingReceipt[]> {
+  const monthsBack = options.monthsBack ?? 3;
+  const cityFilter = options.cityFilter ?? 'all';
+
+  // החודש הנוכחי לא נכלל — רק חודשים שהסתיימו.
+  // אם היום הוא 4.5, מסתכלים על אפריל, מרץ, פברואר.
+  const today = new Date();
+  const monthsToLoad: { year: number; month: number }[] = [];
+  for (let i = 1; i <= monthsBack; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthsToLoad.push({ year: d.getFullYear(), month: d.getMonth() });
+  }
+
+  const snapshots = await Promise.all(
+    monthsToLoad.map(({ year, month }) =>
+      loadMonthSnapshot(year, month, { cityFilter }),
+    ),
+  );
+
+  const outstanding: OutstandingReceipt[] = [];
+  for (const snap of snapshots) {
+    for (const g of snap.guides) {
+      // יש משכורת לקבלה > 0 (אם לא — המדריך לא עבד החודש, לא רלוונטי)
+      if (g.salary.receipt_amount <= 0) continue;
+      // כבר הוציא/אושר — לא רלוונטי
+      if (g.receipt_ack !== null && g.receipt_ack.acknowledged_at !== null) continue;
+      outstanding.push({
+        guide: { id: g.guide.id, name: g.guide.name },
+        year: snap.year,
+        month: snap.month,
+        receipt_amount: g.salary.receipt_amount,
+        admin_notified_at: g.receipt_ack?.admin_notified_at ?? null,
+      });
+    }
+  }
+
+  // ממיינים מהחודש הוותיק ביותר לחדש (כדי שמה שמתעכב יותר יוצג ראשון)
+  outstanding.sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.month - b.month;
+  });
+
+  return outstanding;
+}

@@ -13,7 +13,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ADMIN_COLORS, fmtEuro, monthName, cityLabel } from '@/lib/admin/theme';
-import { loadMonthSnapshot, type MonthSnapshot } from '@/lib/admin/data';
+import { loadMonthSnapshot, loadOutstandingMonthlyReceipts, type MonthSnapshot, type OutstandingReceipt } from '@/lib/admin/data';
 import { supabase } from '@/lib/supabase';
 import KpiCard from '@/components/admin/KpiCard';
 import GuideStatusCard from '@/components/admin/GuideStatusCard';
@@ -30,6 +30,7 @@ function AdminMainContent() {
 
   const [snapshot, setSnapshot] = useState<MonthSnapshot | null>(null);
   const [prevSnapshot, setPrevSnapshot] = useState<MonthSnapshot | null>(null);
+  const [outstandingReceipts, setOutstandingReceipts] = useState<OutstandingReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadCounter, setReloadCounter] = useState(0);
@@ -52,11 +53,13 @@ function AdminMainContent() {
     Promise.all([
       loadMonthSnapshot(year, month, { cityFilter, dayLimit }),
       loadMonthSnapshot(prevY, prevM, { cityFilter, dayLimit }),
+      loadOutstandingMonthlyReceipts({ cityFilter }),
     ])
-      .then(([current, prev]) => {
+      .then(([current, prev, outstanding]) => {
         if (cancelled) return;
         setSnapshot(current);
         setPrevSnapshot(prev);
+        setOutstandingReceipts(outstanding);
       })
       .catch((err) => {
         if (!cancelled) setError(err.message || 'משהו השתבש בטעינה');
@@ -134,6 +137,7 @@ function AdminMainContent() {
           <InboxAlerts
             snapshot={snapshot}
             isCurrentMonth={year === now.getFullYear() && month === now.getMonth()}
+            outstandingReceipts={outstandingReceipts}
           />
 
           {/* ─── שכבה 2: 📊 Pulse — KPIs מרכזיים עם השוואה לחודש קודם ─── */}
@@ -265,10 +269,12 @@ function AdminMainContent() {
             </section>
           )}
 
-          {/* דוח קבלות חודשיות — מתקפל, מציג רק אם יש מדריכים שזכאים לקבלה */}
-          <section id="section-receipts">
-            <MonthlyReceiptsReport snapshot={snapshot} onChange={handleReload} />
-          </section>
+          {/* דוח קבלות חודשיות — חוצה-חודשים, מציג רק אם יש קבלות חסרות מחודשים שהסתיימו */}
+          {outstandingReceipts.length > 0 && (
+            <section id="section-receipts">
+              <MonthlyReceiptsReport outstanding={outstandingReceipts} onChange={handleReload} />
+            </section>
+          )}
 
           {/* דוח הפקדות שמחכות — מתקפל, מציג רק אם יש מדריכים עם סכום ממתין */}
           {snapshot.totals.pending_total > 0 && (
@@ -400,24 +406,22 @@ function OpenGuidesReport({ snapshot }: { snapshot: MonthSnapshot }) {
 function InboxAlerts({
   snapshot,
   isCurrentMonth,
+  outstandingReceipts,
 }: {
   snapshot: MonthSnapshot;
   isCurrentMonth: boolean;
+  outstandingReceipts: OutstandingReceipt[];
 }) {
   const alerts: { icon: string; text: string; color: 'red' | 'yellow'; targetId: string }[] = [];
 
-  // קבלות חסרות (מדריכים שהיה להם receipt_amount > 0 ואין ack)
-  const missingReceipts = snapshot.guides.filter(
-    (g) =>
-      g.salary.receipt_amount > 0 &&
-      (g.receipt_ack === null || g.receipt_ack.acknowledged_at === null),
-  );
-  if (missingReceipts.length > 0) {
+  // קבלות חסרות — חוצה-חודשים, לא תלוי בחודש הנבחר
+  if (outstandingReceipts.length > 0) {
+    const totalAmount = outstandingReceipts.reduce((s, o) => s + o.receipt_amount, 0);
+    // סופרים מדריכים יחודיים (ייתכן ולמדריך אחד יש כמה חודשים פתוחים)
+    const uniqueGuides = new Set(outstandingReceipts.map((o) => o.guide.id)).size;
     alerts.push({
       icon: '🧾',
-      text: `${missingReceipts.length} מדריכים לא הוציאו קבלה — סה״כ ${
-        missingReceipts.reduce((s, g) => s + g.salary.receipt_amount, 0).toFixed(0)
-      }€`,
+      text: `${uniqueGuides} מדריכים לא הוציאו קבלה (${outstandingReceipts.length} חודשים) — סה״כ ${totalAmount.toFixed(0)}€`,
       color: 'red',
       targetId: 'section-receipts',
     });
@@ -775,21 +779,21 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
 // ---------------------------------------------------------------------------
 
 function MonthlyReceiptsReport({
-  snapshot,
+  outstanding,
   onChange,
 }: {
-  snapshot: MonthSnapshot;
+  outstanding: OutstandingReceipt[];
   onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
   // אישור ידני: יוצר שורה ב-receipt_acknowledgements ללא receipt_url
   // (המשמעות: עומר אישרה שהמדריך הוציא קבלה מחוץ למערכת — אין תמונה)
-  async function approveManually(guideId: string) {
+  async function approveManually(guideId: string, year: number, month: number) {
     const { error } = await supabase.from('receipt_acknowledgements').insert({
       guide_id: guideId,
-      year: snapshot.year,
-      month: snapshot.month + 1,
+      year,
+      month: month + 1, // ל-DB 1-indexed
     });
     if (error) {
       alert('משהו השתבש: ' + error.message);
@@ -798,24 +802,9 @@ function MonthlyReceiptsReport({
     onChange();
   }
 
-  // רק מדריכים שיש להם משכורת לקבלה > 0 (מי שלא עבד החודש לא רלוונטי)
-  const eligible = snapshot.guides.filter((g) => g.salary.receipt_amount > 0);
+  if (outstanding.length === 0) return null;
 
-  if (eligible.length === 0) return null;
-
-  const submitted = eligible.filter(
-    (g) => g.receipt_ack !== null && g.receipt_ack.acknowledged_at !== null,
-  );
-  const missing = eligible.filter(
-    (g) => g.receipt_ack === null || g.receipt_ack.acknowledged_at === null,
-  );
-
-  const headerColor = missing.length > 0 ? '#991b1b' : ADMIN_COLORS.green800;
-  const borderColor = missing.length > 0 ? '#fecaca' : '#d1fae5';
-  const summary =
-    missing.length > 0
-      ? `${missing.length} לא הוצאו · ${submitted.length} הוצאו`
-      : `${submitted.length} הוצאו — הכל בסדר ✓`;
+  const totalAmount = outstanding.reduce((s, o) => s + o.receipt_amount, 0);
 
   return (
     <div
@@ -823,7 +812,7 @@ function MonthlyReceiptsReport({
         background: '#fff',
         borderRadius: 12,
         boxShadow: '0 1px 3px rgba(0,0,0,.06)',
-        border: `1px solid ${borderColor}`,
+        border: '1px solid #fecaca',
       }}
     >
       <button
@@ -842,122 +831,57 @@ function MonthlyReceiptsReport({
           gap: 12,
         }}
       >
-        <span style={{ fontSize: 16, fontWeight: 600, color: headerColor }}>
-          🧾 קבלות חודשיות ({summary})
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#991b1b' }}>
+          🧾 קבלות שלא הוצאו ({outstanding.length} · {fmtEuro(totalAmount)})
         </span>
         <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
           {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
         </span>
       </button>
       {open && (
-        <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${borderColor}` }}>
-          {missing.length > 0 && (
-            <div style={{ marginTop: 12 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#991b1b',
-                  marginBottom: 6,
-                }}
-              >
-                🚨 לא הוצאו ({missing.length})
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {missing.map((g) => {
-                  const notified =
-                    g.receipt_ack !== null && g.receipt_ack.admin_notified_at !== null;
-                  return (
-                    <li
-                      key={g.guide.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '8px 12px',
-                        background: '#fef2f2',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        color: ADMIN_COLORS.gray700,
-                      }}
-                    >
-                      <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {notified && (
-                          <span style={{ fontSize: 11, color: '#a37b00' }}>📨 נשלחה התראה</span>
-                        )}
-                        <span style={{ color: '#991b1b', fontWeight: 600 }}>
-                          {fmtEuro(g.salary.receipt_amount)}
-                        </span>
-                        <InlineConfirmButton
-                          label="✓ סמן.י כהופקה"
-                          confirmLabel="בטוח.ה?"
-                          onConfirm={() => approveManually(g.guide.id)}
-                        />
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fecaca' }}>
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray500, marginBottom: 8 }}>
+              קבלות מחודשים שהסתיימו — מציג רק חודשים קודמים, לא את החודש הנוכחי
             </div>
-          )}
-
-          {submitted.length > 0 && (
-            <div style={{ marginTop: 12 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: ADMIN_COLORS.green800,
-                  marginBottom: 6,
-                }}
-              >
-                ✅ הוצאו ({submitted.length})
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {submitted.map((g) => (
-                  <li
-                    key={g.guide.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '8px 12px',
-                      background: '#f0fdf4',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      color: ADMIN_COLORS.gray700,
-                    }}
-                  >
-                    <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {g.receipt_ack?.receipt_url ? (
-                        <a
-                          href={g.receipt_ack.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            fontSize: 12,
-                            color: '#1d4ed8',
-                            textDecoration: 'underline',
-                          }}
-                        >
-                          📷 צפי בקבלה
-                        </a>
-                      ) : (
-                        <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
-                          אישור ידני (אין תמונה)
-                        </span>
-                      )}
-                      <span style={{ fontWeight: 600 }}>
-                        {fmtEuro(g.salary.receipt_amount)}
-                      </span>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {outstanding.map((o) => (
+                <li
+                  key={`${o.guide.id}-${o.year}-${o.month}`}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    background: '#fef2f2',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    color: ADMIN_COLORS.gray700,
+                  }}
+                >
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontWeight: 600 }}>{o.guide.name}</span>
+                    <span style={{ fontSize: 12, color: ADMIN_COLORS.gray500 }}>
+                      {monthName(o.year, o.month)}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {o.admin_notified_at && (
+                      <span style={{ fontSize: 11, color: '#a37b00' }}>📨 נשלחה התראה</span>
+                    )}
+                    <span style={{ color: '#991b1b', fontWeight: 600 }}>
+                      {fmtEuro(o.receipt_amount)}
+                    </span>
+                    <InlineConfirmButton
+                      label="✓ סמן.י כהופקה"
+                      confirmLabel="בטוח.ה?"
+                      onConfirm={() => approveManually(o.guide.id, o.year, o.month)}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>
