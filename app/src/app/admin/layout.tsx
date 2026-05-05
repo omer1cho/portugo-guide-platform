@@ -4,7 +4,7 @@
  * /admin layout — בודק שהמשתמש אדמין, ואם כן מציג את הסיידבר + content.
  *
  * RTL מוגדר ברמת ה-html (root layout). כאן אנחנו רק שמים סיידבר ימני קבוע
- * + תוכן עם margin-right של 250px.
+ * + תוכן עם margin-right של 250px (60px במצב מצומצם).
  */
 
 import { useEffect, useState } from 'react';
@@ -13,9 +13,32 @@ import { supabase } from '@/lib/supabase';
 import { ADMIN_COLORS, ADMIN_SPACING } from '@/lib/admin/theme';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 
+const COLLAPSED_WIDTH = 60;
+const STORAGE_KEY = 'admin-sidebar-collapsed';
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [authState, setAuthState] = useState<'checking' | 'authorized' | 'denied'>('checking');
+  const [collapsed, setCollapsed] = useState(false);
+
+  // לטעון את ההעדפה האחרונה מ-localStorage (סנכרון מ-external store; pattern נדרש כדי
+  // למנוע hydration mismatch — שרת לא מחזיר ערך, לקוח קורא מ-localStorage אחרי mount)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved === '1') setCollapsed(true);
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -73,13 +96,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div style={{ minHeight: '100vh', background: ADMIN_COLORS.gray50 }}>
-      <AdminSidebar />
+      <AdminSidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       <main
         data-admin-main
         style={{
-          marginRight: ADMIN_SPACING.sidebarWidth,
+          marginRight: collapsed ? COLLAPSED_WIDTH : ADMIN_SPACING.sidebarWidth,
           padding: ADMIN_SPACING.contentPadding,
           minHeight: '100vh',
+          transition: 'margin-right 200ms ease',
         }}
       >
         {children}

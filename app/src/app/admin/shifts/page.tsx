@@ -328,7 +328,7 @@ function ShiftsContent() {
   // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
   const HOLIDAY_PILL_HEIGHT = 16;
   const VACATION_PILL_HEIGHT = 26;
-  const CARD_HEIGHT = 60; // נדיב — קלף עם הערה לוקח ~57px, בלי הערה ~43px. 60 מבטיח שאף עמודה לא חורגת
+  const CARD_HEIGHT = 70; // נדיב — קלף עם כותרת 2 שורות + הערה לוקח ~70px. מבטיח שום עמודה לא חורגת
   const CARD_GAP = 4;
   const SECTION_OVERHEAD = 26; // label + padding + margin
   const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(() => {
@@ -523,10 +523,75 @@ function ShiftsContent() {
         </div>
       )}
 
-      {/* הוסר זמנית: בלוק media query למובייל. עומר חשדה שהוא דולף לדסק
-          (אחת התיאוריות לחפיפת המלבנים בעמודות סמוכות). אם הסרת הבלוק מתקנת את
-          הדסק — נוסיף בחזרה דרך useMediaQuery hook במקום CSS, כדי שהוא לא יוכל
-          לדלוף ע"י specificity. בינתיים מובייל יראה את המבנה המקומפקט של הדסק. */}
+      <style jsx>{`
+        /* מובייל ≤720px: ימים מערום אנכי, פונטים גדולים, notes wrap לקריאות.
+           הבעיה של "מלבנים גולשים" שהיה לנו לא הייתה כאן (היא הייתה ב-display:grid
+           של DayColumn) — אז אפשר להחזיר את ה-CSS הזה בבטחה. */
+        @media (max-width: 720px) {
+          [data-shifts-board] {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          [data-shifts-board] [data-day-column] {
+            min-height: auto !important;
+            padding: 10px !important;
+          }
+          [data-shifts-board] [data-day-header] {
+            font-size: 14px !important;
+            padding-bottom: 6px !important;
+          }
+          [data-shifts-board] [data-shift-card] {
+            padding: 8px 10px !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-title] {
+            font-size: 14px !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-time] {
+            font-size: 12px !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-notes] {
+            font-size: 11px !important;
+            white-space: normal !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-guide] {
+            font-size: 13px !important;
+            padding: 4px 10px !important;
+          }
+          [data-shifts-board] [data-vacation-pill] {
+            font-size: 13px !important;
+            padding: 6px 9px !important;
+          }
+          [data-shifts-board] [data-city-section] {
+            padding: 6px !important;
+          }
+          [data-shifts-board] [data-city-label] {
+            font-size: 12px !important;
+            margin-bottom: 4px !important;
+          }
+          /* תפריט הניווט: שורה 1 = מרכז (תאריך+השבוע), שורה 2 = שבוע קודם וצמוד אליו שבוע הבא */
+          [data-week-nav] {
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 8px !important;
+          }
+          [data-week-nav] [data-nav-center] {
+            grid-column: 1 / -1 !important;
+            grid-row: 1 !important;
+          }
+          [data-week-nav] [data-nav-prev] {
+            grid-column: 1 !important;
+            grid-row: 2 !important;
+          }
+          [data-week-nav] [data-nav-next] {
+            grid-column: 2 !important;
+            grid-row: 2 !important;
+          }
+          [data-week-nav] button {
+            padding: 10px 14px !important;
+            font-size: 14px !important;
+          }
+        }
+      `}</style>
 
       {showAddModal && (
         <ManualAddModal
@@ -931,10 +996,13 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
             color: ADMIN_COLORS.gray900,
             flex: '1 1 0',
             minWidth: 0,
-            lineHeight: 1.2,
+            lineHeight: 1.25,
+            // עד 2 שורות — שמות ארוכים כמו "ליסבון הקלאסית פרטי" יראו במלואם
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            wordBreak: 'break-word',
           }}
           title={isTentative ? `כנראה: ${displayTourName}` : displayTourName}
         >

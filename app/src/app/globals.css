@@ -107,6 +107,11 @@ select {
     display: flex !important;
   }
 
+  /* כפתור צמצום הסיידבר (דסק בלבד) — נסתר במובייל */
+  button[data-admin-collapse] {
+    display: none !important;
+  }
+
   /* Overlay — מוצג רק כשהתפריט פתוח */
   div[data-admin-overlay][data-visible="true"] {
     display: block !important;
