@@ -328,9 +328,9 @@ function ShiftsContent() {
   // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
   const HOLIDAY_PILL_HEIGHT = 16;
   const VACATION_PILL_HEIGHT = 26;
-  const CARD_HEIGHT = 52; // הערכה: title row + guide chip + ~notes + padding + border (אחרי הקטנה)
+  const CARD_HEIGHT = 60; // נדיב — קלף עם הערה לוקח ~57px, בלי הערה ~43px. 60 מבטיח שאף עמודה לא חורגת
   const CARD_GAP = 4;
-  const SECTION_OVERHEAD = 24; // label + padding + margin
+  const SECTION_OVERHEAD = 26; // label + padding + margin
   const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(() => {
     let maxHolidays = 0;
     let maxVacations = 0;
@@ -737,6 +737,9 @@ function DayColumn({
               textAlign: 'center',
               fontWeight: 600,
               lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
             title={e.text}
           >
