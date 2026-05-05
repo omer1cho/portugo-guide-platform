@@ -530,43 +530,66 @@ function ShiftsContent() {
         @media (max-width: 720px) {
           [data-shifts-board] {
             grid-template-columns: 1fr !important;
-            gap: 10px !important;
+            gap: 12px !important;
           }
           [data-shifts-board] [data-day-column] {
             min-height: auto !important;
-            padding: 10px !important;
+            padding: 12px !important;
           }
           [data-shifts-board] [data-day-header] {
-            font-size: 14px !important;
-            padding-bottom: 6px !important;
+            font-size: 15px !important;
+            padding-bottom: 8px !important;
           }
+          /* ⚠️ במובייל: ביטול ההזרה של גובה ליסבון. אין צורך ליישר עמודות (יום אחד
+             לעמודה). ביטול ההזרה מקצר את המרווח בין ליסבון לפורטו דרמטית. */
+          [data-shifts-board] [data-lisbon-row] {
+            min-height: 0 !important;
+          }
+          /* כרטיס שיבוץ: padding נדיב + לפחות 60px גובה שיהיה נוח לאצבע */
           [data-shifts-board] [data-shift-card] {
-            padding: 8px 10px !important;
+            padding: 10px 12px !important;
+            min-height: 60px !important;
           }
           [data-shifts-board] [data-shift-card] [data-shift-title] {
-            font-size: 14px !important;
+            font-size: 15px !important;
           }
           [data-shifts-board] [data-shift-card] [data-shift-time] {
-            font-size: 12px !important;
+            font-size: 13px !important;
           }
           [data-shifts-board] [data-shift-card] [data-shift-notes] {
-            font-size: 11px !important;
+            font-size: 12px !important;
             white-space: normal !important;
           }
+          /* צ'יפ מדריך / "+ שבצי" — גובה touch-friendly של 44px */
           [data-shifts-board] [data-shift-card] [data-shift-guide] {
-            font-size: 13px !important;
-            padding: 4px 10px !important;
+            font-size: 14px !important;
+            padding: 10px 12px !important;
+            min-height: 44px !important;
+          }
+          /* ✏️ + 🗑️ — אייקונים עם אזור לחיצה של 44×44 (סטנדרט iOS/Android) */
+          [data-shifts-board] [data-shift-card] button {
+            font-size: 18px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            padding: 6px !important;
+          }
+          /* הצ'יפ עצמו של בחירת המדריך הוא button — הוא יקבל את הגדלים שלו מ-data-shift-guide למעלה.
+             כדי לא להחיל את ה-44×44 על הצ'יפ (שצריך להיות full-width), נחזיר min-width: 0 */
+          [data-shifts-board] [data-shift-card] button[data-shift-guide] {
+            min-width: 0 !important;
+            width: 100% !important;
           }
           [data-shifts-board] [data-vacation-pill] {
             font-size: 13px !important;
-            padding: 6px 9px !important;
+            padding: 7px 10px !important;
           }
           [data-shifts-board] [data-city-section] {
-            padding: 6px !important;
+            padding: 8px !important;
+            gap: 8px !important;
           }
           [data-shifts-board] [data-city-label] {
-            font-size: 12px !important;
-            margin-bottom: 4px !important;
+            font-size: 13px !important;
+            margin-bottom: 6px !important;
           }
           /* תפריט הניווט: שורה 1 = מרכז (תאריך+השבוע), שורה 2 = שבוע קודם וצמוד אליו שבוע הבא */
           [data-week-nav] {
@@ -587,8 +610,9 @@ function ShiftsContent() {
             grid-row: 2 !important;
           }
           [data-week-nav] button {
-            padding: 10px 14px !important;
+            padding: 12px 14px !important;
             font-size: 14px !important;
+            min-height: 44px !important;
           }
         }
       `}</style>
@@ -789,8 +813,9 @@ function DayColumn({
         })}
       </div>
 
-      {/* שורה 4 — אזור ליסבון (גובה שמור אחיד בכל הימים, כדי שפורטו ייושר) */}
-      <div style={{ minHeight: lisbonAreaMinHeight }}>
+      {/* שורה 4 — אזור ליסבון (גובה שמור אחיד בכל הימים, כדי שפורטו ייושר).
+          במובייל ה-CSS מבטל את ה-minHeight כי אין צורך ביישור (יום אחד בעמודה). */}
+      <div data-lisbon-row style={{ minHeight: lisbonAreaMinHeight }}>
         {lisbon.length > 0 && (
           <CitySection
             label="ליסבון"
