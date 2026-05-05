@@ -963,7 +963,8 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         position: 'relative',
         minWidth: 0,
         boxSizing: 'border-box',
-        zIndex: pickerOpen ? 10 : 'auto',
+        // overflow:hidden מבטיח שום תוכן (אייקונים, dropdown, טקסט) לא יוכל לחרוג ממסגרת הקלף
+        overflow: 'hidden',
       }}
     >
       {/* שורה 1: שעה + סוג סיור + כפתורים */}
@@ -1092,27 +1093,16 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         </div>
       )}
 
-      {/* Picker dropdown — בחירת מדריך. backdrop שקוף שסוגר אם לוחצים בחוץ — מונע מ-dropdown להישאר פתוח ולכסות קלפים אחרים. */}
-      {pickerOpen && (
-        <div
-          onClick={() => setPickerOpen(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 4 }}
-          aria-hidden="true"
-        />
-      )}
+      {/* Picker dropdown — נפתח inline בתוך הקלף (במקום position:absolute) כך
+          שהקלף מתרחב כלפי מטה, ולא מכסה קלפים מתחת. גם תואם ל-overflow:hidden של
+          הקלף, שלא יכול להציג רכיבים שיוצאים ממנו. */}
       {pickerOpen && (
         <div
           style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            left: 0,
-            marginTop: 2,
+            marginTop: 4,
             background: '#fff',
             border: `1px solid ${ADMIN_COLORS.gray300}`,
             borderRadius: 6,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            zIndex: 5,
             maxHeight: 200,
             overflowY: 'auto',
           }}
