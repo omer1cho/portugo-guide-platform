@@ -523,10 +523,12 @@ function ShiftsContent() {
         </div>
       )}
 
-      <style jsx>{`
+      <style jsx global>{`
         /* מובייל ≤720px: ימים מערום אנכי, פונטים גדולים, notes wrap לקריאות.
-           הבעיה של "מלבנים גולשים" שהיה לנו לא הייתה כאן (היא הייתה ב-display:grid
-           של DayColumn) — אז אפשר להחזיר את ה-CSS הזה בבטחה. */
+           ⚠️ global ולא scoped — כי הסלקטורים מתייחסים ל-data-attributes
+           שנמצאים בתוך קומפוננטות-ילד (DayColumn, ShiftCard) שלא חולקות
+           scope עם ה-<style jsx> של ShiftsContent. ה-scoping האפקטיבי נשמר
+           דרך התלות ב-[data-shifts-board] שהוא ייחודי לדף הזה. */
         @media (max-width: 720px) {
           [data-shifts-board] {
             grid-template-columns: 1fr !important;
