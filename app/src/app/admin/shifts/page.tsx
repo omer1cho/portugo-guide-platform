@@ -324,13 +324,17 @@ function ShiftsContent() {
   const assignedDraftCount = shifts.filter((s) => s.status === 'draft' && s.guide_id).length;
   const unassignedCount = shifts.filter((s) => !s.guide_id && s.status !== 'cancelled').length;
 
-  // חישוב גובה אחיד לאזורי חגים+חופשות (כדי שכל הימים יישרו בקו אחד)
-  // גבהים נפרדים: חג קטן (פונט 9) לעומת חופשה בולטת יותר (פונט 11 + מסגרת 2px)
+  // חישוב גבהים אחידים לאזורים — כדי שכל הימים יישרו בקו אנכי אחד
+  // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
   const HOLIDAY_PILL_HEIGHT = 17;
   const VACATION_PILL_HEIGHT = 28;
-  const { maxHolidaysHeight, maxVacationsHeight } = useMemo(() => {
+  const CARD_HEIGHT = 65; // הערכה: title row + guide chip + ~notes + padding + border
+  const CARD_GAP = 6;
+  const SECTION_OVERHEAD = 30; // label + padding + margin
+  const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(() => {
     let maxHolidays = 0;
     let maxVacations = 0;
+    let maxLisbon = 0;
     for (let i = 0; i < 7; i++) {
       const d = addDays(weekStart, i);
       const isoDate = toIsoDate(d);
@@ -339,16 +343,24 @@ function ShiftsContent() {
       const vacCount = guides.filter((g) =>
         g.vacations?.some((v) => isoDate >= v.start && isoDate <= v.end),
       ).length;
+      const lisbonCount = shifts.filter(
+        (s) => s.shift_date === isoDate && s.city === 'lisbon' && s.status !== 'cancelled',
+      ).length;
       if (evCount > maxHolidays) maxHolidays = evCount;
       if (vacCount > maxVacations) maxVacations = vacCount;
+      if (lisbonCount > maxLisbon) maxLisbon = lisbonCount;
     }
     return {
       maxHolidaysHeight:
         maxHolidays * HOLIDAY_PILL_HEIGHT + (maxHolidays > 1 ? (maxHolidays - 1) * 2 : 0),
       maxVacationsHeight:
         maxVacations * VACATION_PILL_HEIGHT + (maxVacations > 1 ? (maxVacations - 1) * 3 : 0),
+      lisbonAreaMinHeight:
+        maxLisbon > 0
+          ? maxLisbon * CARD_HEIGHT + (maxLisbon - 1) * CARD_GAP + SECTION_OVERHEAD
+          : 0,
     };
-  }, [weekStart, guides]);
+  }, [weekStart, guides, shifts]);
 
   async function handlePublishWeek() {
     if (!confirm(`לפרסם ${totalDraftCount} שיבוצים לשבוע ${fmtWeekRange(weekStart)}?`)) return;
@@ -503,6 +515,7 @@ function ShiftsContent() {
                 vacationsForDay={vacationsForDay}
                 holidaysAreaMinHeight={maxHolidaysHeight}
                 vacationsAreaMinHeight={maxVacationsHeight}
+                lisbonAreaMinHeight={lisbonAreaMinHeight}
                 onChange={reload}
               />
             );
@@ -652,7 +665,7 @@ function CitySwitcher({ value, onChange }: { value: 'all' | 'lisbon' | 'porto'; 
 
 function DayColumn({
   date, shifts, guides, vacationsForDay, onChange,
-  holidaysAreaMinHeight, vacationsAreaMinHeight,
+  holidaysAreaMinHeight, vacationsAreaMinHeight, lisbonAreaMinHeight,
 }: {
   date: Date;
   shifts: Shift[];
@@ -661,6 +674,7 @@ function DayColumn({
   onChange: () => void;
   holidaysAreaMinHeight: number;
   vacationsAreaMinHeight: number;
+  lisbonAreaMinHeight: number;
 }) {
   const isToday = toIsoDate(date) === toIsoDate(new Date());
   const events = getCalendarEventsForDate(toIsoDate(date)).filter((e) => e.category === 'israel' || e.category === 'portugal');
@@ -679,7 +693,9 @@ function DayColumn({
         borderRadius: 8,
         padding: 5,
         display: 'grid',
-        gridTemplateRows: 'auto auto auto 1fr',
+        // 5 שורות + filler: header / holidays / vacations / lisbon (גובה שמור) / porto / 1fr
+        // הגובה השמור על ליסבון מבטיח שפורטו מתחיל באותה גובה בכל ימי השבוע — אין מדרגות בין עמודות.
+        gridTemplateRows: 'auto auto auto auto auto 1fr',
         gap: 5,
         minHeight: 140,
         minWidth: 0,
@@ -768,11 +784,8 @@ function DayColumn({
         })}
       </div>
 
-      {/* שורה 4 — שיבוצים */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {!hasShifts && (
-          <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500, textAlign: 'center', padding: '6px 0' }}>—</div>
-        )}
+      {/* שורה 4 — אזור ליסבון (גובה שמור אחיד בכל הימים, כדי שפורטו ייושר) */}
+      <div style={{ minHeight: lisbonAreaMinHeight }}>
         {lisbon.length > 0 && (
           <CitySection
             label="ליסבון"
@@ -783,6 +796,10 @@ function DayColumn({
             onChange={onChange}
           />
         )}
+      </div>
+
+      {/* שורה 5 — אזור פורטו (גובה אוטומטי, מתחיל באותה Y בכל ימי השבוע) */}
+      <div>
         {porto.length > 0 && (
           <CitySection
             label="פורטו"
@@ -793,7 +810,13 @@ function DayColumn({
             onChange={onChange}
           />
         )}
+        {!hasShifts && (
+          <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500, textAlign: 'center', padding: '6px 0' }}>—</div>
+        )}
       </div>
+
+      {/* שורה 6 — filler 1fr (גורם לעמודה למלא את גובה הגריד) */}
+      <div />
     </div>
   );
 }
