@@ -511,12 +511,8 @@ function ShiftsContent() {
       )}
 
       <style jsx>{`
-        /* טאבלט ומסכי לפטופ צרים — נשארים על 7 עמודות אבל מקטינים מינימום */
-        @media (max-width: 1100px) and (min-width: 721px) {
-          [data-shifts-board] {
-            grid-template-columns: repeat(7, minmax(80px, 1fr)) !important;
-          }
-        }
+        /* דסק וטאבלט: ה-inline style כבר משתמש ב-minmax(0,1fr) שמאפשר לכל עמודה להתכווץ.
+           הסרתי את override הטאבלט כדי לא להכריח רוחב מינימלי שגורם להצפה אופקית בסיידבר רחב. */
         /* מובייל — שינוי מהותי: ימים מערום אנכי, כל יום בגודל מלא וקריא */
         @media (max-width: 720px) {
           [data-shifts-board] {
@@ -815,9 +811,17 @@ function CitySection({
   return (
     <div
       data-city-section
-      style={{ background: color, borderRadius: 6, padding: 4, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}
+      style={{
+        background: color,
+        borderRadius: 6,
+        padding: 5,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        minWidth: 0,
+      }}
     >
-      <div data-city-label style={{ fontSize: 10, fontWeight: 700, color: labelColor, letterSpacing: 0.3 }}>
+      <div data-city-label style={{ fontSize: 10, fontWeight: 700, color: labelColor, letterSpacing: 0.3, marginBottom: 1 }}>
         {label}
       </div>
       {shifts.map((s) => (
@@ -929,12 +933,14 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
       data-shift-card
       style={{
         background: cardBg,
-        border: `1.5px ${cardBorderStyle} ${cardBorder}`,
+        border: `1px ${cardBorderStyle} ${cardBorder}`,
         borderRadius: 5,
-        padding: '4px 5px',
+        padding: '5px 6px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
         position: 'relative',
         minWidth: 0,
+        boxSizing: 'border-box',
+        zIndex: pickerOpen ? 10 : 'auto',
       }}
     >
       {/* שורה 1: שעה + סוג סיור + כפתורים */}
@@ -1063,7 +1069,14 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         </div>
       )}
 
-      {/* Picker dropdown — בחירת מדריך */}
+      {/* Picker dropdown — בחירת מדריך. backdrop שקוף שסוגר אם לוחצים בחוץ — מונע מ-dropdown להישאר פתוח ולכסות קלפים אחרים. */}
+      {pickerOpen && (
+        <div
+          onClick={() => setPickerOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 4 }}
+          aria-hidden="true"
+        />
+      )}
       {pickerOpen && (
         <div
           style={{
