@@ -627,13 +627,15 @@ function DayColumn({
         border: `1px solid ${isToday ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
         borderRadius: 7,
         padding: 4,
-        display: 'grid',
-        // 5 שורות + filler: header / holidays / vacations / lisbon (גובה שמור) / porto / 1fr
-        // הגובה השמור על ליסבון מבטיח שפורטו מתחיל באותה גובה בכל ימי השבוע — אין מדרגות בין עמודות.
-        gridTemplateRows: 'auto auto auto auto auto 1fr',
+        // ⚠️ חשוב: flex column ולא grid! ב-display:grid בלי gridTemplateColumns
+        // מפורש, ה-implicit column לא מכבד padding ודוחף ילדים 3-4px לעמודה
+        // הסמוכה במסכים צרים (זה היה הבאג של "המלבנים גולשים").
+        display: 'flex',
+        flexDirection: 'column',
         gap: 4,
         minHeight: 120,
         minWidth: 0,
+        boxSizing: 'border-box',
       }}
     >
       {/* שורה 1 — כותרת היום */}
@@ -753,8 +755,8 @@ function DayColumn({
         )}
       </div>
 
-      {/* שורה 6 — filler 1fr (גורם לעמודה למלא את גובה הגריד) */}
-      <div />
+      {/* filler — תופס את הגובה הנותר כדי שהעמודה תמלא את הגריד */}
+      <div style={{ flex: 1 }} />
     </div>
   );
 }
