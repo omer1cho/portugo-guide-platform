@@ -326,11 +326,11 @@ function ShiftsContent() {
 
   // חישוב גבהים אחידים לאזורים — כדי שכל הימים יישרו בקו אנכי אחד
   // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
-  const HOLIDAY_PILL_HEIGHT = 17;
-  const VACATION_PILL_HEIGHT = 28;
-  const CARD_HEIGHT = 65; // הערכה: title row + guide chip + ~notes + padding + border
-  const CARD_GAP = 6;
-  const SECTION_OVERHEAD = 30; // label + padding + margin
+  const HOLIDAY_PILL_HEIGHT = 16;
+  const VACATION_PILL_HEIGHT = 26;
+  const CARD_HEIGHT = 52; // הערכה: title row + guide chip + ~notes + padding + border (אחרי הקטנה)
+  const CARD_GAP = 4;
+  const SECTION_OVERHEAD = 24; // label + padding + margin
   const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(() => {
     let maxHolidays = 0;
     let maxVacations = 0;
@@ -690,14 +690,14 @@ function DayColumn({
       style={{
         background: isToday ? '#f0fdf4' : '#fff',
         border: `1px solid ${isToday ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
-        borderRadius: 8,
-        padding: 5,
+        borderRadius: 7,
+        padding: 4,
         display: 'grid',
         // 5 שורות + filler: header / holidays / vacations / lisbon (גובה שמור) / porto / 1fr
         // הגובה השמור על ליסבון מבטיח שפורטו מתחיל באותה גובה בכל ימי השבוע — אין מדרגות בין עמודות.
         gridTemplateRows: 'auto auto auto auto auto 1fr',
-        gap: 5,
-        minHeight: 140,
+        gap: 4,
+        minHeight: 120,
         minWidth: 0,
       }}
     >
@@ -761,16 +761,16 @@ function DayColumn({
               key={i}
               data-vacation-pill
               style={{
-                fontSize: 11,
+                fontSize: 10,
                 background: '#fde68a',
                 color: '#78350f',
-                padding: '4px 6px',
-                borderRadius: 5,
+                padding: '3px 5px',
+                borderRadius: 4,
                 textAlign: 'center',
                 fontWeight: 800,
                 lineHeight: 1.3,
                 border: '2px solid #d97706',
-                borderRight: c ? `5px solid ${c.border}` : '2px solid #d97706',
+                borderRight: c ? `4px solid ${c.border}` : '2px solid #d97706',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -836,15 +836,15 @@ function CitySection({
       data-city-section
       style={{
         background: color,
-        borderRadius: 6,
-        padding: 5,
+        borderRadius: 5,
+        padding: 4,
         display: 'flex',
         flexDirection: 'column',
-        gap: 6,
+        gap: 4,
         minWidth: 0,
       }}
     >
-      <div data-city-label style={{ fontSize: 10, fontWeight: 700, color: labelColor, letterSpacing: 0.3, marginBottom: 1 }}>
+      <div data-city-label style={{ fontSize: 9, fontWeight: 700, color: labelColor, letterSpacing: 0.3, marginBottom: 1 }}>
         {label}
       </div>
       {shifts.map((s) => (
@@ -957,8 +957,8 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
       style={{
         background: cardBg,
         border: `1px ${cardBorderStyle} ${cardBorder}`,
-        borderRadius: 5,
-        padding: '4px 5px',
+        borderRadius: 4,
+        padding: '3px 4px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
         position: 'relative',
         minWidth: 0,
@@ -968,17 +968,17 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
       }}
     >
       {/* שורה 1: שעה + סוג סיור + כפתורים */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 3, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 2, minWidth: 0 }}>
         <span
           data-shift-time
-          style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700, flexShrink: 0 }}
+          style={{ fontSize: 9, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700, flexShrink: 0 }}
         >
           {shortTime(shift.shift_time)}
         </span>
         {isTentative && (
           <span
             title="הצעה שצפויה לסגור — לא סגור סופית"
-            style={{ fontSize: 11, flexShrink: 0 }}
+            style={{ fontSize: 10, flexShrink: 0 }}
           >
             🤔
           </span>
@@ -986,7 +986,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         <span
           data-shift-title
           style={{
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: 700,
             color: ADMIN_COLORS.gray900,
             flex: '1 1 0',
@@ -1037,8 +1037,8 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
             color: guideClr.fg,
             border: `1px solid ${guideClr.border}`,
             borderRadius: 4,
-            padding: '2px 6px',
-            fontSize: 11,
+            padding: '2px 5px',
+            fontSize: 10,
             fontWeight: 700,
             cursor: 'pointer',
             fontFamily: 'inherit',
@@ -1061,8 +1061,8 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
             color: ADMIN_COLORS.gray500,
             border: `1px dashed ${ADMIN_COLORS.gray300}`,
             borderRadius: 4,
-            padding: '2px 6px',
-            fontSize: 10,
+            padding: '2px 5px',
+            fontSize: 9,
             cursor: 'pointer',
             fontFamily: 'inherit',
             width: '100%',
@@ -1146,7 +1146,7 @@ const iconBtnStyle: React.CSSProperties = {
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  fontSize: 11,
+  fontSize: 10,
   padding: 0,
   fontFamily: 'inherit',
   lineHeight: 1,
