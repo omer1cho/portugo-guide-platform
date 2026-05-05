@@ -325,7 +325,9 @@ function ShiftsContent() {
   const unassignedCount = shifts.filter((s) => !s.guide_id && s.status !== 'cancelled').length;
 
   // חישוב גובה אחיד לאזורי חגים+חופשות (כדי שכל הימים יישרו בקו אחד)
-  const PILL_HEIGHT = 18;
+  // גבהים נפרדים: חג קטן (פונט 9) לעומת חופשה בולטת יותר (פונט 11 + מסגרת 2px)
+  const HOLIDAY_PILL_HEIGHT = 17;
+  const VACATION_PILL_HEIGHT = 28;
   const { maxHolidaysHeight, maxVacationsHeight } = useMemo(() => {
     let maxHolidays = 0;
     let maxVacations = 0;
@@ -341,8 +343,10 @@ function ShiftsContent() {
       if (vacCount > maxVacations) maxVacations = vacCount;
     }
     return {
-      maxHolidaysHeight: maxHolidays * PILL_HEIGHT + (maxHolidays > 1 ? (maxHolidays - 1) * 2 : 0),
-      maxVacationsHeight: maxVacations * PILL_HEIGHT + (maxVacations > 1 ? (maxVacations - 1) * 2 : 0),
+      maxHolidaysHeight:
+        maxHolidays * HOLIDAY_PILL_HEIGHT + (maxHolidays > 1 ? (maxHolidays - 1) * 2 : 0),
+      maxVacationsHeight:
+        maxVacations * VACATION_PILL_HEIGHT + (maxVacations > 1 ? (maxVacations - 1) * 3 : 0),
     };
   }, [weekStart, guides]);
 
@@ -407,18 +411,47 @@ function ShiftsContent() {
         </div>
       </header>
 
-      {/* Week switcher — בעברית: ימין=שבוע קודם (חזרה אחורה), שמאל=שבוע הבא (קדימה) */}
+      {/* Week switcher — 3 עמודות: ימין=שבוע קודם, מרכז=תאריך+השבוע, שמאל=שבוע הבא.
+          במובייל: שורה 1 = תאריך+השבוע מרכזי, שורה 2 = שבוע קודם / שבוע הבא בצדדים. */}
       <div
         data-week-nav
-        style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr auto',
+          alignItems: 'center',
+          gap: 10,
+        }}
       >
-        <button onClick={() => setWeekStart(addDays(weekStart, -7))} style={navBtnStyle}>▶ שבוע קודם</button>
-        <div style={{ minWidth: 200, textAlign: 'center', fontSize: 16, fontWeight: 600, color: ADMIN_COLORS.gray700 }}>
-          {fmtWeekRange(weekStart)}
+        <button
+          data-nav-prev
+          onClick={() => setWeekStart(addDays(weekStart, -7))}
+          style={navBtnStyle}
+        >
+          ▶ שבוע קודם
+        </button>
+        <div
+          data-nav-center
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ fontSize: 16, fontWeight: 600, color: ADMIN_COLORS.gray700 }}>
+            {fmtWeekRange(weekStart)}
+          </div>
+          <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={navBtnStyle}>
+            השבוע
+          </button>
         </div>
-        <button onClick={() => setWeekStart(addDays(weekStart, 7))} style={navBtnStyle}>שבוע הבא ◀</button>
-        <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={{ ...navBtnStyle, marginRight: 12 }}>
-          השבוע
+        <button
+          data-nav-next
+          onClick={() => setWeekStart(addDays(weekStart, 7))}
+          style={navBtnStyle}
+        >
+          שבוע הבא ◀
         </button>
       </div>
 
@@ -517,7 +550,7 @@ function ShiftsContent() {
           }
           [data-shifts-board] [data-vacation-pill] {
             font-size: 13px !important;
-            padding: 7px 9px !important;
+            padding: 6px 9px !important;
           }
           [data-shifts-board] [data-city-section] {
             padding: 6px !important;
@@ -525,6 +558,24 @@ function ShiftsContent() {
           [data-shifts-board] [data-city-label] {
             font-size: 12px !important;
             margin-bottom: 4px !important;
+          }
+          /* תפריט הניווט: שורה 1 = מרכז (תאריך+השבוע), שורה 2 = שבוע קודם וצמוד אליו שבוע הבא */
+          [data-week-nav] {
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 8px !important;
+          }
+          [data-week-nav] [data-nav-center] {
+            grid-column: 1 / -1 !important;
+            grid-row: 1 !important;
+          }
+          [data-week-nav] [data-nav-prev] {
+            grid-column: 1 !important;
+            grid-row: 2 !important;
+          }
+          [data-week-nav] [data-nav-next] {
+            grid-column: 2 !important;
+            grid-row: 2 !important;
           }
           [data-week-nav] button {
             padding: 10px 14px !important;
@@ -699,10 +750,9 @@ function DayColumn({
               data-vacation-pill
               style={{
                 fontSize: 11,
-                background:
-                  'repeating-linear-gradient(45deg, #fde68a, #fde68a 5px, #fcd34d 5px, #fcd34d 10px)',
+                background: '#fde68a',
                 color: '#78350f',
-                padding: '5px 6px',
+                padding: '4px 6px',
                 borderRadius: 5,
                 textAlign: 'center',
                 fontWeight: 800,
@@ -712,7 +762,6 @@ function DayColumn({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                boxShadow: '0 1px 3px rgba(217, 119, 6, 0.25)',
                 letterSpacing: 0.2,
               }}
               title={`${v.guide.name} בחופש${v.label ? ` — ${v.label}` : ''}`}
