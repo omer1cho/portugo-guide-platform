@@ -778,7 +778,7 @@ function DayColumn({
               }}
               title={`${v.guide.name} בחופש${v.label ? ` — ${v.label}` : ''}`}
             >
-              🌴 בחופש: {v.guide.name}
+              🌴 {v.guide.name}
             </div>
           );
         })}
@@ -958,7 +958,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         background: cardBg,
         border: `1px ${cardBorderStyle} ${cardBorder}`,
         borderRadius: 5,
-        padding: '5px 6px',
+        padding: '4px 5px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
         position: 'relative',
         minWidth: 0,
@@ -967,7 +967,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
       }}
     >
       {/* שורה 1: שעה + סוג סיור + כפתורים */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 3, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 3, minWidth: 0 }}>
         <span
           data-shift-time
           style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700, flexShrink: 0 }}
@@ -1157,7 +1157,7 @@ const iconBtnStyle: React.CSSProperties = {
   border: 'none',
   cursor: 'pointer',
   fontSize: 11,
-  padding: '0 2px',
+  padding: 0,
   fontFamily: 'inherit',
   lineHeight: 1,
 };
