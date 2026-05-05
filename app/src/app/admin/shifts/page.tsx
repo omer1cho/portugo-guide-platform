@@ -43,6 +43,9 @@ import { getCalendarEventsForDate } from '@/lib/calendar-events';
 // סוגי סיור פרטיים — מוצגים אחרת בכרטיס (פוקוס על שם הלקוח/סוג, לא על "פרטי_1")
 const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
 
+// תחילית לסיור פרטי שעוד לא הסתיים סופית ("הצעה שצפויה לסגור")
+const TENTATIVE_PREFIX = '[כנראה] ';
+
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 // Palette צבעים נעימה למדריכים — 8 צבעים עם ניגודיות טקסט גבוהה
@@ -96,29 +99,31 @@ function fmtVacation(v: GuideVacation): string {
 type PortoSlot = {
   dayOfWeek: number;
   tour_type: string;
-  /** שעה ספציפית; אם undefined — מתאים לכל פורטו_1/דורו/וכו' באותו יום (גמיש) */
+  /** שעה ספציפית להתאמה; אם undefined — מתאים לכל שעה באותו יום (גמיש) */
   time?: string;
+  /** שעת ברירת-מחדל ליצירת shift חדש כשהאתר לא פרסם (HH:MM) */
+  defaultTime: string;
   guide_name: string;
   notes?: string;
   /** שם מדריך נוסף שיווצר על אותו slot כשיבוץ-גיבוי (manual) */
   secondary?: { guide_name: string; notes: string };
 };
 const PORTO_ROSTER: PortoSlot[] = [
-  { dayOfWeek: 0, tour_type: 'פורטו_1', guide_name: 'תום' },
-  { dayOfWeek: 1, tour_type: 'פורטו_1', guide_name: 'תום' },
-  { dayOfWeek: 2, tour_type: 'פורטו_1', guide_name: 'דותן' },
-  { dayOfWeek: 2, tour_type: 'טעימות', guide_name: 'דותן' },
-  { dayOfWeek: 3, tour_type: 'דורו', guide_name: 'תום' },
+  { dayOfWeek: 0, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 1, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 2, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'דותן' },
+  { dayOfWeek: 2, tour_type: 'טעימות',  defaultTime: '14:30', guide_name: 'דותן' },
+  { dayOfWeek: 3, tour_type: 'דורו',     defaultTime: '08:20', guide_name: 'תום' },
   {
-    dayOfWeek: 3, tour_type: 'פורטו_1',
+    dayOfWeek: 3, tour_type: 'פורטו_1', defaultTime: '09:45',
     guide_name: 'דותן', notes: 'אם הדורו יוצא',
     secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
   },
-  { dayOfWeek: 4, tour_type: 'פורטו_1', guide_name: 'תום' },
-  { dayOfWeek: 4, tour_type: 'טעימות', guide_name: 'תום' },
-  { dayOfWeek: 5, tour_type: 'דורו', guide_name: 'תום' },
+  { dayOfWeek: 4, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 4, tour_type: 'טעימות',  defaultTime: '14:30', guide_name: 'תום' },
+  { dayOfWeek: 5, tour_type: 'דורו',     defaultTime: '08:20', guide_name: 'תום' },
   {
-    dayOfWeek: 5, tour_type: 'פורטו_1',
+    dayOfWeek: 5, tour_type: 'פורטו_1', defaultTime: '10:30',
     guide_name: 'דותן', notes: 'אם הדורו יוצא',
     secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
   },
@@ -128,24 +133,23 @@ const PORTO_ROSTER: PortoSlot[] = [
 /**
  * אוטופיל שקט של קבע פורטו, רץ בכל טעינה של שבוע.
  *
- * עבור כל slot ב-PORTO_ROSTER:
- *   - אם יש shift מתאים (יום+שעה+סוג סיור) ללא מדריך — נקצה את המדריך הראשי
- *     ונסמן את ה-notes (אם יש) כדי שעומר תראה "אם הדורו יוצא".
- *   - אם ל-slot יש secondary (תום בגיבוי) — ניצור shift ידני נוסף עם המדריך
- *     הגיבוי, אלא אם כבר קיים אחד כזה. שני המדריכים יראו את עצמם משובצים.
+ * 3 שלבים:
+ *   1) על שיבוצים קיימים (מהאתר) — להצמיד מדריך ראשי לפי הקבע + להשלים notes.
+ *   2) על שיבוצים קיימים — אם ל-slot יש secondary (תום-גיבוי), ליצור shift ידני נוסף.
+ *   3) על ימים בעתיד שבהם הקבע "מצפה" ל-slot שלא קיים בכלל (האתר לא פרסם) —
+ *      ליצור את הראשי + secondary ידנית, עם תווית "🤖 קבע" כדי שעומר תזהה.
+ *      זה הכרחי לימי שישי שבהם פעמים רבות פורטו_1 לא מופיע באתר.
  *
  * מחזיר את כמות הפעולות שבוצעו — אם > 0, הקורא ירענן.
  */
-async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): Promise<number> {
+async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], weekStart: Date): Promise<number> {
   let actions = 0;
   const guideByName = new Map<string, Guide>();
   for (const g of allGuides) guideByName.set(g.name, g);
 
-  // נבדוק רק שיבוצי פורטו של השבוע הזה
   const portoShifts = allShifts.filter((s) => s.city === 'porto' && s.status !== 'cancelled');
-  if (portoShifts.length === 0) return 0;
 
-  // שלב 1: לכל shift פורטו לבדוק את ה-slot המתאים בקבע
+  // === שלב 1: לכל shift פורטו קיים, להצמיד את המדריך הראשי לפי הקבע ===
   for (const s of portoShifts) {
     const dow = new Date(s.shift_date + 'T00:00:00').getDay();
     const time = shortTime(s.shift_time);
@@ -156,31 +160,17 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): P
     const primary = guideByName.get(slot.guide_name);
     if (!primary) continue;
 
-    // אם המדריך הראשי בחופש — לא משבצים אותו
     const primaryOnVacation = isGuideOnVacation(primary, s.shift_date);
 
-    // 1a) שיבוץ המדריך הראשי אם אין מדריך
     if (!s.guide_id && !primaryOnVacation) {
-      try {
-        await assignGuide(s.id, primary.id);
-        actions++;
-      } catch {
-        /* ignore */
-      }
+      try { await assignGuide(s.id, primary.id); actions++; } catch { /* ignore */ }
     }
-
-    // 1b) השלמת notes — גם אם השיבוץ כבר היה משובץ עם המדריך הראשי בעבר
     if (slot.notes && !s.notes && (s.guide_id === primary.id || (!s.guide_id && !primaryOnVacation))) {
-      try {
-        await updateShift(s.id, { notes: slot.notes });
-        actions++;
-      } catch {
-        /* ignore */
-      }
+      try { await updateShift(s.id, { notes: slot.notes }); actions++; } catch { /* ignore */ }
     }
   }
 
-  // שלב 2: ליצור secondary shifts (תום-גיבוי) — רק אם הראשי לא בחופש (אז זה לא משוטר)
+  // === שלב 2: על shifts קיימים — ליצור secondary (תום-גיבוי) אם חסר ===
   for (const s of portoShifts) {
     const dow = new Date(s.shift_date + 'T00:00:00').getDay();
     const time = shortTime(s.shift_time);
@@ -190,9 +180,7 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): P
     if (!slot || !slot.secondary) continue;
     const sec = guideByName.get(slot.secondary.guide_name);
     if (!sec) continue;
-    // אם המדריך הגיבוי בחופש — לא יוצרים שיבוץ
     if (isGuideOnVacation(sec, s.shift_date)) continue;
-    // האם כבר קיים secondary shift על אותו תאריך+שעה+סוג עם המדריך הזה?
     const exists = allShifts.some(
       (x) =>
         x.shift_date === s.shift_date &&
@@ -211,8 +199,59 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[]): P
         notes: slot.secondary.notes,
       });
       actions++;
-    } catch {
-      // skip silently
+    } catch { /* ignore */ }
+  }
+
+  // === שלב 3: ימים בקבע שאין להם שיבוץ בכלל — האתר לא פרסם, אנחנו ניצור ידנית ===
+  // זה תופס בדיוק את המקרה של שישי שבו לפעמים פורטו_1 לא מופיע באתר.
+  // יוצרים רק לעתיד (כולל היום), לא לימים שעברו.
+  const todayIso = toIsoDate(new Date());
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(weekStart, i);
+    const isoDate = toIsoDate(d);
+    if (isoDate < todayIso) continue;
+    const dow = d.getDay();
+    const slotsForDay = PORTO_ROSTER.filter((r) => r.dayOfWeek === dow);
+    for (const slot of slotsForDay) {
+      // האם קיים shift כלשהו על היום הזה לסוג הסיור הזה?
+      const exists = allShifts.some(
+        (x) =>
+          x.shift_date === isoDate &&
+          x.tour_type === slot.tour_type &&
+          x.city === 'porto' &&
+          x.status !== 'cancelled',
+      );
+      if (exists) continue;
+      const primary = guideByName.get(slot.guide_name);
+      if (!primary || isGuideOnVacation(primary, isoDate)) continue;
+      const baseNotes = '🤖 קבע';
+      try {
+        await createManualShift({
+          shift_date: isoDate,
+          shift_time: slot.defaultTime,
+          tour_type: slot.tour_type,
+          city: 'porto',
+          guide_id: primary.id,
+          notes: slot.notes ? `${baseNotes} · ${slot.notes}` : baseNotes,
+        });
+        actions++;
+      } catch { /* ignore */ }
+      if (slot.secondary) {
+        const sec = guideByName.get(slot.secondary.guide_name);
+        if (sec && !isGuideOnVacation(sec, isoDate)) {
+          try {
+            await createManualShift({
+              shift_date: isoDate,
+              shift_time: slot.defaultTime,
+              tour_type: slot.tour_type,
+              city: 'porto',
+              guide_id: sec.id,
+              notes: `${baseNotes} · ${slot.secondary.notes}`,
+            });
+            actions++;
+          } catch { /* ignore */ }
+        }
+      }
     }
   }
 
@@ -249,8 +288,9 @@ function ShiftsContent() {
       .then(async ([s, g]) => {
         if (cancelled) return;
         // אוטופיל שקט של קבע פורטו: אם נמצאו שיבוצים ללא מדריך או secondary חסר,
-        // נחיל את הקבע ונטען שוב. בלי הודעה, בלי כפתור.
-        const applied = await silentApplyPortoRoster(s, g);
+        // או slot שלא קיים בכלל — נחיל את הקבע ונטען שוב. בלי הודעה, בלי כפתור.
+        // לא רץ כשהמשתמשת מסננת לליסבון בלבד (אחרת ניצור ידני בלי לדעת שיש shifts).
+        const applied = cityFilter === 'lisbon' ? 0 : await silentApplyPortoRoster(s, g, weekStart);
         if (cancelled) return;
         if (applied > 0) {
           const fresh = await loadShiftsForWeek(weekStart, cityFilter);
@@ -337,8 +377,12 @@ function ShiftsContent() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <CitySwitcher value={cityFilter} onChange={setCityFilter} />
-          <button onClick={() => setShowGuidesPanel(true)} style={secondaryBtnStyle}>
-            👥 פרטי מדריכים
+          <button
+            onClick={() => setShowGuidesPanel(true)}
+            style={secondaryBtnStyle}
+            title="עריכת זמינות, סיורים מוסמכים והוספת חופשות"
+          >
+            👥 מדריכים & 🌴 חופשות
           </button>
           <button onClick={() => setShowAddModal(true)} style={secondaryBtnStyle}>
             + הוסיפי שיבוץ
@@ -364,7 +408,10 @@ function ShiftsContent() {
       </header>
 
       {/* Week switcher — בעברית: ימין=שבוע קודם (חזרה אחורה), שמאל=שבוע הבא (קדימה) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+      <div
+        data-week-nav
+        style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}
+      >
         <button onClick={() => setWeekStart(addDays(weekStart, -7))} style={navBtnStyle}>▶ שבוע קודם</button>
         <div style={{ minWidth: 200, textAlign: 'center', fontSize: 16, fontWeight: 600, color: ADMIN_COLORS.gray700 }}>
           {fmtWeekRange(weekStart)}
@@ -431,10 +478,57 @@ function ShiftsContent() {
       )}
 
       <style jsx>{`
-        /* במובייל ובטאבלט קטן — לא דוחקים ל-1 עמודה. השבוע יישאר 7 עמודות עם גלילה אופקית רק כצורך אחרון */
-        @media (max-width: 600px) {
+        /* טאבלט ומסכי לפטופ צרים — נשארים על 7 עמודות אבל מקטינים מינימום */
+        @media (max-width: 1100px) and (min-width: 721px) {
           [data-shifts-board] {
-            grid-template-columns: repeat(7, minmax(60px, 1fr)) !important;
+            grid-template-columns: repeat(7, minmax(80px, 1fr)) !important;
+          }
+        }
+        /* מובייל — שינוי מהותי: ימים מערום אנכי, כל יום בגודל מלא וקריא */
+        @media (max-width: 720px) {
+          [data-shifts-board] {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          [data-shifts-board] [data-day-column] {
+            min-height: auto !important;
+            padding: 10px !important;
+          }
+          [data-shifts-board] [data-day-header] {
+            font-size: 14px !important;
+            padding-bottom: 6px !important;
+          }
+          [data-shifts-board] [data-shift-card] {
+            padding: 8px 10px !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-title] {
+            font-size: 14px !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-time] {
+            font-size: 12px !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-notes] {
+            font-size: 11px !important;
+            white-space: normal !important;
+          }
+          [data-shifts-board] [data-shift-card] [data-shift-guide] {
+            font-size: 13px !important;
+            padding: 4px 10px !important;
+          }
+          [data-shifts-board] [data-vacation-pill] {
+            font-size: 13px !important;
+            padding: 7px 9px !important;
+          }
+          [data-shifts-board] [data-city-section] {
+            padding: 6px !important;
+          }
+          [data-shifts-board] [data-city-label] {
+            font-size: 12px !important;
+            margin-bottom: 4px !important;
+          }
+          [data-week-nav] button {
+            padding: 10px 14px !important;
+            font-size: 14px !important;
           }
         }
       `}</style>
@@ -531,6 +625,7 @@ function DayColumn({
 
   return (
     <div
+      data-day-column
       style={{
         background: isToday ? '#f0fdf4' : '#fff',
         border: `1px solid ${isToday ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
@@ -545,6 +640,7 @@ function DayColumn({
     >
       {/* שורה 1 — כותרת היום */}
       <div
+        data-day-header
         style={{
           fontSize: 12,
           fontWeight: 700,
@@ -586,13 +682,13 @@ function DayColumn({
         ))}
       </div>
 
-      {/* שורה 3 — אזור חופשות מדריכים (גובה אחיד, עיצוב בולט) */}
+      {/* שורה 3 — אזור חופשות מדריכים (גובה אחיד, עיצוב מאוד בולט: פסים אלכסוניים + מסגרת כתומה) */}
       <div
         style={{
           minHeight: vacationsAreaMinHeight,
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
+          gap: 3,
         }}
       >
         {vacationsForDay.map((v, i) => {
@@ -600,24 +696,28 @@ function DayColumn({
           return (
             <div
               key={i}
+              data-vacation-pill
               style={{
-                fontSize: 10,
-                background: '#fde68a',
+                fontSize: 11,
+                background:
+                  'repeating-linear-gradient(45deg, #fde68a, #fde68a 5px, #fcd34d 5px, #fcd34d 10px)',
                 color: '#78350f',
-                padding: '3px 5px',
-                borderRadius: 4,
+                padding: '5px 6px',
+                borderRadius: 5,
                 textAlign: 'center',
-                fontWeight: 700,
+                fontWeight: 800,
                 lineHeight: 1.3,
-                border: '1px solid #f59e0b',
-                borderRight: c ? `4px solid ${c.border}` : '1px solid #f59e0b',
+                border: '2px solid #d97706',
+                borderRight: c ? `5px solid ${c.border}` : '2px solid #d97706',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
+                boxShadow: '0 1px 3px rgba(217, 119, 6, 0.25)',
+                letterSpacing: 0.2,
               }}
               title={`${v.guide.name} בחופש${v.label ? ` — ${v.label}` : ''}`}
             >
-              🌴 <span style={{ textDecoration: 'none' }}>{v.guide.name}</span> בחופש
+              🌴 בחופש: {v.guide.name}
             </div>
           );
         })}
@@ -664,8 +764,11 @@ function CitySection({
   onChange: () => void;
 }) {
   return (
-    <div style={{ background: color, borderRadius: 6, padding: 4, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: labelColor, letterSpacing: 0.3 }}>
+    <div
+      data-city-section
+      style={{ background: color, borderRadius: 6, padding: 4, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}
+    >
+      <div data-city-label style={{ fontSize: 10, fontWeight: 700, color: labelColor, letterSpacing: 0.3 }}>
         {label}
       </div>
       {shifts.map((s) => (
@@ -694,15 +797,32 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   const currentGuide = guides.find((g) => g.id === shift.guide_id);
   const guideClr = guideColor(shift.guide_id, guides);
   const isPrivate = PRIVATE_TOUR_TYPES.has(shift.tour_type);
+  // האם זו "הצעה שצפויה לסגור" שעוד לא אושרה סופית — מסומן בתחילית [כנראה]
+  const isTentative = isPrivate && (shift.notes?.startsWith(TENTATIVE_PREFIX) ?? false);
 
-  // לסיור פרטי — שולפים את ה-detail (חלק ראשון לפני "·") מתוך notes
+  // לסיור פרטי — שולפים את ה-detail (חלק ראשון לפני המפריד) מתוך notes
   // ומציגים אותו כ"<detail> פרטי". השאר בהערה.
+  // תומך בכמה מפרידים: " · " (הפורמט הרשמי), " - " ו-" / " (פורמט ידני שעומר השתמשה בו בעבר).
   let privateDetail: string | null = null;
   let restNotes: string | null = null;
   if (isPrivate && shift.notes) {
-    const parts = shift.notes.split(' · ');
-    privateDetail = parts[0] || null;
-    restNotes = parts.slice(1).join(' · ') || null;
+    let raw = shift.notes;
+    if (isTentative) raw = raw.slice(TENTATIVE_PREFIX.length).trim();
+    const splitter = raw.includes(' · ')
+      ? ' · '
+      : raw.includes(' - ')
+        ? ' - '
+        : raw.includes(' / ')
+          ? ' / '
+          : null;
+    if (splitter) {
+      const parts = raw.split(splitter);
+      privateDetail = parts[0]?.trim() || null;
+      restNotes = parts.slice(1).join(splitter).trim() || null;
+    } else {
+      privateDetail = raw.trim() || null;
+      restNotes = null;
+    }
   }
 
   async function handleAssign(guideId: string | null) {
@@ -732,12 +852,17 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     }
   }
 
-  // מסגרת לכרטיס לפי סטטוס
+  // מסגרת לכרטיס לפי סטטוס. סיור "כנראה פרטי" — מסגרת מקווקווית + רקע קרם
   let cardBg: string = '#fff';
   let cardBorder: string = ADMIN_COLORS.gray300;
+  let cardBorderStyle: string = 'solid';
   if (shift.status === 'cancelled') {
     cardBg = '#fef2f2';
     cardBorder = '#fca5a5';
+  } else if (isTentative) {
+    cardBg = '#fffbeb';
+    cardBorder = '#a37b00';
+    cardBorderStyle = 'dashed';
   } else if (shift.status === 'published') {
     cardBorder = '#93c5fd';
   }
@@ -752,9 +877,10 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
 
   return (
     <div
+      data-shift-card
       style={{
         background: cardBg,
-        border: `1px solid ${cardBorder}`,
+        border: `1.5px ${cardBorderStyle} ${cardBorder}`,
         borderRadius: 5,
         padding: '4px 5px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
@@ -764,10 +890,22 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     >
       {/* שורה 1: שעה + סוג סיור + כפתורים */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 3, minWidth: 0 }}>
-        <span style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700, flexShrink: 0 }}>
+        <span
+          data-shift-time
+          style={{ fontSize: 10, color: ADMIN_COLORS.gray500, whiteSpace: 'nowrap', fontWeight: 700, flexShrink: 0 }}
+        >
           {shortTime(shift.shift_time)}
         </span>
+        {isTentative && (
+          <span
+            title="הצעה שצפויה לסגור — לא סגור סופית"
+            style={{ fontSize: 11, flexShrink: 0 }}
+          >
+            🤔
+          </span>
+        )}
         <span
+          data-shift-title
           style={{
             fontSize: 11,
             fontWeight: 700,
@@ -779,7 +917,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
           }}
-          title={displayTourName}
+          title={isTentative ? `כנראה: ${displayTourName}` : displayTourName}
         >
           {displayTourName}
         </span>
@@ -814,6 +952,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           onClick={() => setPickerOpen(!pickerOpen)}
           disabled={busy}
           title={currentGuide.availability_notes || ''}
+          data-shift-guide
           style={{
             background: guideClr.bg,
             color: guideClr.fg,
@@ -837,6 +976,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         <button
           onClick={() => setPickerOpen(!pickerOpen)}
           disabled={busy}
+          data-shift-guide
           style={{
             background: '#fff',
             color: ADMIN_COLORS.gray500,
@@ -854,9 +994,22 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         </button>
       )}
 
-      {/* הערות אופציונליות */}
+      {/* הערות אופציונליות — nowrap + ellipsis כדי שלא יגלשו אופקית */}
       {displayNotes && shift.status !== 'cancelled' && (
-        <div style={{ fontSize: 9, color: '#a37b00', marginTop: 2, fontStyle: 'italic', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div
+          data-shift-notes
+          title={displayNotes}
+          style={{
+            fontSize: 9,
+            color: '#a37b00',
+            marginTop: 2,
+            fontStyle: 'italic',
+            lineHeight: 1.3,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {displayNotes}
         </div>
       )}
@@ -1295,6 +1448,7 @@ function ManualAddModal({
   const [privateDetail, setPrivateDetail] = useState(''); // value מהתפריט (קלאסי / סינטרה / "אחר" / וכו')
   const [privateDetailOther, setPrivateDetailOther] = useState(''); // אם נבחר "אחר"
   const [privateCustomer, setPrivateCustomer] = useState('');
+  const [tentative, setTentative] = useState(false); // "כנראה פרטי" — הצעה שעוד לא אושרה
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -1327,6 +1481,7 @@ function ManualAddModal({
       return;
     }
     // לסיור פרטי — בונים את ההערה אוטומטית מסוג הסיור + שם הלקוח
+    // אם זה "כנראה" (הצעה שלא נסגרה סופית) — מוסיפים תחילית [כנראה] שהכרטיס יזהה
     let finalNotes: string | undefined = notes || undefined;
     if (isPrivate) {
       const detailText = privateDetail === '__other__' ? privateDetailOther.trim() : privateDetail;
@@ -1336,7 +1491,8 @@ function ManualAddModal({
       }
       const parts: string[] = [detailText];
       if (privateCustomer.trim()) parts.push(privateCustomer.trim());
-      finalNotes = parts.join(' · ');
+      const body = parts.join(' · ');
+      finalNotes = tentative ? `${TENTATIVE_PREFIX}${body}` : body;
     }
     setSaving(true);
     try {
@@ -1445,10 +1601,37 @@ function ManualAddModal({
                 style={inputStyle}
               />
             </label>
+
+            {/* "כנראה פרטי" — הצעה שעוד לא אושרה סופית; הכרטיס יוצג עם מסגרת מקווקווית ו-🤔 */}
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                fontSize: 12,
+                color: '#78350f',
+                background: '#fffbeb',
+                border: '1px dashed #d97706',
+                borderRadius: 6,
+                padding: '8px 10px',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={tentative}
+                onChange={(e) => setTentative(e.target.checked)}
+                style={{ marginTop: 2, accentColor: '#d97706' }}
+              />
+              <span style={{ flex: 1, lineHeight: 1.4 }}>
+                <strong>🤔 כנראה ייצא לפועל</strong> — לסמן הצעה ששלחת ונראית בסבירות גבוהה לסגירה.
+                בלוח הסיור יופיע במסגרת מקווקווית, כדי שתזכרי לקחת אותו בחשבון בשיבוצים.
+              </span>
+            </label>
+
             <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500, marginTop: -4 }}>
-              ב-לוח יוצג: <strong>סיור פרטי</strong>
-              {privateDetail && privateDetail !== '__other__' ? ` · ${privateDetail}` : ''}
-              {privateDetail === '__other__' && privateDetailOther ? ` · ${privateDetailOther}` : ''}
+              ב-לוח יוצג: <strong>{tentative ? '🤔 ' : ''}
+                {(privateDetail === '__other__' ? privateDetailOther : privateDetail) || '(בחרי סוג סיור)'} פרטי</strong>
               {privateCustomer ? ` · ${privateCustomer}` : ''}
             </span>
           </>
