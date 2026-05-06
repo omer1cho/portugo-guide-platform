@@ -913,7 +913,6 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [dupeOpen, setDupeOpen] = useState(false);
 
   const eligibleGuides = useMemo(() => {
     // לסיורים פרטיים / הכשרות / פעילות צוות — כל מדריך בעיר זמין
@@ -988,6 +987,34 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     setBusy(true);
     try {
       await deleteShift(shift.id);
+      onChange();
+    } catch (e) {
+      alert('משהו השתבש: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * שכפול לתצפות — יוצר ישר משמרת חדשה בלוח באותו תאריך/שעה/עיר/סיור,
+   * עם tour_type='תצפות'. ה-detail (שם הסיור) נשמר ב-notes לפי אותו פורמט
+   * שכרטיס תצפות יודע לקרוא. השיבוץ נשאר ריק — עומר תבחר את המדריך הצופה
+   * דרך הקלף בלוח כמו כל משמרת אחרת.
+   */
+  async function handleDuplicateToObservation() {
+    setBusy(true);
+    try {
+      const observationDetail = isPrivate
+        ? (detailFromNotes || 'סיור פרטי')
+        : tourTypeLabel(shift.tour_type);
+      await createManualShift({
+        shift_date: shift.shift_date,
+        shift_time: shortTime(shift.shift_time),
+        city: shift.city,
+        tour_type: 'תצפות',
+        guide_id: null,
+        notes: observationDetail,
+      });
       onChange();
     } catch (e) {
       alert('משהו השתבש: ' + (e instanceof Error ? e.message : ''));
@@ -1227,32 +1254,13 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           shift={shift}
           onClose={() => setEditOpen(false)}
           onSaved={() => { setEditOpen(false); onChange(); }}
-          // "שכפלי כתצפות" — רלוונטי רק על משמרות רגילות (לא על תצפות / ניסיון דפים / פעילות צוות)
+          // "שכפלי כתצפות" — רלוונטי רק על משמרות רגילות (לא על תצפות / ניסיון דפים / פעילות צוות).
+          // לחיצה יוצרת ישר משמרת חדשה (אין modal) — עומר תשבץ את המדריך הצופה דרך הקלף.
           onDuplicateToObservation={
             !isTraining && !isTeam
-              ? () => { setEditOpen(false); setDupeOpen(true); }
+              ? async () => { await handleDuplicateToObservation(); setEditOpen(false); }
               : undefined
           }
-        />
-      )}
-      {/* Duplicate-to-observation modal — אותו תאריך/שעה/עיר, סוג=תצפות, סיור הספציפי כבר נבחר */}
-      {dupeOpen && (
-        <ManualAddModal
-          weekStart={new Date(`${shift.shift_date}T00:00:00`)}
-          guides={guides}
-          onClose={() => setDupeOpen(false)}
-          onCreated={() => { setDupeOpen(false); onChange(); }}
-          prefill={{
-            date: shift.shift_date,
-            time: shortTime(shift.shift_time),
-            city: shift.city as 'lisbon' | 'porto',
-            tourType: 'תצפות',
-            // הסיור שעליו צופים: לסיור פרטי — ה-detail מה-notes; לסיור רגיל — ה-label של סוג הסיור
-            privateDetail: isPrivate ? (detailFromNotes || '') : tourTypeLabel(shift.tour_type),
-            // המדריך המלווה = המדריך הנוכחי של המשמרת המקורית (זה שעליו צופים)
-            companionGuide: currentGuide?.name || '',
-            contextLabel: `${tourTypeLabel(shift.tour_type)} ${shortTime(shift.shift_time)}${currentGuide ? ` · ${currentGuide.name}` : ''}`,
-          }}
         />
       )}
     </div>
@@ -1622,40 +1630,25 @@ function GuideCardRow({
   );
 }
 
-// Prefill — לפתיחת המודאל עם שדות ממולאים מראש (למשל כש"שכפלי לתצפות" נלחץ על משמרת קיימת)
-type ManualAddPrefill = {
-  date?: string;
-  time?: string;
-  city?: 'lisbon' | 'porto';
-  tourType?: string;
-  privateDetail?: string;
-  companionGuide?: string;
-  // קונטקסט שמוצג בכותרת המודאל ("שכפול תצפות מ: <משהו>") — אופציונלי
-  contextLabel?: string;
-};
-
 function ManualAddModal({
-  weekStart, guides, onClose, onCreated, prefill,
+  weekStart, guides, onClose, onCreated,
 }: {
   weekStart: Date;
   guides: Guide[];
   onClose: () => void;
   onCreated: () => void;
-  prefill?: ManualAddPrefill;
 }) {
-  const [date, setDate] = useState(prefill?.date ?? toIsoDate(weekStart));
-  const [time, setTime] = useState(prefill?.time ?? '10:00');
-  const [city, setCity] = useState<'lisbon' | 'porto'>(prefill?.city ?? 'lisbon');
-  const [tourType, setTourType] = useState(prefill?.tourType ?? 'פרטי_1');
+  const [date, setDate] = useState(toIsoDate(weekStart));
+  const [time, setTime] = useState('10:00');
+  const [city, setCity] = useState<'lisbon' | 'porto'>('lisbon');
+  const [tourType, setTourType] = useState('פרטי_1');
   const [guideId, setGuideId] = useState<string>('');
   const [notes, setNotes] = useState('');
   // שדות מיוחדים לסיור פרטי
-  const [privateDetail, setPrivateDetail] = useState(prefill?.privateDetail ?? ''); // value מהתפריט (קלאסי / סינטרה / "אחר" / וכו')
+  const [privateDetail, setPrivateDetail] = useState(''); // value מהתפריט (קלאסי / סינטרה / "אחר" / וכו')
   const [privateDetailOther, setPrivateDetailOther] = useState(''); // אם נבחר "אחר"
   const [privateCustomer, setPrivateCustomer] = useState('');
   const [tentative, setTentative] = useState(false); // "כנראה פרטי" — הצעה שעוד לא אושרה
-  // שדה "מדריך מלווה / מתלמד" — רק להכשרות (תצפות / ניסיון דפים)
-  const [companionGuide, setCompanionGuide] = useState(prefill?.companionGuide ?? '');
   // תיאור פעילות צוות (לדוגמה "ארוחת צהריים בכיכר", "פגישת תיאום")
   const [teamDescription, setTeamDescription] = useState('');
   const [saving, setSaving] = useState(false);
@@ -1713,12 +1706,7 @@ function ManualAddModal({
         setErr('צריך לבחור את סוג הסיור');
         return;
       }
-      const parts: string[] = [detailText];
-      if (companionGuide.trim()) {
-        const role = tourType === 'תצפות' ? 'מלווה' : 'מתלמד';
-        parts.push(`${role}: ${companionGuide.trim()}`);
-      }
-      finalNotes = parts.join(' · ');
+      finalNotes = detailText;
     } else if (isTeam) {
       if (!teamDescription.trim()) {
         setErr('צריך תיאור לפעילות הצוות');
@@ -1763,12 +1751,10 @@ function ManualAddModal({
         dir="rtl"
       >
         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: ADMIN_COLORS.green900 }}>
-          {prefill?.contextLabel ? `👁️ שכפול לתצפות` : 'הוסיפי שיבוץ ידני'}
+          הוסיפי שיבוץ ידני
         </h3>
         <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
-          {prefill?.contextLabel
-            ? `מתוך: ${prefill.contextLabel} — בחרי מי בא לצפות`
-            : 'לסיורים פרטיים או חד-פעמיים שלא מסונכרנים מהאתר'}
+          לסיורים פרטיים או חד-פעמיים שלא מסונכרנים מהאתר
         </p>
         <label style={labelStyle}>תאריך
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
@@ -1879,19 +1865,6 @@ function ManualAddModal({
           </>
         )}
 
-        {isTraining && (
-          <label style={labelStyle}>
-            {tourType === 'תצפות' ? 'מדריך מלווה (אופציונלי)' : 'מדריך מתלמד (אופציונלי)'}
-            <input
-              type="text"
-              value={companionGuide}
-              onChange={(e) => setCompanionGuide(e.target.value)}
-              placeholder={tourType === 'תצפות' ? 'מי מעביר את ההכשרה?' : 'מי בהכשרה?'}
-              style={inputStyle}
-            />
-          </label>
-        )}
-
         {isTeam && (
           <label style={labelStyle}>תיאור הפעילות
             <input
@@ -1959,15 +1932,26 @@ function EditShiftModal({
   shift: Shift;
   onClose: () => void;
   onSaved: () => void;
-  /** אופציונלי — אם קיים, מציג כפתור "שכפלי כתצפות" שסוגר את העריכה ופותח את מודאל השכפול */
-  onDuplicateToObservation?: () => void;
+  /** אופציונלי — אם קיים, מציג כפתור "שכפלי כתצפות" שיוצר ישר משמרת תצפות חדשה ללוח */
+  onDuplicateToObservation?: () => Promise<void>;
 }) {
   const [date, setDate] = useState(shift.shift_date);
   const [time, setTime] = useState(shortTime(shift.shift_time));
   const [tourType, setTourType] = useState(shift.tour_type);
   const [notes, setNotes] = useState(shift.notes || '');
   const [saving, setSaving] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [err, setErr] = useState('');
+
+  async function handleDuplicateClick() {
+    if (!onDuplicateToObservation) return;
+    setDuplicating(true);
+    try {
+      await onDuplicateToObservation();
+    } finally {
+      setDuplicating(false);
+    }
+  }
 
   const tourOptions = TOUR_TYPES[shift.city];
 
@@ -2049,9 +2033,9 @@ function EditShiftModal({
         {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
         {onDuplicateToObservation && (
           <button
-            onClick={onDuplicateToObservation}
-            disabled={saving}
-            title="פותח שכפול לתצפות עם אותו תאריך/שעה/סיור (שינויים שלא נשמרו יאבדו)"
+            onClick={handleDuplicateClick}
+            disabled={saving || duplicating}
+            title="יוצרת ישר בלוח משמרת תצפות באותו תאריך/שעה/סיור — את משבצת את המדריך הצופה דרך הקלף"
             style={{
               padding: '8px 12px',
               background: '#fff',
@@ -2060,12 +2044,12 @@ function EditShiftModal({
               borderRadius: 6,
               fontSize: 12,
               fontWeight: 600,
-              cursor: saving ? 'not-allowed' : 'pointer',
+              cursor: (saving || duplicating) ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit',
               textAlign: 'center',
             }}
           >
-            👁️ שכפלי משמרת זו כתצפות
+            {duplicating ? 'יוצרת...' : '👁️ שכפלי משמרת זו כתצפות'}
           </button>
         )}
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
