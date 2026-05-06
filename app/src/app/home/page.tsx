@@ -28,6 +28,13 @@ import {
   getGracePeriodNotice,
   formatYearMonthParam,
 } from '@/lib/month-policy';
+import {
+  loadPublishedShiftsForGuide,
+  getLatestPublishTimestampForGuide,
+  tourTypeLabel,
+  shortTime,
+  type Shift,
+} from '@/lib/admin/shifts-data';
 
 type Summary = {
   tours: number;
@@ -74,6 +81,56 @@ function getTimeGreeting() {
   if (h >= 12 && h < 17) return { text: 'שלום', emoji: '👋' };
   if (h >= 17 && h < 22) return { text: 'ערב טוב', emoji: '🌙' };
   return { text: 'היי', emoji: '✨' };
+}
+
+// === Shift display helpers (משותף עם /my-shifts) ===
+const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
+const TRAINING_TOUR_TYPES = new Set(['תצפות', 'נסיון_דפים']);
+const TEAM_TOUR_TYPES = new Set(['פעילות_צוות']);
+const TENTATIVE_PREFIX = '[כנראה] ';
+const TOUR_TYPE_ICONS: Record<string, string> = {
+  'תצפות': '👁️', 'נסיון_דפים': '📋', 'פעילות_צוות': '🤝',
+};
+const TOUR_TYPE_SHORT_LABELS: Record<string, string> = {
+  'תצפות': 'תצפות', 'נסיון_דפים': 'ניסיון דפים', 'פעילות_צוות': 'פעילות צוות',
+};
+
+function shiftDisplayName(shift: Shift): string {
+  const isPrivate = PRIVATE_TOUR_TYPES.has(shift.tour_type);
+  const isTraining = TRAINING_TOUR_TYPES.has(shift.tour_type);
+  const isTeam = TEAM_TOUR_TYPES.has(shift.tour_type);
+  let detailFromNotes: string | null = null;
+  if ((isPrivate || isTraining) && shift.notes) {
+    let raw = shift.notes;
+    if (raw.startsWith(TENTATIVE_PREFIX)) raw = raw.slice(TENTATIVE_PREFIX.length).trim();
+    const splitter = raw.includes(' · ') ? ' · ' : raw.includes(' - ') ? ' - ' : raw.includes(' / ') ? ' / ' : null;
+    detailFromNotes = splitter ? (raw.split(splitter)[0]?.trim() || null) : raw.trim() || null;
+  }
+  if (isPrivate) return detailFromNotes ? `${detailFromNotes} פרטי` : tourTypeLabel(shift.tour_type);
+  if (isTraining) {
+    const icon = TOUR_TYPE_ICONS[shift.tour_type] || '';
+    const label = TOUR_TYPE_SHORT_LABELS[shift.tour_type] || tourTypeLabel(shift.tour_type);
+    return detailFromNotes ? `${icon} ${label}: ${detailFromNotes}` : `${icon} ${label}`;
+  }
+  if (isTeam) {
+    const icon = TOUR_TYPE_ICONS[shift.tour_type] || '';
+    const label = TOUR_TYPE_SHORT_LABELS[shift.tour_type] || tourTypeLabel(shift.tour_type);
+    return `${icon} ${label}`;
+  }
+  return tourTypeLabel(shift.tour_type);
+}
+
+/** "ראשון, 12/5" / "היום" / "מחר" */
+function shiftDayLabel(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return 'היום';
+  if (diff === 1) return 'מחר';
+  const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+  return `${dayNames[date.getDay()]}, ${d}/${m}`;
 }
 
 function formatMonthLabel(year: number, month: number) {
@@ -126,6 +183,12 @@ function HomeContent() {
   type TeamBirthday = { id: string; name: string; birthday: string };
   const [todayBirthdays, setTodayBirthdays] = useState<TeamBirthday[]>([]);
   const [currentGuideId, setCurrentGuideId] = useState<string | null>(null);
+  // המשמרת הקרובה ביותר של המדריך (היום והלאה). null = אין.
+  const [nextShift, setNextShift] = useState<Shift | null>(null);
+  // האם יש פרסום חדש שעדיין לא נראה (להצגת הבאנר "הסידור פורסם")
+  const [hasNewPublish, setHasNewPublish] = useState(false);
+  // ה-published_at העדכני ביותר — נסמן כ"נראה" כשהמדריך לוחץ על הבאנר
+  const [latestPublishedAt, setLatestPublishedAt] = useState<string | null>(null);
 
   // Month navigation — read initial from URL, default to current month
   const now = new Date();
@@ -151,6 +214,27 @@ function HomeContent() {
       const today = todayMonthDay();
       const todayBdays = ((data as TeamBirthday[]) || []).filter((b) => b.birthday === today);
       setTodayBirthdays(todayBdays);
+    })();
+
+    // המשמרת הקרובה + סטטוס פרסום
+    (async () => {
+      try {
+        const upcoming = await loadPublishedShiftsForGuide(id, 14);
+        setNextShift(upcoming[0] ?? null);
+
+        const latest = await getLatestPublishTimestampForGuide(id);
+        setLatestPublishedAt(latest);
+        if (latest) {
+          const seen = localStorage.getItem(`portugo_seen_publish_${id}`);
+          // הבאנר יופיע אם המדריך עוד לא ראה את הפרסום הזה
+          setHasNewPublish(seen !== latest);
+        } else {
+          setHasNewPublish(false);
+        }
+      } catch (e) {
+        // בלי להפיל את העמוד — רק לוג. הבאנר/המשמרת פשוט לא יופיעו.
+        console.error('Failed to load shifts info:', e);
+      }
     })();
 
     async function loadSummary() {
@@ -513,6 +597,18 @@ function HomeContent() {
     router.replace('/home', { scroll: false });
   };
 
+  /**
+   * נקרא כשהמדריך לוחץ על באנר "הסידור פורסם" — סוגר את הבאנר ומסמן
+   * ב-localStorage את ה-published_at העדכני כ"נראה". הבאנר לא יופיע שוב
+   * עד שיהיה published_at חדש יותר (כלומר עד הפרסום הבא).
+   */
+  const dismissPublishBanner = () => {
+    if (currentGuideId && latestPublishedAt) {
+      localStorage.setItem(`portugo_seen_publish_${currentGuideId}`, latestPublishedAt);
+    }
+    setHasNewPublish(false);
+  };
+
   const greeting = getTimeGreeting();
   const monthLabel = formatMonthLabel(year, month);
   const isCurrent = isCurrentMonth(year, month);
@@ -561,6 +657,24 @@ function HomeContent() {
         {/* Admin: switch which guide we're viewing */}
         <AdminGuideSwitcher />
 
+        {/* באנר "הסידור החדש פורסם" — מופיע רק אם פורסם משהו חדש שעוד לא ראית.
+            לחיצה לוקחת ל-/my-shifts (שגם מסמנת אותו כ"נראה") ועוצרת את הבאנר עד הפרסום הבא. */}
+        {hasNewPublish && (
+          <Link
+            href="/my-shifts"
+            onClick={dismissPublishBanner}
+            className="block bg-gradient-to-l from-green-700 to-green-600 text-white rounded-2xl p-4 shadow-lg active:scale-98 transition-transform"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-bold text-base">🗓️ הסידור לשבוע הבא פורסם</div>
+                <div className="text-xs opacity-90 mt-0.5">לחצ.י לצפייה במשמרות שלך</div>
+              </div>
+              <div className="text-2xl">←</div>
+            </div>
+          </Link>
+        )}
+
         {/* ברכות יומיות — חגים, ימי הולדת, ומעברי שעון. סדר תצוגה:
             1. יום הולדת של החוגג עצמו (אם יש) — תמיד למעלה
             2. אירועי לוח לפי עדיפות (ישראל → פורטוגל → שעון → בינלאומי)
@@ -605,6 +719,37 @@ function HomeContent() {
             </div>
           );
         })()}
+
+        {/* "המשמרת הקרובה שלי" — קלף בולט עם המשמרת הבאה. מופיע רק אם יש משמרת ב-14 הימים הקרובים. */}
+        {nextShift && (
+          <Link
+            href="/my-shifts"
+            className="block bg-white rounded-2xl shadow-md p-4 border-r-4 border-green-600 active:scale-98 transition-transform"
+          >
+            <div className="text-xs text-gray-500 font-semibold mb-1">
+              🗓️ המשמרת הקרובה שלך
+            </div>
+            <div className="flex justify-between items-baseline mb-1">
+              <div className="text-lg font-bold text-green-800">
+                {shiftDayLabel(nextShift.shift_date)}
+              </div>
+              <div className="text-xl font-bold text-green-900">
+                {shortTime(nextShift.shift_time)}
+              </div>
+            </div>
+            <div className="text-base font-semibold text-gray-900">
+              {shiftDisplayName(nextShift)}
+            </div>
+            {nextShift.notes && !PRIVATE_TOUR_TYPES.has(nextShift.tour_type) && !TRAINING_TOUR_TYPES.has(nextShift.tour_type) && (
+              <div className="text-sm text-amber-700 italic mt-1">
+                {nextShift.notes}
+              </div>
+            )}
+            <div className="text-xs text-gray-500 mt-2">
+              {nextShift.city === 'lisbon' ? 'ליסבון' : 'פורטו'} · לחצ.י לכל המשמרות ←
+            </div>
+          </Link>
+        )}
 
         {/* תזכורת אדומה — קופת המתנה. מופיעה גבוה מעל סיכום החודש כדי שלא תפוספס. */}
         {summary.pending_total > 0 && (
@@ -1037,6 +1182,13 @@ function HomeContent() {
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/my-shifts"
+            className="bg-white rounded-xl shadow p-4 text-center hover:bg-gray-50 active:scale-95 transition-transform col-span-2 border border-green-200"
+          >
+            <div className="text-lg font-semibold text-green-800">🗓️ המשמרות שלי</div>
+            <div className="text-xs text-gray-500 mt-1">השבוע הקרוב</div>
+          </Link>
           <Link
             href={`/my-tours?year=${year}&month=${month + 1}`}
             className="bg-white rounded-xl shadow p-4 text-center hover:bg-gray-50 active:scale-95 transition-transform"

@@ -55,6 +55,61 @@ export function addDays(d: Date, days: number): Date {
   return r;
 }
 
+/**
+ * טוען את כל ה-published shifts של מדריך מסוים, מהיום והלאה (עד `daysAhead` ימים).
+ * משמש בצד המדריך ב-/home וב-/my-shifts.
+ *
+ * RLS: מדריך רגיל יקבל רק את ה-shifts שלו (לפי policy ב-DB).
+ * אדמין יקבל את ה-shifts של מי שהוא מבקש (כי policy מאפשר לו all).
+ */
+export async function loadPublishedShiftsForGuide(
+  guideId: string,
+  daysAhead: number = 14,
+): Promise<Shift[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = toIsoDate(today);
+  const end = toIsoDate(addDays(today, daysAhead));
+
+  const { data, error } = await supabase
+    .from('shifts')
+    .select('*')
+    .eq('guide_id', guideId)
+    .eq('status', 'published')
+    .gte('shift_date', start)
+    .lte('shift_date', end)
+    .order('shift_date', { ascending: true })
+    .order('shift_time', { ascending: true });
+
+  if (error) throw error;
+  return (data || []) as Shift[];
+}
+
+/**
+ * מחזיר את ה-published_at העדכני ביותר מבין כל ה-shifts העתידיים של מדריך.
+ * משמש לבאנר "הסידור פורסם" — אם זה חדש מהקודם שראה המדריך, מציגים באנר.
+ * מחזיר null אם אין משמרות עתידיות פורסמו.
+ */
+export async function getLatestPublishTimestampForGuide(guideId: string): Promise<string | null> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = toIsoDate(today);
+
+  const { data, error } = await supabase
+    .from('shifts')
+    .select('published_at')
+    .eq('guide_id', guideId)
+    .eq('status', 'published')
+    .gte('shift_date', start)
+    .not('published_at', 'is', null)
+    .order('published_at', { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+  return (data[0] as { published_at: string | null }).published_at;
+}
+
 /** טוען shifts לשבוע (ראשון-שבת) ולעיר אופציונלית */
 export async function loadShiftsForWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' | 'porto' = 'all'): Promise<Shift[]> {
   const start = toIsoDate(weekStart);
