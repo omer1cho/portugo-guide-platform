@@ -132,30 +132,64 @@ export async function loadShiftsForWeek(weekStart: Date, cityFilter: 'all' | 'li
   return (data || []) as Shift[];
 }
 
-/** טוען את כל המדריכים הפעילים (לשימוש ב-dropdown) */
+/**
+ * טוען את כל המדריכים הפעילים שמשבצים אותם על סיורים.
+ * הסינון מבוסס על is_guide=true (כולל אדמינים שגם מדריכים, כמו רונה).
+ *
+ * Defensive fallbacks (לא להפיל את הדף אם העמודות עוד לא רצו ב-DB):
+ *  • אם is_guide לא קיים — נשתמש ב-is_admin=false (התנהגות ישנה).
+ *  • אם vacations לא קיים — נטען בלי העמודה.
+ */
 export async function loadAvailableGuides(): Promise<Guide[]> {
   const SAFE = 'id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person';
-  const FULL = `${SAFE}, vacations`;
+  const FULL = `${SAFE}, is_guide, vacations`;
 
-  // ננסה עם vacations; אם העמודה לא קיימת ב-DB עדיין — נחזור בלי שהדף ייקרס
+  // ניסיון ראשי — עם is_guide + vacations
   const first = await supabase
     .from('guides')
     .select(FULL)
     .eq('is_active', true)
-    .eq('is_admin', false)
+    .eq('is_guide', true)
     .order('name');
   if (!first.error) return (first.data || []) as Guide[];
 
-  if (first.error.message?.toLowerCase().includes('vacations')) {
-    const fallback = await supabase
+  const msg = first.error.message?.toLowerCase() || '';
+
+  // Fallback A: is_guide לא קיים → לסנן ב-is_admin=false (התנהגות ישנה, רונה לא תופיע)
+  if (msg.includes('is_guide')) {
+    const noGuideCol = await supabase
       .from('guides')
-      .select(SAFE)
+      .select(`${SAFE}, vacations`)
       .eq('is_active', true)
       .eq('is_admin', false)
+      .order('name');
+    if (!noGuideCol.error) return (noGuideCol.data || []) as Guide[];
+    // אם גם vacations חסר — נמשיך ל-fallback B
+    if (noGuideCol.error.message?.toLowerCase().includes('vacations')) {
+      const minimal = await supabase
+        .from('guides')
+        .select(SAFE)
+        .eq('is_active', true)
+        .eq('is_admin', false)
+        .order('name');
+      if (minimal.error) throw minimal.error;
+      return (minimal.data || []) as Guide[];
+    }
+    throw noGuideCol.error;
+  }
+
+  // Fallback B: vacations לא קיים אבל is_guide כן → לטעון בלי vacations
+  if (msg.includes('vacations')) {
+    const fallback = await supabase
+      .from('guides')
+      .select(`${SAFE}, is_guide`)
+      .eq('is_active', true)
+      .eq('is_guide', true)
       .order('name');
     if (fallback.error) throw fallback.error;
     return (fallback.data || []) as Guide[];
   }
+
   throw first.error;
 }
 

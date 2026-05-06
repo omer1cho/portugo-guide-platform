@@ -109,22 +109,44 @@ export async function loadMonthSnapshot(
   const { start, end } = monthBounds(year, month, dayLimit);
 
   // ─── שלב 1: כל המדריכים הפעילים ─────────────────────────────────────────
-  let guidesQ = supabase
-    .from('guides')
-    .select(
-      'id, name, city, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, is_admin, is_active',
-    )
-    .eq('is_active', true)
-    .order('name');
+  // אם הצרכן מבקש לכלול אדמינים — נטען את כולם.
+  // אחרת נסנן ל-is_guide=true (כולל אדמינים שגם מדריכים, כמו רונה).
+  // Fallback ל-is_admin=false אם is_guide עדיין לא רץ ב-DB.
+  async function fetchGuides() {
+    const baseSelect = 'id, name, city, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, is_admin, is_active';
 
-  if (cityFilter !== 'all') {
-    guidesQ = guidesQ.eq('city', cityFilter);
-  }
-  if (!includeAdmins) {
-    guidesQ = guidesQ.eq('is_admin', false);
+    if (includeAdmins) {
+      let q = supabase.from('guides').select(baseSelect).eq('is_active', true).order('name');
+      if (cityFilter !== 'all') q = q.eq('city', cityFilter);
+      return q;
+    }
+
+    // ניסיון ראשי — is_guide=true
+    let q = supabase
+      .from('guides')
+      .select(`${baseSelect}, is_guide`)
+      .eq('is_active', true)
+      .eq('is_guide', true)
+      .order('name');
+    if (cityFilter !== 'all') q = q.eq('city', cityFilter);
+    const primary = await q;
+    if (!primary.error) return primary;
+
+    // Fallback — is_guide לא קיים, נסנן ב-is_admin=false (התנהגות ישנה)
+    if (primary.error.message?.toLowerCase().includes('is_guide')) {
+      let fb = supabase
+        .from('guides')
+        .select(baseSelect)
+        .eq('is_active', true)
+        .eq('is_admin', false)
+        .order('name');
+      if (cityFilter !== 'all') fb = fb.eq('city', cityFilter);
+      return fb;
+    }
+    return primary;
   }
 
-  const { data: guidesRaw, error: guidesErr } = await guidesQ;
+  const { data: guidesRaw, error: guidesErr } = await fetchGuides();
   if (guidesErr) throw guidesErr;
   const guides = (guidesRaw || []) as (GuideMonthSummary['guide'] & { is_active: boolean })[];
 
