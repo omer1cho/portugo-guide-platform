@@ -186,7 +186,7 @@ export default function GuideStatusCard({ summary, onChange }: Props) {
           onMouseEnter={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green800)}
           onMouseLeave={(e) => (e.currentTarget.style.background = ADMIN_COLORS.green700)}
         >
-          👁️ צפ.י כמו {guide.name.split(' ')[0]}
+          👁️ צפי כמו {guide.name.split(' ')[0]}
         </button>
         <button
           onClick={() => setShowTopupModal(true)}
