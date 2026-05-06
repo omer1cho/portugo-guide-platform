@@ -235,6 +235,55 @@ export async function publishWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' 
   return (data || []).length;
 }
 
+/**
+ * מפרסם מחדש את כל ה-published shifts בשבוע — מעדכן published_at לזמן הנוכחי.
+ * ה-status נשאר published, אבל ה-timestamp החדש יגרום לבאנר "הסידור פורסם"
+ * להופיע מחדש למדריכים שכבר ראו את הפרסום הקודם.
+ */
+export async function republishWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' | 'porto' = 'all'): Promise<number> {
+  const start = toIsoDate(weekStart);
+  const end = toIsoDate(addDays(weekStart, 6));
+
+  let q = supabase
+    .from('shifts')
+    .update({ published_at: new Date().toISOString() })
+    .eq('status', 'published')
+    .gte('shift_date', start)
+    .lte('shift_date', end);
+
+  if (cityFilter !== 'all') {
+    q = q.eq('city', cityFilter);
+  }
+
+  const { data, error } = await q.select('id');
+  if (error) throw error;
+  return (data || []).length;
+}
+
+/**
+ * מבטל פרסום של כל ה-published shifts בשבוע — מחזיר אותם ל-draft ומאפס published_at.
+ * המדריכים יפסיקו לראות אותם ב-/my-shifts (RLS חוסם draft) עד שיפורסמו שוב.
+ */
+export async function unpublishWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' | 'porto' = 'all'): Promise<number> {
+  const start = toIsoDate(weekStart);
+  const end = toIsoDate(addDays(weekStart, 6));
+
+  let q = supabase
+    .from('shifts')
+    .update({ status: 'draft', published_at: null })
+    .eq('status', 'published')
+    .gte('shift_date', start)
+    .lte('shift_date', end);
+
+  if (cityFilter !== 'all') {
+    q = q.eq('city', cityFilter);
+  }
+
+  const { data, error } = await q.select('id');
+  if (error) throw error;
+  return (data || []).length;
+}
+
 /** יוצר שיבוץ ידני (לסיור פרטי / חד-פעמי שלא באתר) */
 export async function createManualShift(opts: {
   shift_date: string;

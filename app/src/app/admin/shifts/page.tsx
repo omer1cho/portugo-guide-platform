@@ -23,6 +23,8 @@ import {
   loadAvailableGuides,
   assignGuide,
   publishWeek,
+  republishWeek,
+  unpublishWeek,
   createManualShift,
   deleteShift,
   updateShift,
@@ -398,6 +400,9 @@ function ShiftsContent() {
   const totalDraftCount = shifts.filter((s) => s.status === 'draft').length;
   const assignedDraftCount = shifts.filter((s) => s.status === 'draft' && s.guide_id).length;
   const unassignedCount = shifts.filter((s) => !s.guide_id && s.status !== 'cancelled').length;
+  const publishedCount = shifts.filter((s) => s.status === 'published').length;
+  // אם אין יותר drafts אבל יש published — מציגים "פרסמי מחדש" ו-"בטלי פרסום" במקום "פרסמי שבוע"
+  const allPublished = totalDraftCount === 0 && publishedCount > 0;
 
   // חישוב גבהים אחידים לאזורים — כדי שכל הימים יישרו בקו אנכי אחד
   // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
@@ -451,6 +456,43 @@ function ShiftsContent() {
     }
   }
 
+  /**
+   * "פרסמי מחדש" — מעדכן רק את ה-published_at, בלי לשנות status.
+   * השימוש העיקרי: אחרי שעדכנת/תיקנת משמרות שכבר פורסמו, ולחיצה על "מחדש" תגרום
+   * לבאנר "הסידור פורסם" להופיע שוב למדריכים שכבר ראו.
+   */
+  async function handleRepublishWeek() {
+    if (!confirm(`לעדכן ${publishedCount} שיבוצים מפורסמים? המדריכים יקבלו את הבאנר שוב.`)) return;
+    setPublishing(true);
+    try {
+      const n = await republishWeek(weekStart, cityFilter);
+      alert(`עודכנו ${n} שיבוצים — הבאנר יחזור למדריכים`);
+      reload();
+    } catch (e) {
+      alert('עדכון נכשל: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  /**
+   * "בטלי פרסום" — מחזיר את כל ה-published shifts בשבוע ל-draft.
+   * המדריכים יפסיקו לראות אותם ב-/my-shifts מיד.
+   */
+  async function handleUnpublishWeek() {
+    if (!confirm(`לבטל פרסום של ${publishedCount} שיבוצים? המדריכים יפסיקו לראות אותם.`)) return;
+    setPublishing(true);
+    try {
+      const n = await unpublishWeek(weekStart, cityFilter);
+      alert(`בוטל פרסום של ${n} שיבוצים — חזרו ל-draft`);
+      reload();
+    } catch (e) {
+      alert('ביטול פרסום נכשל: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   // ה-autofill עבר להיות שקט ואוטומטי — ראי silentApplyPortoRoster למעלה.
   // עומר תמיד יכולה לערוך/למחוק/להוסיף ידנית בלוח עצמו.
 
@@ -478,23 +520,65 @@ function ShiftsContent() {
           <button onClick={() => setShowAddModal(true)} style={secondaryBtnStyle}>
             + הוסיפי שיבוץ
           </button>
-          <button
-            onClick={handlePublishWeek}
-            disabled={publishing || totalDraftCount === 0}
-            style={{
-              padding: '8px 14px',
-              background: totalDraftCount > 0 ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300,
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: totalDraftCount > 0 ? 'pointer' : 'not-allowed',
-              fontFamily: 'inherit',
-            }}
-          >
-            📤 פרסמי שבוע ({totalDraftCount})
-          </button>
+          {allPublished ? (
+            // מצב "הכל פורסם" — מציגים שני כפתורים: עדכון פרסום (ירוק) + ביטול (אפור)
+            <>
+              <button
+                onClick={handleUnpublishWeek}
+                disabled={publishing}
+                title="מחזיר את כל המשמרות ל-draft. המדריכים יפסיקו לראות אותן."
+                style={{
+                  padding: '8px 14px',
+                  background: '#fff',
+                  color: '#991b1b',
+                  border: '1px solid #fca5a5',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: publishing ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                ↩️ בטלי פרסום
+              </button>
+              <button
+                onClick={handleRepublishWeek}
+                disabled={publishing}
+                title="מעדכן את זמן הפרסום — הבאנר יחזור למדריכים שכבר ראו"
+                style={{
+                  padding: '8px 14px',
+                  background: ADMIN_COLORS.green700,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: publishing ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                🔄 פרסמי מחדש
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handlePublishWeek}
+              disabled={publishing || totalDraftCount === 0}
+              style={{
+                padding: '8px 14px',
+                background: totalDraftCount > 0 ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300,
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: totalDraftCount > 0 ? 'pointer' : 'not-allowed',
+                fontFamily: 'inherit',
+              }}
+            >
+              📤 פרסמי שבוע ({totalDraftCount})
+            </button>
+          )}
         </div>
       </header>
 

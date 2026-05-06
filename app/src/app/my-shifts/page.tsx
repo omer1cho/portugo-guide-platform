@@ -167,10 +167,6 @@ function MyShiftsContent() {
       </header>
 
       <main className="max-w-md mx-auto p-4 space-y-4">
-        <p className="text-sm text-gray-600 text-center">
-          {guideName ? `הסידור של ${guideName} ל-14 הימים הקרובים` : 'הסידור ל-14 הימים הקרובים'}
-        </p>
-
         {loading ? (
           <div className="text-gray-400 text-center py-12">רגע, מושכת את הסידור...</div>
         ) : dates.length === 0 ? (
@@ -227,9 +223,6 @@ function MyShiftsContent() {
                               {notes}
                             </div>
                           )}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {s.city === 'lisbon' ? 'ליסבון' : 'פורטו'}
-                          </div>
                         </div>
                       </li>
                     );

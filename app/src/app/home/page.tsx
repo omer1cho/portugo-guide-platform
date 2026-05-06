@@ -668,7 +668,7 @@ function HomeContent() {
             <div className="flex justify-between items-center">
               <div>
                 <div className="font-bold text-base">🗓️ הסידור לשבוע הבא פורסם</div>
-                <div className="text-xs opacity-90 mt-0.5">לחצ.י לצפייה במשמרות שלך</div>
+                <div className="text-xs opacity-90 mt-0.5">לחץ.י לצפייה במשמרות שלך</div>
               </div>
               <div className="text-2xl">←</div>
             </div>
@@ -746,7 +746,7 @@ function HomeContent() {
               </div>
             )}
             <div className="text-xs text-gray-500 mt-2">
-              {nextShift.city === 'lisbon' ? 'ליסבון' : 'פורטו'} · לחצ.י לכל המשמרות ←
+              לחץ.י לכל המשמרות ←
             </div>
           </Link>
         )}
@@ -760,7 +760,7 @@ function HomeContent() {
             <div className="flex justify-between items-center">
               <div>
                 <div className="font-bold text-red-700 text-base">💰 ממתין להפקדה</div>
-                <div className="text-xs text-red-700 mt-0.5">לחצ.י כאן ברגע שהפקדת</div>
+                <div className="text-xs text-red-700 mt-0.5">לחץ.י כאן ברגע שהפקדת</div>
               </div>
               <div className="text-3xl font-bold text-red-700">
                 {summary.pending_total.toFixed(0)}€
