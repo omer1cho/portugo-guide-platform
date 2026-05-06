@@ -913,6 +913,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [dupeOpen, setDupeOpen] = useState(false);
 
   const eligibleGuides = useMemo(() => {
     // לסיורים פרטיים / הכשרות / פעילות צוות — כל מדריך בעיר זמין
@@ -1093,6 +1094,16 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         {shift.status === 'published' && (
           <span title="פורסם" style={{ fontSize: 9, flexShrink: 0 }}>📤</span>
         )}
+        {!isTraining && !isTeam && (
+          <button
+            onClick={() => setDupeOpen(true)}
+            disabled={busy}
+            title="שכפלי כתצפות (אותו תאריך + שעה + סיור)"
+            style={{ ...iconBtnStyle, flexShrink: 0 }}
+          >
+            👁️+
+          </button>
+        )}
         <button
           onClick={() => setEditOpen(true)}
           disabled={busy}
@@ -1226,6 +1237,26 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           shift={shift}
           onClose={() => setEditOpen(false)}
           onSaved={() => { setEditOpen(false); onChange(); }}
+        />
+      )}
+      {/* Duplicate-to-observation modal — אותו תאריך/שעה/עיר, סוג=תצפות, סיור הספציפי כבר נבחר */}
+      {dupeOpen && (
+        <ManualAddModal
+          weekStart={new Date(`${shift.shift_date}T00:00:00`)}
+          guides={guides}
+          onClose={() => setDupeOpen(false)}
+          onCreated={() => { setDupeOpen(false); onChange(); }}
+          prefill={{
+            date: shift.shift_date,
+            time: shortTime(shift.shift_time),
+            city: shift.city as 'lisbon' | 'porto',
+            tourType: 'תצפות',
+            // הסיור שעליו צופים: לסיור פרטי — ה-detail מה-notes; לסיור רגיל — ה-label של סוג הסיור
+            privateDetail: isPrivate ? (detailFromNotes || '') : tourTypeLabel(shift.tour_type),
+            // המדריך המלווה = המדריך הנוכחי של המשמרת המקורית (זה שעליו צופים)
+            companionGuide: currentGuide?.name || '',
+            contextLabel: `${tourTypeLabel(shift.tour_type)} ${shortTime(shift.shift_time)}${currentGuide ? ` · ${currentGuide.name}` : ''}`,
+          }}
         />
       )}
     </div>
@@ -1595,27 +1626,40 @@ function GuideCardRow({
   );
 }
 
+// Prefill — לפתיחת המודאל עם שדות ממולאים מראש (למשל כש"שכפלי לתצפות" נלחץ על משמרת קיימת)
+type ManualAddPrefill = {
+  date?: string;
+  time?: string;
+  city?: 'lisbon' | 'porto';
+  tourType?: string;
+  privateDetail?: string;
+  companionGuide?: string;
+  // קונטקסט שמוצג בכותרת המודאל ("שכפול תצפות מ: <משהו>") — אופציונלי
+  contextLabel?: string;
+};
+
 function ManualAddModal({
-  weekStart, guides, onClose, onCreated,
+  weekStart, guides, onClose, onCreated, prefill,
 }: {
   weekStart: Date;
   guides: Guide[];
   onClose: () => void;
   onCreated: () => void;
+  prefill?: ManualAddPrefill;
 }) {
-  const [date, setDate] = useState(toIsoDate(weekStart));
-  const [time, setTime] = useState('10:00');
-  const [city, setCity] = useState<'lisbon' | 'porto'>('lisbon');
-  const [tourType, setTourType] = useState('פרטי_1');
+  const [date, setDate] = useState(prefill?.date ?? toIsoDate(weekStart));
+  const [time, setTime] = useState(prefill?.time ?? '10:00');
+  const [city, setCity] = useState<'lisbon' | 'porto'>(prefill?.city ?? 'lisbon');
+  const [tourType, setTourType] = useState(prefill?.tourType ?? 'פרטי_1');
   const [guideId, setGuideId] = useState<string>('');
   const [notes, setNotes] = useState('');
   // שדות מיוחדים לסיור פרטי
-  const [privateDetail, setPrivateDetail] = useState(''); // value מהתפריט (קלאסי / סינטרה / "אחר" / וכו')
+  const [privateDetail, setPrivateDetail] = useState(prefill?.privateDetail ?? ''); // value מהתפריט (קלאסי / סינטרה / "אחר" / וכו')
   const [privateDetailOther, setPrivateDetailOther] = useState(''); // אם נבחר "אחר"
   const [privateCustomer, setPrivateCustomer] = useState('');
   const [tentative, setTentative] = useState(false); // "כנראה פרטי" — הצעה שעוד לא אושרה
   // שדה "מדריך מלווה / מתלמד" — רק להכשרות (תצפות / ניסיון דפים)
-  const [companionGuide, setCompanionGuide] = useState('');
+  const [companionGuide, setCompanionGuide] = useState(prefill?.companionGuide ?? '');
   // תיאור פעילות צוות (לדוגמה "ארוחת צהריים בכיכר", "פגישת תיאום")
   const [teamDescription, setTeamDescription] = useState('');
   const [saving, setSaving] = useState(false);
@@ -1723,10 +1767,12 @@ function ManualAddModal({
         dir="rtl"
       >
         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: ADMIN_COLORS.green900 }}>
-          הוסיפי שיבוץ ידני
+          {prefill?.contextLabel ? `👁️ שכפול לתצפות` : 'הוסיפי שיבוץ ידני'}
         </h3>
         <p style={{ margin: 0, fontSize: 12, color: ADMIN_COLORS.gray500 }}>
-          לסיורים פרטיים או חד-פעמיים שלא מסונכרנים מהאתר
+          {prefill?.contextLabel
+            ? `מתוך: ${prefill.contextLabel} — בחרי מי בא לצפות`
+            : 'לסיורים פרטיים או חד-פעמיים שלא מסונכרנים מהאתר'}
         </p>
         <label style={labelStyle}>תאריך
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
@@ -1987,7 +2033,7 @@ function EditShiftModal({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder={'למשל: "רק אם הדורו יוצא" · "להגיע 15 דק׳ קודם" · "כפולה עם בלם"'}
+            placeholder={'"רק אם הדורו יוצא" · "להגיע 15 דק׳ קודם" · "כפולה עם בלם"'}
             rows={3}
             style={{
               ...inputStyle,
