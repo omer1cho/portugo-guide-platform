@@ -403,33 +403,41 @@ function ShiftsContent() {
   // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
   const HOLIDAY_PILL_HEIGHT = 16;
   const VACATION_PILL_HEIGHT = 26;
+  // pill עם label ("רק בבוקר", "בארץ" וכו') לוקח שורה שנייה — תוספת גובה
+  const VACATION_LABEL_EXTRA_HEIGHT = 14;
   const CARD_HEIGHT = 70; // נדיב — קלף עם כותרת 2 שורות + הערה לוקח ~70px. מבטיח שום עמודה לא חורגת
   const CARD_GAP = 4;
   const SECTION_OVERHEAD = 26; // label + padding + margin
   const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(() => {
     let maxHolidays = 0;
-    let maxVacations = 0;
+    let maxVacationsTotalHeight = 0;
     let maxLisbon = 0;
     for (let i = 0; i < 7; i++) {
       const d = addDays(weekStart, i);
       const isoDate = toIsoDate(d);
       const evCount = getCalendarEventsForDate(isoDate)
         .filter((e) => e.category === 'israel' || e.category === 'portugal').length;
-      const vacCount = guides.filter((g) =>
-        g.vacations?.some((v) => isoDate >= v.start && isoDate <= v.end),
-      ).length;
+      // גובה ה-vacations של היום הזה: כל pill = VACATION_PILL_HEIGHT + תוספת אם יש label, + gap בין pills
+      const vacsForDay = guides
+        .map((g) => g.vacations?.find((v) => isoDate >= v.start && isoDate <= v.end))
+        .filter((v): v is GuideVacation => !!v);
+      let dayVacHeight = 0;
+      for (const v of vacsForDay) {
+        dayVacHeight += VACATION_PILL_HEIGHT;
+        if (v.label) dayVacHeight += VACATION_LABEL_EXTRA_HEIGHT;
+      }
+      if (vacsForDay.length > 1) dayVacHeight += (vacsForDay.length - 1) * 3; // gap
       const lisbonCount = shifts.filter(
         (s) => s.shift_date === isoDate && s.city === 'lisbon' && s.status !== 'cancelled',
       ).length;
       if (evCount > maxHolidays) maxHolidays = evCount;
-      if (vacCount > maxVacations) maxVacations = vacCount;
+      if (dayVacHeight > maxVacationsTotalHeight) maxVacationsTotalHeight = dayVacHeight;
       if (lisbonCount > maxLisbon) maxLisbon = lisbonCount;
     }
     return {
       maxHolidaysHeight:
         maxHolidays * HOLIDAY_PILL_HEIGHT + (maxHolidays > 1 ? (maxHolidays - 1) * 2 : 0),
-      maxVacationsHeight:
-        maxVacations * VACATION_PILL_HEIGHT + (maxVacations > 1 ? (maxVacations - 1) * 3 : 0),
+      maxVacationsHeight: maxVacationsTotalHeight,
       lisbonAreaMinHeight:
         maxLisbon > 0
           ? maxLisbon * CARD_HEIGHT + (maxLisbon - 1) * CARD_GAP + SECTION_OVERHEAD
@@ -878,13 +886,27 @@ function DayColumn({
                 border: '2px solid #d97706',
                 borderRight: c ? `4px solid ${c.border}` : '2px solid #d97706',
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
                 letterSpacing: 0.2,
               }}
               title={`${v.guide.name} בחופש${v.label ? ` — ${v.label}` : ''}`}
             >
-              🌴 {v.guide.name}
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                🌴 {v.guide.name}
+              </div>
+              {v.label && (
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    opacity: 0.85,
+                    marginTop: 1,
+                    lineHeight: 1.2,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {v.label}
+                </div>
+              )}
             </div>
           );
         })}
