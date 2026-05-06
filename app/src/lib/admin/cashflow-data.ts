@@ -14,9 +14,9 @@ export type CashflowGuideStatus = {
   guide_name: string;
   city: 'lisbon' | 'porto';
   is_closed: boolean;
-  closed_at: string | null;
-  has_receipt: boolean;        // האם המדריך הוציא קבלה החודש (Fatura-Recibo)
-  receipt_amount: number | null;
+  closed_at: string | null;       // תאריך מתי "נמשכה משכורת" (= סגירת חודש)
+  has_receipt: boolean;            // האם המדריך הוציא קבלה החודש (Fatura-Recibo) ב-/home
+  salary_withdrawn: number | null; // סכום שהמדריך משך לעצמו (transfer salary_withdrawal)
 };
 
 export type CashflowRun = {
@@ -34,14 +34,22 @@ export type CashflowRun = {
 
 /**
  * מחזיר את סטטוס סגירת החודש לכל המדריכים הפעילים שמדריכים בפועל (is_guide=true).
- * שילוב של:
- *   - guides (כל מי שמדריך פעיל)
- *   - closed_months (סגר את החודש?)
- *   - receipt_acknowledgements (הוציא קבלה?)
+ *
+ * "סגירת חודש" של מדריך = יש לו רשומה ב-`transfers` עם `transfer_type='salary_withdrawal'`
+ * בחודש הזה. זה נוצר אוטומטית כשהמדריך לוחץ "סגרי חודש" ב-/close-month וקובע את
+ * המשכורת שמשך לעצמו מהקופה.
+ *
+ * "הוצאת קבלה" = רשומה ב-`receipt_acknowledgements` (המדריך אישר ב-/home שהוציא קבלת
+ * Fatura-Recibo, אופציונלית עם תמונה).
  */
 export async function loadGuidesCashflowStatus(year: number, month: number): Promise<CashflowGuideStatus[]> {
+  // טווח התאריכים של החודש
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
   // טעינה במקביל של 3 מקורות
-  const [guidesRes, closedRes, ackRes] = await Promise.all([
+  const [guidesRes, salaryRes, ackRes] = await Promise.all([
     // הגנה: ננסה עם is_guide; אם העמודה לא קיימת — נופלים ל-is_admin=false (התנהגות ישנה)
     (async () => {
       const primary = await supabase
@@ -61,11 +69,14 @@ export async function loadGuidesCashflowStatus(year: number, month: number): Pro
       }
       return primary;
     })(),
+    // המקור האמיתי לסגירת חודש — salary_withdrawal ב-transfers
     supabase
-      .from('closed_months')
-      .select('guide_id, closed_at, receipt_amount')
-      .eq('year', year)
-      .eq('month', month),
+      .from('transfers')
+      .select('guide_id, transfer_date, amount')
+      .eq('transfer_type', 'salary_withdrawal')
+      .gte('transfer_date', start)
+      .lte('transfer_date', end),
+    // קבלות חודשיות שהמדריך הוציא לפורטוגו
     supabase
       .from('receipt_acknowledgements')
       .select('guide_id, acknowledged_at')
@@ -74,25 +85,28 @@ export async function loadGuidesCashflowStatus(year: number, month: number): Pro
   ]);
 
   if (guidesRes.error) throw guidesRes.error;
-  if (closedRes.error) throw closedRes.error;
+  if (salaryRes.error) throw salaryRes.error;
   if (ackRes.error) throw ackRes.error;
 
-  const closedMap = new Map<string, { closed_at: string; receipt_amount: number | null }>();
-  for (const c of (closedRes.data || []) as { guide_id: string; closed_at: string; receipt_amount: number | null }[]) {
-    closedMap.set(c.guide_id, { closed_at: c.closed_at, receipt_amount: c.receipt_amount });
+  // אם מדריך משך כמה פעמים באותו חודש — ניקח את הראשון (לא נורמלי, אבל לא להפיל)
+  const salaryMap = new Map<string, { transfer_date: string; amount: number }>();
+  for (const t of (salaryRes.data || []) as { guide_id: string; transfer_date: string; amount: number }[]) {
+    if (!salaryMap.has(t.guide_id)) {
+      salaryMap.set(t.guide_id, { transfer_date: t.transfer_date, amount: t.amount });
+    }
   }
   const ackSet = new Set(((ackRes.data || []) as { guide_id: string }[]).map((a) => a.guide_id));
 
   return ((guidesRes.data || []) as { id: string; name: string; city: 'lisbon' | 'porto' }[]).map((g) => {
-    const closed = closedMap.get(g.id);
+    const salary = salaryMap.get(g.id);
     return {
       guide_id: g.id,
       guide_name: g.name,
       city: g.city,
-      is_closed: !!closed,
-      closed_at: closed?.closed_at ?? null,
+      is_closed: !!salary,
+      closed_at: salary?.transfer_date ?? null,
       has_receipt: ackSet.has(g.id),
-      receipt_amount: closed?.receipt_amount ?? null,
+      salary_withdrawn: salary?.amount ?? null,
     };
   });
 }

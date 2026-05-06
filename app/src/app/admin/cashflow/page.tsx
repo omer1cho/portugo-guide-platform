@@ -165,8 +165,8 @@ export default function AdminCashflowPage() {
                 <th style={{ padding: '8px 6px', fontWeight: 600 }}>מדריך</th>
                 <th style={{ padding: '8px 6px', fontWeight: 600 }}>עיר</th>
                 <th style={{ padding: '8px 6px', fontWeight: 600 }}>סגר חודש</th>
-                <th style={{ padding: '8px 6px', fontWeight: 600 }}>קבלה</th>
-                <th style={{ padding: '8px 6px', fontWeight: 600 }}>סכום קבלה</th>
+                <th style={{ padding: '8px 6px', fontWeight: 600 }}>הוציא קבלה</th>
+                <th style={{ padding: '8px 6px', fontWeight: 600 }}>משך משכורת</th>
               </tr>
             </thead>
             <tbody>
@@ -193,7 +193,7 @@ export default function AdminCashflowPage() {
                     )}
                   </td>
                   <td style={{ padding: '8px 6px', color: ADMIN_COLORS.gray700 }}>
-                    {g.receipt_amount != null ? `${g.receipt_amount.toFixed(2)}€` : '—'}
+                    {g.salary_withdrawn != null ? `${g.salary_withdrawn.toFixed(2)}€` : '—'}
                   </td>
                 </tr>
               ))}
