@@ -270,7 +270,11 @@ function AddTourContent() {
     loadTour();
   }, [editId]);
 
-  const availableTours = TOUR_TYPES[guideCity];
+  // הטופס "הוסף סיור" מציג רק סיורים מסחריים (קלאסי / קבוע / פרטי).
+  // הסוגים תצפות / ניסיון דפים / פעילות צוות הם רק לתיעוד בלוח השיבוצים — לא להזנת סיור בסוף יום.
+  const availableTours = TOUR_TYPES[guideCity].filter(
+    (t) => t.category === 'classic' || t.category === 'fixed' || t.category === 'private',
+  );
 
   const handleTourTypeChange = (val: string) => {
     setTourType(val);

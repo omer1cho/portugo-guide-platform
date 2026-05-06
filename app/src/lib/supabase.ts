@@ -158,12 +158,18 @@ export const TOUR_TYPES = {
     { value: 'אובידוש', label: 'אובידוש', category: 'fixed' as const },
     { value: 'קולינרי', label: 'קולינרי', category: 'fixed' as const },
     { value: 'פרטי_1', label: 'סיור פרטי (ליסבון)', category: 'private' as const },
+    { value: 'תצפות', label: '👁️ תצפות', category: 'training' as const },
+    { value: 'נסיון_דפים', label: '📋 ניסיון דפים', category: 'training' as const },
+    { value: 'פעילות_צוות', label: '🤝 פעילות צוות', category: 'team' as const },
   ],
   porto: [
     { value: 'פורטו_1', label: 'פורטו הקלאסית', category: 'classic' as const },
     { value: 'טעימות', label: 'סיור טעימות', category: 'fixed' as const },
     { value: 'דורו', label: 'עמק הדורו', category: 'fixed' as const },
     { value: 'פרטי_2', label: 'סיור פרטי (פורטו)', category: 'private' as const },
+    { value: 'תצפות', label: '👁️ תצפות', category: 'training' as const },
+    { value: 'נסיון_דפים', label: '📋 ניסיון דפים', category: 'training' as const },
+    { value: 'פעילות_צוות', label: '🤝 פעילות צוות', category: 'team' as const },
   ],
 };
 

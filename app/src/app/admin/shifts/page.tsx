@@ -43,6 +43,29 @@ import { getCalendarEventsForDate } from '@/lib/calendar-events';
 // סוגי סיור פרטיים — מוצגים אחרת בכרטיס (פוקוס על שם הלקוח/סוג, לא על "פרטי_1")
 const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
 
+// סוגי "הכשרה" — תצפות וניסיון דפים. דורשים בחירת סוג סיור (כמו פרטי) + שדה "מדריך מלווה" אופציונלי.
+const TRAINING_TOUR_TYPES = new Set(['תצפות', 'נסיון_דפים']);
+
+// פעילות צוות — לא קשורה לסיור ספציפי, רק תיאור חופשי.
+const TEAM_TOUR_TYPES = new Set(['פעילות_צוות']);
+
+// סוגים שמשתמשים בלוגיקת "פירוט ב-notes" (כמו פרטי) — סינון מדריכים סלחני (בלי qualified_tours).
+const FLEXIBLE_TOUR_TYPES = new Set([...PRIVATE_TOUR_TYPES, ...TRAINING_TOUR_TYPES, ...TEAM_TOUR_TYPES]);
+
+// אייקון לסוג סיור (תצפות / ניסיון דפים / פעילות צוות) — להצגה בקלף
+const TOUR_TYPE_ICONS: Record<string, string> = {
+  'תצפות': '👁️',
+  'נסיון_דפים': '📋',
+  'פעילות_צוות': '🤝',
+};
+
+// תוויות קצרות לסוגים החדשים — להצגה בכרטיס
+const TOUR_TYPE_SHORT_LABELS: Record<string, string> = {
+  'תצפות': 'תצפות',
+  'נסיון_דפים': 'ניסיון דפים',
+  'פעילות_צוות': 'פעילות צוות',
+};
+
 // תחילית לסיור פרטי שעוד לא הסתיים סופית ("הצעה שצפויה לסגור")
 const TENTATIVE_PREFIX = '[כנראה] ';
 
@@ -892,10 +915,16 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   const [editOpen, setEditOpen] = useState(false);
 
   const eligibleGuides = useMemo(() => {
+    // לסיורים פרטיים / הכשרות / פעילות צוות — כל מדריך בעיר זמין
+    // (ההסמכה הספציפית באה לידי ביטוי בפירוט הסיור).
+    // לשאר הסיורים — מסננים לפי qualified_tours.
+    const skipQualificationFilter = FLEXIBLE_TOUR_TYPES.has(shift.tour_type);
     return guides.filter((g) => {
       if (g.city !== shift.city) return false;
-      const qt = g.qualified_tours || [];
-      if (qt.length > 0 && !qt.includes(shift.tour_type)) return false;
+      if (!skipQualificationFilter) {
+        const qt = g.qualified_tours || [];
+        if (qt.length > 0 && !qt.includes(shift.tour_type)) return false;
+      }
       // מדריך בחופש בתאריך הזה — לא בdropdown
       if (isGuideOnVacation(g, shift.shift_date)) return false;
       return true;
@@ -905,15 +934,17 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   const currentGuide = guides.find((g) => g.id === shift.guide_id);
   const guideClr = guideColor(shift.guide_id, guides);
   const isPrivate = PRIVATE_TOUR_TYPES.has(shift.tour_type);
+  const isTraining = TRAINING_TOUR_TYPES.has(shift.tour_type);
+  const isTeam = TEAM_TOUR_TYPES.has(shift.tour_type);
   // האם זו "הצעה שצפויה לסגור" שעוד לא אושרה סופית — מסומן בתחילית [כנראה]
   const isTentative = isPrivate && (shift.notes?.startsWith(TENTATIVE_PREFIX) ?? false);
 
-  // לסיור פרטי — שולפים את ה-detail (חלק ראשון לפני המפריד) מתוך notes
-  // ומציגים אותו כ"<detail> פרטי". השאר בהערה.
+  // לסיור פרטי / הכשרה — שולפים את ה-detail (חלק ראשון לפני המפריד) מתוך notes.
+  // לפעילות צוות — ה-notes כולו הוא התיאור (אין splitter).
   // תומך בכמה מפרידים: " · " (הפורמט הרשמי), " - " ו-" / " (פורמט ידני שעומר השתמשה בו בעבר).
-  let privateDetail: string | null = null;
+  let detailFromNotes: string | null = null;
   let restNotes: string | null = null;
-  if (isPrivate && shift.notes) {
+  if ((isPrivate || isTraining) && shift.notes) {
     let raw = shift.notes;
     if (isTentative) raw = raw.slice(TENTATIVE_PREFIX.length).trim();
     const splitter = raw.includes(' · ')
@@ -925,13 +956,14 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           : null;
     if (splitter) {
       const parts = raw.split(splitter);
-      privateDetail = parts[0]?.trim() || null;
+      detailFromNotes = parts[0]?.trim() || null;
       restNotes = parts.slice(1).join(splitter).trim() || null;
     } else {
-      privateDetail = raw.trim() || null;
+      detailFromNotes = raw.trim() || null;
       restNotes = null;
     }
   }
+  const privateDetail = isPrivate ? detailFromNotes : null;
 
   async function handleAssign(guideId: string | null) {
     setBusy(true);
@@ -947,7 +979,10 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
   }
 
   async function handleDeleteShift() {
-    const tourLabel = isPrivate ? 'סיור פרטי' : tourTypeLabel(shift.tour_type);
+    let tourLabel: string;
+    if (isPrivate) tourLabel = 'סיור פרטי';
+    else if (isTraining || isTeam) tourLabel = TOUR_TYPE_SHORT_LABELS[shift.tour_type] || tourTypeLabel(shift.tour_type);
+    else tourLabel = tourTypeLabel(shift.tour_type);
     if (!confirm(`למחוק את המשמרת של ${tourLabel} ב-${shortTime(shift.shift_time)}?\nהשיבוץ ייעלם מהלוח לחלוטין.`)) return;
     setBusy(true);
     try {
@@ -975,13 +1010,33 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     cardBorder = '#93c5fd';
   }
 
-  // לסיור פרטי — שם הסיור = "<detail> פרטי" (למשל "אראבידה פרטי", "ליסבון הקלאסית פרטי")
-  // אם אין detail — נופלים לסיור פרטי (ליסבון/פורטו)
-  const displayTourName = isPrivate
-    ? (privateDetail ? `${privateDetail} פרטי` : tourTypeLabel(shift.tour_type))
-    : tourTypeLabel(shift.tour_type);
-  // ההערה התחתונה: לסיור פרטי — רק שם לקוח/מספר אנשים. לרגיל — כל ה-notes.
-  const displayNotes = isPrivate ? restNotes : shift.notes;
+  // שם הסיור להצגה:
+  //   • פרטי: "<detail> פרטי" (למשל "אראבידה פרטי")
+  //   • תצפות / ניסיון דפים: "<icon> <kind>: <detail>" (למשל "👁️ תצפות: ליסבון הקלאסית")
+  //   • פעילות צוות: "🤝 פעילות צוות"
+  //   • שאר: שם הסיור הרגיל
+  let displayTourName: string;
+  if (isPrivate) {
+    displayTourName = detailFromNotes ? `${detailFromNotes} פרטי` : tourTypeLabel(shift.tour_type);
+  } else if (isTraining) {
+    const icon = TOUR_TYPE_ICONS[shift.tour_type] || '';
+    const shortLabel = TOUR_TYPE_SHORT_LABELS[shift.tour_type] || tourTypeLabel(shift.tour_type);
+    displayTourName = detailFromNotes
+      ? `${icon} ${shortLabel}: ${detailFromNotes}`
+      : `${icon} ${shortLabel}`;
+  } else if (isTeam) {
+    const icon = TOUR_TYPE_ICONS[shift.tour_type] || '';
+    const shortLabel = TOUR_TYPE_SHORT_LABELS[shift.tour_type] || tourTypeLabel(shift.tour_type);
+    displayTourName = `${icon} ${shortLabel}`;
+  } else {
+    displayTourName = tourTypeLabel(shift.tour_type);
+  }
+  // ההערה התחתונה:
+  //   • פרטי: שם הלקוח/מספר אנשים (restNotes)
+  //   • תצפות / ניסיון דפים: שם המדריך המלווה/מתלמד (restNotes)
+  //   • פעילות צוות: כל ה-notes (התיאור)
+  //   • שאר: כל ה-notes
+  const displayNotes = isPrivate || isTraining ? restNotes : shift.notes;
 
   return (
     <div
@@ -1559,30 +1614,40 @@ function ManualAddModal({
   const [privateDetailOther, setPrivateDetailOther] = useState(''); // אם נבחר "אחר"
   const [privateCustomer, setPrivateCustomer] = useState('');
   const [tentative, setTentative] = useState(false); // "כנראה פרטי" — הצעה שעוד לא אושרה
+  // שדה "מדריך מלווה / מתלמד" — רק להכשרות (תצפות / ניסיון דפים)
+  const [companionGuide, setCompanionGuide] = useState('');
+  // תיאור פעילות צוות (לדוגמה "ארוחת צהריים בכיכר", "פגישת תיאום")
+  const [teamDescription, setTeamDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
   const tourOptions = TOUR_TYPES[city];
   const isPrivate = PRIVATE_TOUR_TYPES.has(tourType);
+  const isTraining = TRAINING_TOUR_TYPES.has(tourType);
+  const isTeam = TEAM_TOUR_TYPES.has(tourType);
+  // שדות "פירוט סוג סיור" — משותפים לפרטי + הכשרות (תצפות / ניסיון דפים)
+  const requiresTourDetail = isPrivate || isTraining;
 
-  // אפשרויות לסיור פרטי = כל הסוגים בעיר חוץ מ-פרטי עצמו, + "אחר"
+  // אפשרויות לסיור פרטי = כל הסיורים הרגילים בעיר (לא פרטי, לא הכשרות, לא צוות), + "אחר"
   const privateDetailOptions = useMemo(() => {
     const base = TOUR_TYPES[city]
-      .filter((t) => !PRIVATE_TOUR_TYPES.has(t.value))
+      .filter((t) => !FLEXIBLE_TOUR_TYPES.has(t.value))
       .map((t) => ({ value: t.label, label: `${t.label} פרטי` }));
     return [...base, { value: '__other__', label: 'אחר (טקסט חופשי)' }];
   }, [city]);
 
-  const eligibleGuides = useMemo(
-    () =>
-      guides.filter(
-        (g) =>
-          g.city === city &&
-          (!g.qualified_tours?.length || g.qualified_tours.includes(tourType)) &&
-          !isGuideOnVacation(g, date),
-      ),
-    [guides, city, tourType, date],
-  );
+  const eligibleGuides = useMemo(() => {
+    // לסיורים פרטיים / הכשרות / פעילות צוות — כל מדריך בעיר זמין
+    // (ההסמכה הספציפית באה לידי ביטוי בפירוט הסיור).
+    // לשאר הסיורים — מסננים לפי qualified_tours.
+    const skipQualificationFilter = FLEXIBLE_TOUR_TYPES.has(tourType);
+    return guides.filter(
+      (g) =>
+        g.city === city &&
+        (skipQualificationFilter || !g.qualified_tours?.length || g.qualified_tours.includes(tourType)) &&
+        !isGuideOnVacation(g, date),
+    );
+  }, [guides, city, tourType, date]);
 
   async function handleSave() {
     setErr('');
@@ -1590,8 +1655,7 @@ function ManualAddModal({
       setErr('צריך תאריך, שעה וסוג סיור');
       return;
     }
-    // לסיור פרטי — בונים את ההערה אוטומטית מסוג הסיור + שם הלקוח
-    // אם זה "כנראה" (הצעה שלא נסגרה סופית) — מוסיפים תחילית [כנראה] שהכרטיס יזהה
+    // בונים את ההערה אוטומטית לפי הסוג. הפורמט "<detail> · <extra>" מוכר לכרטיס.
     let finalNotes: string | undefined = notes || undefined;
     if (isPrivate) {
       const detailText = privateDetail === '__other__' ? privateDetailOther.trim() : privateDetail;
@@ -1603,6 +1667,24 @@ function ManualAddModal({
       if (privateCustomer.trim()) parts.push(privateCustomer.trim());
       const body = parts.join(' · ');
       finalNotes = tentative ? `${TENTATIVE_PREFIX}${body}` : body;
+    } else if (isTraining) {
+      const detailText = privateDetail === '__other__' ? privateDetailOther.trim() : privateDetail;
+      if (!detailText) {
+        setErr('צריך לבחור את סוג הסיור');
+        return;
+      }
+      const parts: string[] = [detailText];
+      if (companionGuide.trim()) {
+        const role = tourType === 'תצפות' ? 'מלווה' : 'מתלמד';
+        parts.push(`${role}: ${companionGuide.trim()}`);
+      }
+      finalNotes = parts.join(' · ');
+    } else if (isTeam) {
+      if (!teamDescription.trim()) {
+        setErr('צריך תיאור לפעילות הצוות');
+        return;
+      }
+      finalNotes = teamDescription.trim();
     }
     setSaving(true);
     try {
@@ -1658,10 +1740,11 @@ function ManualAddModal({
             onChange={(e) => {
               const newCity = e.target.value as 'lisbon' | 'porto';
               setCity(newCity);
-              // אם בחרת פרטי קודם — נמשיך עם פרטי בעיר החדשה
+              // אם בחרת פרטי קודם — נמשיך עם פרטי בעיר החדשה.
+              // הכשרות / פעילות צוות זהות בשתי הערים — נשמור על אותו סוג.
               if (isPrivate) {
                 setTourType(newCity === 'lisbon' ? 'פרטי_1' : 'פרטי_2');
-              } else {
+              } else if (!isTraining && !isTeam) {
                 setTourType(TOUR_TYPES[newCity][0].value);
               }
             }}
@@ -1677,9 +1760,9 @@ function ManualAddModal({
           </select>
         </label>
 
-        {isPrivate && (
+        {requiresTourDetail && (
           <>
-            <label style={labelStyle}>פירוט הסיור
+            <label style={labelStyle}>{isTraining ? 'איזה סיור מועבר?' : 'פירוט הסיור'}
               <select
                 value={privateDetail}
                 onChange={(e) => setPrivateDetail(e.target.value)}
@@ -1687,7 +1770,9 @@ function ManualAddModal({
               >
                 <option value="">— בחרי סוג סיור —</option>
                 {privateDetailOptions.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {isTraining ? o.value : o.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -1702,6 +1787,11 @@ function ManualAddModal({
                 />
               </label>
             )}
+          </>
+        )}
+
+        {isPrivate && (
+          <>
             <label style={labelStyle}>שם הלקוח / מספר אנשים
               <input
                 type="text"
@@ -1747,14 +1837,39 @@ function ManualAddModal({
           </>
         )}
 
-        <label style={labelStyle}>מדריך {isPrivate ? '' : '(אופציונלי)'}
+        {isTraining && (
+          <label style={labelStyle}>
+            {tourType === 'תצפות' ? 'מדריך מלווה (אופציונלי)' : 'מדריך מתלמד (אופציונלי)'}
+            <input
+              type="text"
+              value={companionGuide}
+              onChange={(e) => setCompanionGuide(e.target.value)}
+              placeholder={tourType === 'תצפות' ? 'מי מעביר את ההכשרה?' : 'מי בהכשרה?'}
+              style={inputStyle}
+            />
+          </label>
+        )}
+
+        {isTeam && (
+          <label style={labelStyle}>תיאור הפעילות
+            <input
+              type="text"
+              value={teamDescription}
+              onChange={(e) => setTeamDescription(e.target.value)}
+              placeholder='לדוגמה: "ארוחת צהריים בכיכר", "פגישת תיאום"'
+              style={inputStyle}
+            />
+          </label>
+        )}
+
+        <label style={labelStyle}>{isTeam ? 'מדריך/ה (אופציונלי)' : `מדריך ${isPrivate ? '' : '(אופציונלי)'}`}
           <select value={guideId} onChange={(e) => setGuideId(e.target.value)} style={inputStyle}>
             <option value="">— ללא שיבוץ עדיין —</option>
             {eligibleGuides.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </label>
 
-        {!isPrivate && (
+        {!isPrivate && !isTraining && !isTeam && (
           <label style={labelStyle}>הערה (אופציונלי)
             <input
               type="text"
@@ -1868,14 +1983,24 @@ function EditShiftModal({
             {tourOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </label>
-        <label style={labelStyle}>הערה
-          <input
-            type="text"
+        <label style={{ ...labelStyle, fontSize: 13 }}>📝 הערה למשמרת
+          <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="הערה חופשית"
-            style={inputStyle}
+            placeholder={'למשל: "רק אם הדורו יוצא" · "להגיע 15 דק׳ קודם" · "כפולה עם בלם"'}
+            rows={3}
+            style={{
+              ...inputStyle,
+              fontSize: 13,
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              minHeight: 64,
+              lineHeight: 1.4,
+            }}
           />
+          <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500, fontWeight: 400, marginTop: 2 }}>
+            ההערה תופיע בלוח השבועי מתחת לשם המדריך
+          </span>
         </label>
         {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

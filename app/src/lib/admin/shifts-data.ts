@@ -229,6 +229,9 @@ export function tourTypeLabel(tourType: string): string {
     'דורו': 'דורו',
     'פרטי_1': 'פרטי (ליסבון)',
     'פרטי_2': 'פרטי (פורטו)',
+    'תצפות': 'תצפות',
+    'נסיון_דפים': 'ניסיון דפים',
+    'פעילות_צוות': 'פעילות צוות',
   };
   return map[tourType] || tourType;
 }
