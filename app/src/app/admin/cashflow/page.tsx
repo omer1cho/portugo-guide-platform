@@ -172,7 +172,19 @@ export default function AdminCashflowPage() {
             <tbody>
               {guides.map((g) => (
                 <tr key={g.guide_id} style={{ borderBottom: `1px solid ${ADMIN_COLORS.gray100}` }}>
-                  <td style={{ padding: '8px 6px', fontWeight: 600 }}>{g.guide_name}</td>
+                  <td style={{ padding: '8px 6px', fontWeight: 600 }}>
+                    <Link
+                      href={`/admin/guides/${g.guide_id}/months/${year}/${month}`}
+                      style={{
+                        color: ADMIN_COLORS.green800,
+                        textDecoration: 'none',
+                        borderBottom: `1px dotted ${ADMIN_COLORS.gray300}`,
+                      }}
+                      title="צפי בסגירה ההיסטורית של החודש"
+                    >
+                      {g.guide_name}
+                    </Link>
+                  </td>
                   <td style={{ padding: '8px 6px', color: ADMIN_COLORS.gray500 }}>
                     {g.city === 'lisbon' ? 'ליסבון' : 'פורטו'}
                   </td>

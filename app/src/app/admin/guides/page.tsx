@@ -14,8 +14,34 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
 import { supabase } from '@/lib/supabase';
+
+// אפריל 2026 הוא החודש הראשון עם נתונים אמיתיים. לפניו אין טעם להציג.
+const FIRST_ACTIVE_YEAR = 2026;
+const FIRST_ACTIVE_MONTH = 4; // 1-indexed
+
+const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
+/** רשימת חודשים אחורה מהחודש הנוכחי עד אפריל 2026 (כולל). */
+function activeMonthsList(): { year: number; month: number; label: string }[] {
+  const now = new Date();
+  const out: { year: number; month: number; label: string }[] = [];
+  let y = now.getFullYear();
+  let m = now.getMonth() + 1; // 1-indexed
+  while (true) {
+    out.push({ year: y, month: m, label: `${HE_MONTHS[m - 1]} ${y}` });
+    if (y === FIRST_ACTIVE_YEAR && m === FIRST_ACTIVE_MONTH) break;
+    m -= 1;
+    if (m === 0) {
+      m = 12;
+      y -= 1;
+    }
+    if (y < FIRST_ACTIVE_YEAR) break;
+  }
+  return out;
+}
 
 type GuideRow = {
   id: string;
@@ -438,6 +464,34 @@ function GuideCard({
               checked={form.is_admin}
               onChange={(v) => setForm({ ...form, is_admin: v })}
             />
+          </FormSection>
+
+          {/* 6. סגירות חודש היסטוריות */}
+          <FormSection title="📊 סגירות חודש היסטוריות">
+            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray500, lineHeight: 1.5 }}>
+              צפי בסיכום מלא של חודש מסוים — משכורת, העברות, הוצאות, פערים בסגירה.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+              {activeMonthsList().map((opt) => (
+                <Link
+                  key={`${opt.year}-${opt.month}`}
+                  href={`/admin/guides/${guide.id}/months/${opt.year}/${opt.month}`}
+                  style={{
+                    padding: '6px 12px',
+                    background: ADMIN_COLORS.green25,
+                    border: `1px solid ${ADMIN_COLORS.green700}`,
+                    color: ADMIN_COLORS.green800,
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {opt.label}
+                </Link>
+              ))}
+            </div>
           </FormSection>
 
           {saveError && (
