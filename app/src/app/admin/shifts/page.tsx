@@ -52,6 +52,51 @@ const TEAM_TOUR_TYPES = new Set(['פעילות_צוות']);
 // סוגים שמשתמשים בלוגיקת "פירוט ב-notes" (כמו פרטי) — סינון מדריכים סלחני (בלי qualified_tours).
 const FLEXIBLE_TOUR_TYPES = new Set([...PRIVATE_TOUR_TYPES, ...TRAINING_TOUR_TYPES, ...TEAM_TOUR_TYPES]);
 
+// קידומת ההערה של שיבוצים שנוצרו ע"י silentApplyPortoRoster ("🤖 קבע · אם הדורו יוצא" וכו')
+const ROSTER_AUTOFILL_PREFIX = '🤖 קבע';
+
+// localStorage — slots של "🤖 קבע" שעומר מחקה ידנית, כדי שה-autofill לא ישחזר אותם.
+// ערך = "YYYY-MM-DD|HH:MM|tour_type|city". מנקים אוטומטית entries של תאריכים שעברו.
+const SKIP_ROSTER_KEY = 'portugo_skip_roster_slots';
+
+function rosterSlotKey(date: string, time: string, tourType: string, city: 'lisbon' | 'porto'): string {
+  return `${date}|${time}|${tourType}|${city}`;
+}
+
+function getSkippedRosterSlots(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(SKIP_ROSTER_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as string[];
+    // ניקוי entries של תאריכים שעברו
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const fresh = arr.filter((k) => (k.split('|')[0] || '') >= todayIso);
+    if (fresh.length !== arr.length) {
+      localStorage.setItem(SKIP_ROSTER_KEY, JSON.stringify(fresh));
+    }
+    return new Set(fresh);
+  } catch {
+    return new Set();
+  }
+}
+
+function addSkippedRosterSlot(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(SKIP_ROSTER_KEY);
+    const arr = raw ? (JSON.parse(raw) as string[]) : [];
+    if (!arr.includes(key)) {
+      arr.push(key);
+      localStorage.setItem(SKIP_ROSTER_KEY, JSON.stringify(arr));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 // אייקון לסוג סיור (תצפות / ניסיון דפים / פעילות צוות) — להצגה בקלף
 const TOUR_TYPE_ICONS: Record<string, string> = {
   'תצפות': '👁️',
@@ -170,6 +215,9 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
   const guideByName = new Map<string, Guide>();
   for (const g of allGuides) guideByName.set(g.name, g);
 
+  // slots שעומר מחקה ידנית — לא להחזיר ב-autofill
+  const skipped = getSkippedRosterSlots();
+
   const portoShifts = allShifts.filter((s) => s.city === 'porto' && s.status !== 'cancelled');
 
   // === שלב 1: לכל shift פורטו קיים, להצמיד את המדריך הראשי לפי הקבע ===
@@ -204,6 +252,8 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
     const sec = guideByName.get(slot.secondary.guide_name);
     if (!sec) continue;
     if (isGuideOnVacation(sec, s.shift_date)) continue;
+    // עומר מחקה ידנית את ה-secondary slot הזה — לא להחזיר אותו
+    if (skipped.has(rosterSlotKey(s.shift_date, time, s.tour_type, 'porto'))) continue;
     const exists = allShifts.some(
       (x) =>
         x.shift_date === s.shift_date &&
@@ -236,6 +286,8 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
     const dow = d.getDay();
     const slotsForDay = PORTO_ROSTER.filter((r) => r.dayOfWeek === dow);
     for (const slot of slotsForDay) {
+      // עומר מחקה ידנית את ה-slot הזה (גם primary וגם secondary לא יחזרו)
+      if (skipped.has(rosterSlotKey(isoDate, slot.defaultTime, slot.tour_type, 'porto'))) continue;
       // האם קיים shift כלשהו על היום הזה לסוג הסיור הזה?
       const exists = allShifts.some(
         (x) =>
@@ -247,7 +299,7 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
       if (exists) continue;
       const primary = guideByName.get(slot.guide_name);
       if (!primary || isGuideOnVacation(primary, isoDate)) continue;
-      const baseNotes = '🤖 קבע';
+      const baseNotes = ROSTER_AUTOFILL_PREFIX;
       try {
         await createManualShift({
           shift_date: isoDate,
@@ -986,6 +1038,11 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     if (!confirm(`למחוק את המשמרת של ${tourLabel} ב-${shortTime(shift.shift_time)}?\nהשיבוץ ייעלם מהלוח לחלוטין.`)) return;
     setBusy(true);
     try {
+      // אם זה שיבוץ "🤖 קבע" — לזכור שעומר ביטלה אותו ידנית, אחרת ה-autofill ישחזר אותו בטעינה הבאה
+      const isRosterAutofill = shift.notes?.startsWith(ROSTER_AUTOFILL_PREFIX) ?? false;
+      if (isRosterAutofill && shift.city === 'porto') {
+        addSkippedRosterSlot(rosterSlotKey(shift.shift_date, shortTime(shift.shift_time), shift.tour_type, 'porto'));
+      }
       await deleteShift(shift.id);
       onChange();
     } catch (e) {
