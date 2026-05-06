@@ -1094,16 +1094,6 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         {shift.status === 'published' && (
           <span title="פורסם" style={{ fontSize: 9, flexShrink: 0 }}>📤</span>
         )}
-        {!isTraining && !isTeam && (
-          <button
-            onClick={() => setDupeOpen(true)}
-            disabled={busy}
-            title="שכפלי כתצפות (אותו תאריך + שעה + סיור)"
-            style={{ ...iconBtnStyle, flexShrink: 0 }}
-          >
-            👁️+
-          </button>
-        )}
         <button
           onClick={() => setEditOpen(true)}
           disabled={busy}
@@ -1237,6 +1227,12 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           shift={shift}
           onClose={() => setEditOpen(false)}
           onSaved={() => { setEditOpen(false); onChange(); }}
+          // "שכפלי כתצפות" — רלוונטי רק על משמרות רגילות (לא על תצפות / ניסיון דפים / פעילות צוות)
+          onDuplicateToObservation={
+            !isTraining && !isTeam
+              ? () => { setEditOpen(false); setDupeOpen(true); }
+              : undefined
+          }
         />
       )}
       {/* Duplicate-to-observation modal — אותו תאריך/שעה/עיר, סוג=תצפות, סיור הספציפי כבר נבחר */}
@@ -1958,11 +1954,13 @@ const inputStyle: React.CSSProperties = {
 
 // ─── עריכת משמרת קיימת (תאריך / שעה / סוג / הערות) ───
 function EditShiftModal({
-  shift, onClose, onSaved,
+  shift, onClose, onSaved, onDuplicateToObservation,
 }: {
   shift: Shift;
   onClose: () => void;
   onSaved: () => void;
+  /** אופציונלי — אם קיים, מציג כפתור "שכפלי כתצפות" שסוגר את העריכה ופותח את מודאל השכפול */
+  onDuplicateToObservation?: () => void;
 }) {
   const [date, setDate] = useState(shift.shift_date);
   const [time, setTime] = useState(shortTime(shift.shift_time));
@@ -2049,6 +2047,27 @@ function EditShiftModal({
           </span>
         </label>
         {err && <div style={{ fontSize: 12, color: '#991b1b' }}>{err}</div>}
+        {onDuplicateToObservation && (
+          <button
+            onClick={onDuplicateToObservation}
+            disabled={saving}
+            title="פותח שכפול לתצפות עם אותו תאריך/שעה/סיור (שינויים שלא נשמרו יאבדו)"
+            style={{
+              padding: '8px 12px',
+              background: '#fff',
+              color: ADMIN_COLORS.green900,
+              border: `1px dashed ${ADMIN_COLORS.green700}`,
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: saving ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              textAlign: 'center',
+            }}
+          >
+            👁️ שכפלי משמרת זו כתצפות
+          </button>
+        )}
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <button onClick={onClose} disabled={saving} style={{ ...navBtnStyle, flex: 1 }}>ביטול</button>
           <button
