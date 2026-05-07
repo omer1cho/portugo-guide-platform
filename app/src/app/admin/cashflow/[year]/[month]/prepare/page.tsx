@@ -140,31 +140,13 @@ export default function CashflowPreparePage() {
         setToursIncome={setToursIncome}
       />
 
-      {/* Flag summary */}
+      {/* Flag summary — עם פירוט לפי סוג */}
       {data.flaggedCount > 0 && (
-        <div style={{
-          padding: 12,
-          background: '#fef3c7',
-          border: '1px solid #fcd34d',
-          borderRadius: 8,
-          fontSize: 13,
-          color: '#78350f',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}>
-          <span>
-            🚨 <strong>{data.flaggedCount} פריטים דורשים תשומת לב</strong> — חשד מולטיבנקו, קבלה חסרה, סכום או תאריך חסר
-          </span>
-          <button
-            onClick={() => setShowOnlyFlagged((v) => !v)}
-            style={smallBtnStyle()}
-          >
-            {showOnlyFlagged ? 'הצג הכל' : 'סנן רק דגלים'}
-          </button>
-        </div>
+        <FlagSummary
+          data={data}
+          showOnlyFlagged={showOnlyFlagged}
+          onToggleFilter={() => setShowOnlyFlagged((v) => !v)}
+        />
       )}
 
       {/* Cashflow chronological — שורות אחת אחרי השנייה לפי תאריך, כמו בגליון Excel */}
@@ -214,10 +196,71 @@ export default function CashflowPreparePage() {
 }
 
 // ===========================================================================
+// Flag summary — מציג פירוט של פריטים שדורשים תשומת לב
+// ===========================================================================
+
+function FlagSummary({
+  data,
+  showOnlyFlagged,
+  onToggleFilter,
+}: {
+  data: CashflowPrepareData;
+  showOnlyFlagged: boolean;
+  onToggleFilter: () => void;
+}) {
+  const missingReceiptCount = data.expenses.filter((e) => !e.is_admin_added && !e.receipt_url && e.cashflow_category === 'regular').length;
+  const multibancoCount = data.expenses.filter((e) => e.multibanco_suspect).length;
+  const unscheduledCount = data.unscheduledInvoices.length;
+  const pendingCount = data.pendingDeposits.length;
+  const noAmountInvoiceCount = data.salaryInvoices.filter((i) => i.amount === null).length;
+
+  return (
+    <div style={{
+      padding: 14,
+      background: '#fef3c7',
+      border: '1px solid #fcd34d',
+      borderRadius: 8,
+      fontSize: 13,
+      color: '#78350f',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+        <span><strong>🚨 {data.flaggedCount} פריטים דורשים תשומת לב</strong></span>
+        <button onClick={onToggleFilter} style={smallBtnStyle()}>
+          {showOnlyFlagged ? 'הצג הכל' : 'סנן בטבלה רק דגלים'}
+        </button>
+      </div>
+      <ul style={{ margin: 0, paddingInlineStart: 20, lineHeight: 1.7 }}>
+        {missingReceiptCount > 0 && (
+          <li>
+            📷 <strong>{missingReceiptCount} הוצאות בלי תמונת קבלה</strong>
+            <span style={{ color: '#92400e' }}> — שורות אדומות בטבלה. לחיצה על "סנן בטבלה רק דגלים" תציג רק אותן.</span>
+          </li>
+        )}
+        {multibancoCount > 0 && (
+          <li>💳 <strong>{multibancoCount} חשד למולטיבנקו</strong> — להחליט אם להחריג</li>
+        )}
+        {pendingCount > 0 && (
+          <li>⏳ <strong>{pendingCount} הפקדות ממתינות</strong> — בסקציה למטה (לא נכנסות לקשפלו)</li>
+        )}
+        {unscheduledCount > 0 && (
+          <li>⚠️ <strong>{unscheduledCount} קבלות מס בלי תאריך</strong> — בסקציה למטה</li>
+        )}
+        {noAmountInvoiceCount > 0 && (
+          <li>💼 <strong>{noAmountInvoiceCount} קבלות מס בלי סכום ב-DB</strong> — בעיית סנכרון, צריך לבדוק</li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
+// ===========================================================================
 // Section: שורת הכנסה ויתרה — הלב של הקשפלו (Excel rows 12+15)
 // ===========================================================================
 
-const TARGET_FINAL_BALANCE = 15;
+// המטרה: יתרה סוגרת בין 200€ ל-300€ (חוק עומר 7.5.26 — צריך מספיק רזרבה לחודש הבא)
+const TARGET_FINAL_BALANCE_MIN = 200;
+const TARGET_FINAL_BALANCE_MAX = 300;
+const TARGET_FINAL_BALANCE_MID = (TARGET_FINAL_BALANCE_MIN + TARGET_FINAL_BALANCE_MAX) / 2; // 250
 
 function CashflowSetupSection({
   data,
@@ -234,12 +277,13 @@ function CashflowSetupSection({
 }) {
   const totalOutflow = data.totalRegularOutflow + data.totalDeposits + data.totalSalaries;
   const prev = parseFloat(prevBalance) || 0;
-  const suggested = totalOutflow - prev + TARGET_FINAL_BALANCE;
+  const suggested = totalOutflow - prev + TARGET_FINAL_BALANCE_MID;
   const income = parseFloat(toursIncome) || 0;
   const projectedFinal = prev + income - totalOutflow;
 
-  const isBalanced = Math.abs(projectedFinal - TARGET_FINAL_BALANCE) < 1;
-  const isClose = Math.abs(projectedFinal - TARGET_FINAL_BALANCE) < 50;
+  // ירוק = בתוך הטווח [200, 300]; צהוב = ±100 מהטווח; אחרת אדום
+  const isInRange = projectedFinal >= TARGET_FINAL_BALANCE_MIN && projectedFinal <= TARGET_FINAL_BALANCE_MAX;
+  const isClose = projectedFinal >= TARGET_FINAL_BALANCE_MIN - 100 && projectedFinal <= TARGET_FINAL_BALANCE_MAX + 100;
 
   const fmtSuggested = Math.round(suggested / 10) * 10; // עיגול עשרות
 
@@ -249,7 +293,7 @@ function CashflowSetupSection({
         💰 שורת הכנסה — מאזנת את החודש
       </h2>
       <p style={hintStyle}>
-        ההכנסה (Row 15 בקשפלו) הולכת לאזן את כל ההוצאות. המטרה: יתרה סוגרת של ~{TARGET_FINAL_BALANCE}€.
+        ההכנסה (Row 15 בקשפלו) הולכת לאזן את כל ההוצאות. המטרה: <strong>יתרה סוגרת בין {TARGET_FINAL_BALANCE_MIN}€ ל-{TARGET_FINAL_BALANCE_MAX}€</strong> (רזרבה לחודש הבא).
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
@@ -316,14 +360,14 @@ function CashflowSetupSection({
           display: 'flex',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          color: isBalanced ? ADMIN_COLORS.green700 : isClose ? '#a16207' : ADMIN_COLORS.red,
+          color: isInRange ? ADMIN_COLORS.green700 : isClose ? '#a16207' : ADMIN_COLORS.red,
           fontWeight: 700,
           fontSize: 14,
         }}>
           <span>= יתרה צפויה בסוף חודש (I88):</span>
           <strong>
             {projectedFinal.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
-            {isBalanced ? ' ✓' : isClose ? ' ~' : ' ⚠'}
+            {isInRange ? ' ✓ בטווח' : isClose ? ' ~ קרוב' : ' ⚠ לא בטווח'}
           </strong>
         </div>
       </div>
