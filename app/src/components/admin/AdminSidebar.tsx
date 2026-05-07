@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/shifts', label: 'לוח שיבוצים', icon: '🗓️' },
   { href: '/admin/cashflow', label: 'קשפלו חודשי', icon: '💸' },
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
-  { href: '/admin/pricing-validation', label: 'רווחיות סיורים יומיים', icon: '💰' },
+  { href: '/admin/pricing-validation', label: 'רווחיות סיורים', icon: '💰' },
 ];
 
 export default function AdminSidebar({

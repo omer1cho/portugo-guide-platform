@@ -15,13 +15,17 @@
 import { useState } from 'react';
 import {
   TOURS,
+  TASTING_TOURS,
   SUMMARY_CARDS,
+  TASTING_SUMMARY_CARDS,
   INSIGHTS,
   PRICING_VALIDATION_VERSION,
   PRICING_VALIDATION_UPDATED,
   type Tour,
+  type TastingTour,
   type Scenario,
   type ScenarioRow,
+  type TastingScenarioRow,
   type ProfitCell,
 } from '@/lib/pricing-validation-data';
 
@@ -53,19 +57,23 @@ export default function PricingValidationPage() {
       {/* Header */}
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-1">
-          רווחיות סיורים יומיים — שני ספקים בעין אחת
+          רווחיות סיורים — אימות תמחור
         </h1>
         <p className="text-sm text-gray-500">
-          סינטרה · אראבידה · אובידוש · דורו · עודכן: {PRICING_VALIDATION_UPDATED}
+          סינטרה · אראבידה · אובידוש · דורו · קולינרי בוקר · קולינרי צהריים · טעימות פורטו · עודכן: {PRICING_VALIDATION_UPDATED}
         </p>
       </header>
 
       {/* Assumptions */}
       <div className="bg-emerald-50 border-r-4 border-emerald-500 rounded-md p-4 mb-7 text-sm">
         <p className="text-emerald-900">
-          <strong>איך לקרוא את הטבלאות:</strong>{' '}
-          בכל שורה תראי <strong>שני ערכי רווח/הפסד זה לצד זה</strong> — אחד עם הספק הזול, אחד עם הספק היקר.
-          ככה רואים בעין אחת את שתי האפשרויות: כשהזול זמין → רווח גבוה. כשרק היקר זמין → רווח נמוך או הפסד.
+          <strong>איך לקרוא את הטבלאות:</strong>
+        </p>
+        <p className="text-emerald-900 mt-1">
+          <strong>סיורים יומיים</strong> (סינטרה, אראבידה, אובידוש, דורו): שני ערכי רווח/הפסד זה לצד זה — ספק זול / ספק יקר. כך רואים בעין אחת את שתי האפשרויות.
+        </p>
+        <p className="text-emerald-900 mt-1">
+          <strong>סיורי טעימות</strong> (קולינרי בוקר/צהריים, טעימות פורטו): טור רווח אחד — אין השוואת ספקים, אבל יש פירוט עלויות (מזון פר-אדם + פריטים משותפים).
         </p>
         <p className="mt-2 text-emerald-900 flex flex-wrap items-center gap-2">
           צביעת תאים:{' '}
@@ -75,7 +83,15 @@ export default function PricingValidationPage() {
         </p>
       </div>
 
-      {/* Summary cards */}
+      {/* ─── Daily tours section ─── */}
+      <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-2 mb-1">
+        סיורים יומיים — תלויי רכב
+      </h2>
+      <p className="text-xs text-gray-600 mb-5">
+        השוואת ספקי רכב (פרדאוטו / מורטה בליסבון · איבורבס-ז&apos;ורז&apos; / אנטורס בפורטו) — בחירת ספק היא הגורם הקריטי לרווחיות
+      </p>
+
+      {/* Daily summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-9">
         {SUMMARY_CARDS.map((c, i) => (
           <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
@@ -92,9 +108,39 @@ export default function PricingValidationPage() {
         ))}
       </div>
 
-      {/* Tour sections */}
+      {/* Daily tour sections */}
       {TOURS.map((tour) => (
         <TourSection key={tour.slug} tour={tour} />
+      ))}
+
+      {/* ─── Tasting tours section ─── */}
+      <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1">
+        סיורי טעימות — תלויי מזון
+      </h2>
+      <p className="text-xs text-gray-600 mb-5">
+        ללא רכב · עיקר העלות: שכר + מזון פר-אדם + פריטים משותפים. אין השוואת ספקים, אבל יש רגישות לגודל קבוצה דרך פריטים שמתחלקים (מגש גבינות, פאו דה קז&apos;ו, יין ירוק, גווארנה)
+      </p>
+
+      {/* Tasting summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-9">
+        {TASTING_SUMMARY_CARDS.map((c, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="text-base font-bold text-slate-800 mb-3">{c.title}</h3>
+            <div className="space-y-1">
+              {c.rows.map((r, j) => (
+                <div key={j} className="flex justify-between text-xs">
+                  <span className="text-gray-500">{r.label}</span>
+                  <span className="font-semibold text-gray-900">{r.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tasting tour sections */}
+      {TASTING_TOURS.map((tour) => (
+        <TastingSection key={tour.slug} tour={tour} />
       ))}
 
       {/* Insights */}
@@ -108,7 +154,7 @@ export default function PricingValidationPage() {
       </div>
 
       <div className="text-center text-xs text-gray-400 mt-7 mb-4">
-        פורטוגו · מודל תמחור · גרסה {PRICING_VALIDATION_VERSION} (שני ספקים גלוי) · {PRICING_VALIDATION_UPDATED}
+        פורטוגו · מודל תמחור · גרסה {PRICING_VALIDATION_VERSION} (+ קולינרי וטעימות) · {PRICING_VALIDATION_UPDATED}
       </div>
     </div>
   );
@@ -281,6 +327,132 @@ function ScenarioMobileCard({ tour, row }: { tour: Tour; row: ScenarioRow }) {
           <div><span className="text-gray-400">אשל:</span> {fmtEuro(row.daily)}</div>
           <div className="col-span-2" dir="ltr">
             <span className="text-gray-400">רכב:</span> {row.carText}
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+// ─── Tasting section (קולינרי / טעימות) ────────────────────────────────────
+function TastingSection({ tour }: { tour: TastingTour }) {
+  const [activeScenarioId, setActiveScenarioId] = useState(tour.scenarios[0].id);
+  const activeScenario = tour.scenarios.find((s) => s.id === activeScenarioId) ?? tour.scenarios[0];
+
+  return (
+    <section className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 mb-6 shadow-sm">
+      <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-1">{tour.name}</h2>
+      <p className="text-sm text-gray-600 mb-1">{tour.priceInfo}</p>
+      {tour.priceInfoExtra && (
+        <p className="text-xs text-gray-500 mb-3">{tour.priceInfoExtra}</p>
+      )}
+
+      {/* Scenario tabs */}
+      <div className="flex flex-wrap gap-2 mb-3 mt-4">
+        {tour.scenarios.map((s) => {
+          const active = s.id === activeScenarioId;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setActiveScenarioId(s.id)}
+              className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-all ${
+                active
+                  ? 'bg-slate-700 text-white border-slate-700'
+                  : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+              }`}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <TastingTable tour={tour} rows={activeScenario.rows} />
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-2 mt-2">
+        {activeScenario.rows.map((row) => (
+          <TastingMobileCard key={row.size} tour={tour} row={row} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Tasting desktop table ────────────────────────────────────────────────
+function TastingTable({ tour, rows }: { tour: TastingTour; rows: TastingScenarioRow[] }) {
+  return (
+    <table className="w-full text-sm border-collapse">
+      <thead>
+        <tr className="text-right text-slate-600">
+          <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל</th>
+          <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">הכנסה</th>
+          <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">שכר</th>
+          <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">{tour.perPersonLabel}</th>
+          {tour.sharedCostLabels.map((label, i) => (
+            <th key={i} className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">{label}</th>
+          ))}
+          <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">סה&quot;כ עלות</th>
+          <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">רווח</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.size} className="border-b border-gray-100">
+            <td className="px-2.5 py-2.5 font-bold">{row.size}</td>
+            <td className="px-2.5 py-2.5">{fmtEuro(row.income)}</td>
+            <td className="px-2.5 py-2.5">{fmtEuro(row.guideSalary)}</td>
+            <td className="px-2.5 py-2.5">{fmtEuro(row.perPersonFood)}</td>
+            {row.sharedCosts.map((cost, i) => (
+              <td key={i} className="px-2.5 py-2.5">{fmtEuro(cost)}</td>
+            ))}
+            <td className="px-2.5 py-2.5 font-semibold">{fmtEuro(row.totalCost)}</td>
+            <td className={`px-2.5 py-2.5 ${profitCellClasses(row.profit)}`}>
+              {profitCellText(row.profit)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// ─── Tasting mobile card ──────────────────────────────────────────────────
+function TastingMobileCard({ tour, row }: { tour: TastingTour; row: TastingScenarioRow }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+      {/* Header: size + income */}
+      <div className="flex justify-between items-baseline mb-2">
+        <div>
+          <span className="text-xs text-gray-500">קבוצה</span>{' '}
+          <span className="text-2xl font-bold text-slate-800">{row.size}</span>
+        </div>
+        <div className="text-sm">
+          <span className="text-gray-500">הכנסה </span>
+          <span className="font-bold text-slate-800">{fmtEuro(row.income)}</span>
+        </div>
+      </div>
+
+      {/* Single profit cell */}
+      <div className={`rounded-lg p-3 text-center ${profitCellClasses(row.profit)}`}>
+        <div className="text-[11px] opacity-80 font-normal">רווח</div>
+        <div className="text-lg mt-0.5">{profitCellText(row.profit)}</div>
+      </div>
+
+      {/* Details — collapsed accordion */}
+      <details className="mt-2 text-xs text-gray-600">
+        <summary className="cursor-pointer text-gray-500 hover:text-gray-700">פרטי עלויות</summary>
+        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1">
+          <div><span className="text-gray-400">שכר:</span> {fmtEuro(row.guideSalary)}</div>
+          <div><span className="text-gray-400">{tour.perPersonLabel}:</span> {fmtEuro(row.perPersonFood)}</div>
+          {tour.sharedCostLabels.map((label, i) => (
+            <div key={i}><span className="text-gray-400">{label}:</span> {fmtEuro(row.sharedCosts[i])}</div>
+          ))}
+          <div className="col-span-2 border-t border-gray-100 pt-1 mt-1">
+            <span className="text-gray-400">סה&quot;כ עלות:</span> <span className="font-semibold">{fmtEuro(row.totalCost)}</span>
           </div>
         </div>
       </details>
