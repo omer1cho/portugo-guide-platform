@@ -165,6 +165,7 @@ export type CashflowExpense = {
   expense_date: string;
   guide_id: string | null;
   guide_name: string;          // 'אדמין' אם is_admin_added
+  /** מה שהמדריך באמת הזין/בחר (טקסט מקורי בעברית) */
   item: string;
   amount: number;
   notes: string | null;
@@ -178,6 +179,10 @@ export type CashflowExpense = {
   tour_type: string | null;
   /** סימן חשד למולטיבנקו (heuristic) — כשהמדריך לא סימן ידנית */
   multibanco_suspect: boolean;
+  /** האם פריט זה דורש קבלה לפי הקטלוג. null = פריט שלא מהקטלוג (free text) */
+  catalog_requires_receipt: boolean | null;
+  /** שם פריט הקטלוג (אם נבחר מקטלוג) */
+  catalog_item_name: string | null;
 };
 
 /** הפקדה לבנק (transfer מסוג to_portugo). pending unsettled מוחרגות מהקשפלו. */
@@ -382,11 +387,11 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       .select('id, name')
       .order('name'),
 
-    // הוצאות בכל החודש (כולל is_admin_added)
+    // הוצאות בכל החודש (כולל is_admin_added) + הצטרפות לקטלוג לקבלת requires_receipt
     (async () => {
       const primary = await supabase
         .from('expenses')
-        .select('id, guide_id, expense_date, item, amount, notes, receipt_url, tour_type, supplier_name, receipt_number, cashflow_category, is_admin_added')
+        .select('id, guide_id, expense_date, item, amount, notes, receipt_url, tour_type, supplier_name, receipt_number, cashflow_category, is_admin_added, catalog_item_id, expense_catalog(item_name, requires_receipt)')
         .gte('expense_date', start)
         .lte('expense_date', end)
         .order('expense_date');
@@ -482,6 +487,8 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     receipt_number?: string | null;
     cashflow_category?: string | null;
     is_admin_added?: boolean | null;
+    catalog_item_id?: string | null;
+    expense_catalog?: { item_name: string | null; requires_receipt: boolean | null } | null;
   };
   // שלב א': עיבוד ראשוני וניחוש Entity (ספק / סוג סיור / לפי מילות מפתח)
   const rawExpenses = ((expensesRes.data || []) as RawExpense[]).map((e) => ({
@@ -505,6 +512,8 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     const guideName = isAdmin ? 'אדמין' : guideById.get(e.guide_id || '')?.name || '—';
     const supplier = e.supplier_name ?? autoApplied.get(e.id) ?? null;
     const suspectMb = cat === 'regular' && looksLikeMultibanco(e.item, e.notes, supplier);
+    const catalogReq = e.expense_catalog?.requires_receipt ?? null;
+    const catalogItemName = e.expense_catalog?.item_name ?? null;
     return {
       id: e.id,
       expense_date: e.expense_date,
@@ -515,14 +524,14 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       notes: e.notes,
       receipt_url: e.receipt_url,
       supplier_name: supplier,
-      // suggested_supplier משמש רק כשעוד לא נשמר משהו (מקרה קצה — fallback ב-DB);
-      // בפועל autoApplied כבר טיפל בזה.
       suggested_supplier: supplier ? null : suggested,
       receipt_number: e.receipt_number ?? null,
       cashflow_category: cat,
       is_admin_added: isAdmin,
       tour_type: e.tour_type,
       multibanco_suspect: suspectMb,
+      catalog_requires_receipt: catalogReq,
+      catalog_item_name: catalogItemName,
     };
   });
 
@@ -607,8 +616,10 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
 
   // flagged: חשד מולטיבנקו, חסרה תמונת קבלה (להוצאות לא is_admin_added),
   // קבלות ללא תאריך הוצאת חשבונית, הפקדות ממתינות שעדיין לא הופקדו
+  // "חסרה קבלה" רק אם הקטלוג דורש קבלה (catalog_requires_receipt !== false).
+  // פריטי free-text (catalog_requires_receipt = null) — דורשים קבלה כברירת מחדל.
   const flaggedCount = expenses.filter((e) => e.multibanco_suspect).length
-    + expenses.filter((e) => !e.is_admin_added && !e.receipt_url).length
+    + expenses.filter((e) => !e.is_admin_added && !e.receipt_url && e.catalog_requires_receipt !== false).length
     + unscheduledInvoices.length
     + pendingDeposits.length
     + salaryInvoices.filter((i) => i.amount === null).length;

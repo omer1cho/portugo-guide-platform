@@ -208,7 +208,13 @@ function FlagSummary({
   showOnlyFlagged: boolean;
   onToggleFilter: () => void;
 }) {
-  const missingReceiptCount = data.expenses.filter((e) => !e.is_admin_added && !e.receipt_url && e.cashflow_category === 'regular').length;
+  // "חסרה קבלה" רק אם הקטלוג דורש קבלה (catalog_requires_receipt !== false).
+  const missingReceiptCount = data.expenses.filter((e) =>
+    !e.is_admin_added &&
+    !e.receipt_url &&
+    e.cashflow_category === 'regular' &&
+    e.catalog_requires_receipt !== false
+  ).length;
   const multibancoCount = data.expenses.filter((e) => e.multibanco_suspect).length;
   const unscheduledCount = data.unscheduledInvoices.length;
   const pendingCount = data.pendingDeposits.length;
@@ -419,6 +425,9 @@ function buildCashflowRows(
   // 2. הוצאות (regular בלבד — multibanco/excluded לא בקשפלו)
   for (const e of data.expenses) {
     if (e.cashflow_category !== 'regular') continue;
+    // "חסרה קבלה" רק אם הקטלוג דורש קבלה (לא false). פריטים כמו "בירה" שמסומנים
+    // ב-requires_receipt=false → לא מסומנים כדגל.
+    const noReceiptIsFlag = !e.is_admin_added && !e.receipt_url && e.catalog_requires_receipt !== false;
     rows.push({
       key: `e-${e.id}`,
       type: 'expense',
@@ -429,7 +438,7 @@ function buildCashflowRows(
       outflow: e.amount,
       expense: e,
       receipt_url: e.receipt_url,
-      flag: e.multibanco_suspect ? 'multibanco' : (!e.is_admin_added && !e.receipt_url ? 'no-receipt' : null),
+      flag: e.multibanco_suspect ? 'multibanco' : (noReceiptIsFlag ? 'no-receipt' : null),
     });
   }
 
@@ -662,11 +671,27 @@ function CashflowRowItem({
               {typeIcon} {row.entity || <em style={{ color: ADMIN_COLORS.gray500 }}>—</em>}
             </span>
           )}
+          {/* פריט מקורי בעברית — מה שהמדריך באמת בחר/הקליד */}
+          {row.expense && (row.expense.item || row.expense.notes || row.expense.tour_type) && (
+            <div style={{ fontSize: 11, color: ADMIN_COLORS.gray500, marginTop: 3, lineHeight: 1.4 }}>
+              <span dir="rtl">
+                {row.expense.item && <span>📝 {row.expense.item}</span>}
+                {row.expense.tour_type && <span style={{ color: ADMIN_COLORS.gray700 }}> · {row.expense.tour_type}</span>}
+                {row.expense.notes && <span style={{ color: ADMIN_COLORS.gray500 }}> · "{row.expense.notes}"</span>}
+              </span>
+            </div>
+          )}
           {row.flag === 'multibanco' && (
             <div style={{ fontSize: 10, color: '#92400e', marginTop: 2 }}>🚨 חשד מולטיבנקו</div>
           )}
           {row.flag === 'no-receipt' && (
             <div style={{ fontSize: 10, color: '#991b1b', marginTop: 2 }}>⚠ חסרה תמונת קבלה</div>
+          )}
+          {/* פריט שלא דורש קבלה לפי הקטלוג — מציינים שזה תקין */}
+          {row.expense && !row.expense.receipt_url && row.expense.catalog_requires_receipt === false && (
+            <div style={{ fontSize: 10, color: ADMIN_COLORS.gray500, marginTop: 2 }}>
+              ℹ פריט שלא דורש קבלה לפי הקטלוג
+            </div>
           )}
         </td>
         <td style={{ ...tdStyle, fontFamily: 'monospace', color: ADMIN_COLORS.gray700 }}>
