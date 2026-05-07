@@ -19,6 +19,7 @@ import Image from 'next/image';
 import { ADMIN_COLORS, fmtEuro, monthName } from '@/lib/admin/theme';
 import {
   loadCashflowPrepareData,
+  loadPreviousFinalBalance,
   updateExpenseClassification,
   addAdminExpense,
   setExpenseReceiptUrl,
@@ -68,12 +69,21 @@ export default function CashflowPreparePage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showOnlyFlagged, setShowOnlyFlagged] = useState(false);
 
+  // שורת הכנסה ויתרה — הלב של הקשפלו
+  const [prevBalance, setPrevBalance] = useState<string>('');
+  const [toursIncome, setToursIncome] = useState<string>('');
+
   const reload = async () => {
     setLoading(true);
     setError(null);
     try {
-      const d = await loadCashflowPrepareData(year, month);
+      const [d, prev] = await Promise.all([
+        loadCashflowPrepareData(year, month),
+        loadPreviousFinalBalance(year, month),
+      ]);
       setData(d);
+      // אם יש יתרת חודש קודם ב-DB — אל תדרוס מה שעומר הזינה ידנית
+      setPrevBalance((cur) => (cur ? cur : prev != null ? String(prev) : ''));
     } catch (e) {
       const err = e as { message?: string };
       setError(err.message || 'משהו השתבש');
@@ -120,6 +130,15 @@ export default function CashflowPreparePage() {
           <span style={{ fontSize: 13, color: ADMIN_COLORS.gray500 }}>שלב 2 מתוך 3</span>
         </div>
       </header>
+
+      {/* Cashflow setup — שורת הכנסה ויתרה (הלב של הקשפלו) */}
+      <CashflowSetupSection
+        data={data}
+        prevBalance={prevBalance}
+        setPrevBalance={setPrevBalance}
+        toursIncome={toursIncome}
+        setToursIncome={setToursIncome}
+      />
 
       {/* Flag summary */}
       {data.flaggedCount > 0 && (
@@ -209,6 +228,124 @@ export default function CashflowPreparePage() {
 }
 
 // ===========================================================================
+// Section: שורת הכנסה ויתרה — הלב של הקשפלו (Excel rows 12+15)
+// ===========================================================================
+
+const TARGET_FINAL_BALANCE = 15;
+
+function CashflowSetupSection({
+  data,
+  prevBalance,
+  setPrevBalance,
+  toursIncome,
+  setToursIncome,
+}: {
+  data: CashflowPrepareData;
+  prevBalance: string;
+  setPrevBalance: (v: string) => void;
+  toursIncome: string;
+  setToursIncome: (v: string) => void;
+}) {
+  const totalOutflow = data.totalRegularOutflow + data.totalDeposits + data.totalSalaries;
+  const prev = parseFloat(prevBalance) || 0;
+  const suggested = totalOutflow - prev + TARGET_FINAL_BALANCE;
+  const income = parseFloat(toursIncome) || 0;
+  const projectedFinal = prev + income - totalOutflow;
+
+  const isBalanced = Math.abs(projectedFinal - TARGET_FINAL_BALANCE) < 1;
+  const isClose = Math.abs(projectedFinal - TARGET_FINAL_BALANCE) < 50;
+
+  const fmtSuggested = Math.round(suggested / 10) * 10; // עיגול עשרות
+
+  return (
+    <section style={{ ...cardStyle, background: ADMIN_COLORS.green25, borderColor: ADMIN_COLORS.green600 }}>
+      <h2 style={{ ...sectionTitleStyle, marginBottom: 8 }}>
+        💰 שורת הכנסה — מאזנת את החודש
+      </h2>
+      <p style={hintStyle}>
+        ההכנסה (Row 15 בקשפלו) הולכת לאזן את כל ההוצאות. המטרה: יתרה סוגרת של ~{TARGET_FINAL_BALANCE}€.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
+        <Field label="יתרת חודש קודם (I12)">
+          <input
+            type="number"
+            step="0.01"
+            value={prevBalance}
+            onChange={(e) => setPrevBalance(e.target.value)}
+            placeholder="לדוגמה: 1543.20"
+            style={inputStyle(true)}
+          />
+          <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>
+            מתוך I88 בגליון של החודש הקודם
+          </span>
+        </Field>
+
+        <Field label="הכנסות סיורים (G15) *">
+          <input
+            type="number"
+            step="0.01"
+            value={toursIncome}
+            onChange={(e) => setToursIncome(e.target.value)}
+            placeholder="—"
+            style={inputStyle(true)}
+          />
+          <button
+            onClick={() => setToursIncome(String(fmtSuggested))}
+            style={{ ...secondaryBtnStyle, marginTop: 4, fontSize: 11 }}
+            type="button"
+          >
+            הצעה: {fmtSuggested.toLocaleString('he-IL')}€
+          </button>
+        </Field>
+      </div>
+
+      {/* תצוגת הנוסחה */}
+      <div style={{
+        marginTop: 16,
+        padding: 12,
+        background: '#fff',
+        border: `1px solid ${ADMIN_COLORS.gray300}`,
+        borderRadius: 8,
+        fontSize: 12,
+        lineHeight: 1.7,
+      }}>
+        <div style={{ color: ADMIN_COLORS.gray700, fontFamily: 'monospace', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <span>יתרת חודש קודם:</span>
+          <strong>{prev.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
+        </div>
+        <div style={{ color: ADMIN_COLORS.green700, fontFamily: 'monospace', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <span>+ הכנסות סיורים:</span>
+          <strong>{income.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
+        </div>
+        <div style={{ color: ADMIN_COLORS.red, fontFamily: 'monospace', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <span>− סה"כ הוצאות (regular + הפקדות + משכורות):</span>
+          <strong>{totalOutflow.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
+        </div>
+        <div style={{
+          marginTop: 6,
+          paddingTop: 6,
+          borderTop: `1px dashed ${ADMIN_COLORS.gray300}`,
+          fontFamily: 'monospace',
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          color: isBalanced ? ADMIN_COLORS.green700 : isClose ? '#a16207' : ADMIN_COLORS.red,
+          fontWeight: 700,
+          fontSize: 14,
+        }}>
+          <span>= יתרה צפויה בסוף חודש (I88):</span>
+          <strong>
+            {projectedFinal.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
+            {isBalanced ? ' ✓' : isClose ? ' ~' : ' ⚠'}
+          </strong>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ===========================================================================
 // Section: הוצאות מדריכים + אדמין
 // ===========================================================================
 
@@ -293,19 +430,16 @@ function ExpenseRow({
   onSavingEnd: () => void;
   onChange: () => void;
 }) {
-  // ברירת מחדל: שם ספק שמור, ואם אין — ניחוש המערכת מתוך פריט/הערות
-  const initialSupplier = expense.supplier_name || expense.suggested_supplier || '';
-  const [supplier, setSupplier] = useState(initialSupplier);
+  // ברירת מחדל: שם ספק שמור (מולא אוטומטית בעת הטעינה אם הייתה התאמה)
+  const [supplier, setSupplier] = useState(expense.supplier_name || '');
   const [receiptNum, setReceiptNum] = useState(expense.receipt_number || '');
   const [category, setCategory] = useState(expense.cashflow_category);
   const [showReceipt, setShowReceipt] = useState(false);
 
-  // dirty = השדה שונה ממה ששמור ב-DB (לא ממה שהוצע)
   const dirty =
     supplier !== (expense.supplier_name || '') ||
     receiptNum !== (expense.receipt_number || '') ||
     category !== expense.cashflow_category;
-  const isSuggestion = !expense.supplier_name && expense.suggested_supplier && supplier === expense.suggested_supplier;
 
   const flagBg = expense.multibanco_suspect
     ? '#fef3c7'
@@ -374,18 +508,11 @@ function ExpenseRow({
             onChange={(ev) => setSupplier(ev.target.value)}
             list={`suppliers-${expense.id}`}
             placeholder="שם ספק"
-            style={{
-              ...inputStyle(),
-              ...(isSuggestion ? { background: '#fffbeb', borderColor: '#fcd34d', fontStyle: 'italic' } : {}),
-            }}
-            title={isSuggestion ? 'הצעה אוטומטית — לחצי "שמרי" כדי לקבע' : undefined}
+            style={inputStyle()}
           />
           <datalist id={`suppliers-${expense.id}`}>
             {FREQUENT_SUPPLIERS.map((s) => <option key={s} value={s} />)}
           </datalist>
-          {isSuggestion && (
-            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2 }}>הצעה — לחצי שמרי לאשר</div>
-          )}
         </td>
         <td style={tdStyle}>
           <input

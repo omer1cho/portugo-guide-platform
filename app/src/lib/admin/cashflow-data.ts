@@ -271,6 +271,26 @@ export function guessSupplier(item: string | null, notes: string | null): string
   return null;
 }
 
+/** אצוות עדכון: מילוי אוטומטי של supplier_name להוצאות שיש להן ניחוש בטוח. */
+async function autoFillGuessedSuppliers(
+  rows: { id: string; supplier_name: string | null; suggested: string | null }[]
+): Promise<Map<string, string>> {
+  const applied = new Map<string, string>();
+  const toUpdate = rows.filter((r) => !r.supplier_name && r.suggested);
+  if (toUpdate.length === 0) return applied;
+  // עדכון פר-שורה (במקום .in() שלא תומך בערכים שונים)
+  await Promise.all(
+    toUpdate.map(async (r) => {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ supplier_name: r.suggested })
+        .eq('id', r.id);
+      if (!error && r.suggested) applied.set(r.id, r.suggested);
+    })
+  );
+  return applied;
+}
+
 /** שם פרטי בעברית קטנה לעמודת Description בהפקדות */
 function depositFirstNameLc(name: string): string {
   // לוקח את המילה הראשונה (השם הפרטי בעברית), משאיר תווים בשם.
@@ -396,13 +416,28 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     cashflow_category?: string | null;
     is_admin_added?: boolean | null;
   };
-  const expenses: CashflowExpense[] = ((expensesRes.data || []) as RawExpense[]).map((e) => {
+  // שלב א': עיבוד ראשוני וניחוש ספקים
+  const rawExpenses = ((expensesRes.data || []) as RawExpense[]).map((e) => ({
+    raw: e,
+    suggested: e.supplier_name ? null : guessSupplier(e.item, e.notes),
+  }));
+
+  // שלב ב': מילוי אוטומטי של ניחושים ב-DB (silently — בלי שעומר תאשר)
+  const autoApplied = await autoFillGuessedSuppliers(
+    rawExpenses.map(({ raw, suggested }) => ({
+      id: raw.id,
+      supplier_name: raw.supplier_name ?? null,
+      suggested,
+    }))
+  );
+
+  // שלב ג': מיפוי לטיפוס הסופי — הספק שנשמר עכשיו הוא ה"שמור" החדש
+  const expenses: CashflowExpense[] = rawExpenses.map(({ raw: e, suggested }) => {
     const cat = (e.cashflow_category as 'regular' | 'multibanco' | 'excluded') || 'regular';
     const isAdmin = !!e.is_admin_added;
     const guideName = isAdmin ? 'אדמין' : guideById.get(e.guide_id || '')?.name || '—';
-    const suspectMb = cat === 'regular' && looksLikeMultibanco(e.item, e.notes, e.supplier_name ?? null);
-    const supplier = e.supplier_name ?? null;
-    const suggested = supplier ? null : guessSupplier(e.item, e.notes);
+    const supplier = e.supplier_name ?? autoApplied.get(e.id) ?? null;
+    const suspectMb = cat === 'regular' && looksLikeMultibanco(e.item, e.notes, supplier);
     return {
       id: e.id,
       expense_date: e.expense_date,
@@ -413,7 +448,9 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       notes: e.notes,
       receipt_url: e.receipt_url,
       supplier_name: supplier,
-      suggested_supplier: suggested,
+      // suggested_supplier משמש רק כשעוד לא נשמר משהו (מקרה קצה — fallback ב-DB);
+      // בפועל autoApplied כבר טיפל בזה.
+      suggested_supplier: supplier ? null : suggested,
       receipt_number: e.receipt_number ?? null,
       cashflow_category: cat,
       is_admin_added: isAdmin,
@@ -590,6 +627,30 @@ export async function updateTransferSettledAt(transferId: string, settledAt: str
     .update({ settled_at: settledAt })
     .eq('id', transferId);
   if (error) throw error;
+}
+
+/** מחזיר את היתרה הסוגרת של חודש קודם (= I12 בגליון של החודש הזה) — אם קיימת. */
+export async function loadPreviousFinalBalance(year: number, month: number): Promise<number | null> {
+  // מחפש את הרצת הקשפלו האחרונה לחודש ה-(month-1) של אותה שנה
+  let prevYear = year;
+  let prevMonth = month - 1;
+  if (prevMonth === 0) {
+    prevMonth = 12;
+    prevYear -= 1;
+  }
+  const { data, error } = await supabase
+    .from('cashflow_runs')
+    .select('final_balance')
+    .eq('year', prevYear)
+    .eq('month', prevMonth)
+    .order('generated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    if (error.message?.toLowerCase().includes('cashflow_runs')) return null;
+    return null;
+  }
+  return (data?.final_balance ?? null) as number | null;
 }
 
 /** מחיקת הוצאת אדמין (להחלפה במקרה של טעות) */
