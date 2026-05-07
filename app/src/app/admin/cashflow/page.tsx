@@ -91,7 +91,7 @@ export default function AdminCashflowPage() {
           💸 קשפלו חודשי
         </h1>
         <p style={{ fontSize: 13, color: ADMIN_COLORS.gray500, margin: '4px 0 0' }}>
-          הכנת גליון Excel חודשי ל-PIRO LDA — שלב 1 מתוך 3
+          הכנת גליון Excel חודשי ל-PIRO LDA
         </p>
       </header>
 
@@ -227,25 +227,25 @@ export default function AdminCashflowPage() {
           )}
         </div>
 
-        {/* TODO (סשן הבא): כפתור "→ הכנת קשפלו" שינווט ל-/admin/cashflow/[year]/[month]/prepare */}
         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            disabled
-            title="הדף הבא ייבנה בסשן הבא — prepare + generate"
+          <Link
+            href={`/admin/cashflow/${year}/${month}/prepare`}
             style={{
               padding: '10px 18px',
-              background: ADMIN_COLORS.gray300,
+              background: ADMIN_COLORS.green700,
               color: '#fff',
               border: 'none',
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 600,
-              cursor: 'not-allowed',
+              cursor: 'pointer',
               fontFamily: 'inherit',
+              textDecoration: 'none',
+              display: 'inline-block',
             }}
           >
-            → הכנת קשפלו (בקרוב)
-          </button>
+            → הכנת קשפלו
+          </Link>
         </div>
       </section>
 
@@ -298,8 +298,8 @@ export default function AdminCashflowPage() {
       <section style={{ background: '#f9fafb', border: `1px dashed ${ADMIN_COLORS.gray300}`, borderRadius: 6, padding: 12, fontSize: 12, color: ADMIN_COLORS.gray500, lineHeight: 1.6 }}>
         <strong>שלבי הפיתוח:</strong>
         <ol style={{ margin: '6px 0 0', paddingInlineStart: 18 }}>
-          <li>✅ <strong>שלב 1 (כעת):</strong> סטטוס סגירה + היסטוריה</li>
-          <li>⏳ <strong>שלב 2:</strong> דף הכנה (prepare) — סקירה וסיווג קבלות, העלאת קבלות אדמין</li>
+          <li>✅ <strong>שלב 1:</strong> סטטוס סגירה + היסטוריה</li>
+          <li>✅ <strong>שלב 2:</strong> דף הכנה (prepare) — סקירה וסיווג קבלות, העלאת קבלות אדמין</li>
           <li>⏳ <strong>שלב 3:</strong> דף ייצור (generate) — תצוגה מקדימה + יצירת sheet חדש בקובץ</li>
         </ol>
       </section>
