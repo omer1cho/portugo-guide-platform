@@ -245,40 +245,52 @@ function looksLikeMultibanco(item: string | null, notes: string | null, supplier
 }
 
 /**
- * מיפוי מילות מפתח → "Entity" בקשפלו (כפי שעומר רושמת ידנית באקסל cashflow piro).
- * כל הערכים באנגלית קטנה (lowercase) כדי להתאים למוסכמות הגיליון.
- * הסדר חשוב: מילים ייחודיות (Belém) לפני כלליות (קלאסי).
+ * מיפוי מילות מפתח → "Entity" בקשפלו = שם הספק כפי שמופיע בקבלה האמיתית.
+ * המוסכמה: שם פורטוגזי מלא עם תווים מיוחדים (é, ç, ã) ואותיות גדולות.
+ * דוגמאות מ-Feb26/mar26 (עבודה ידנית של עומר/Claude קודם):
+ *   "Pastéis de Belém", "José Maria da Fonseca", "Mercado do Camões".
+ * הסדר חשוב: מילים ייחודיות (Belém) לפני כלליות.
  */
 const SUPPLIER_KEYWORDS: { keywords: string[]; supplier: string }[] = [
-  // ספקי בלם — לרוב מופיעים לפי שם
-  { keywords: ['belém', 'belem', 'בלם', 'פסטל', 'pastel', 'pastéis', 'pasteis'], supplier: 'pasteis de belem' },
-  // ספקי יין
-  { keywords: ['fonseca', 'jmf', 'פונסקה', 'אזיטאו', 'azeitão', 'azeitao'], supplier: 'jose maria da fonseca' },
-  { keywords: ['quinta do beijo', 'beijo', 'קינטה דו ביז'], supplier: 'quinta do beijo' },
-  { keywords: ['quinta do bom dia', 'bom dia'], supplier: 'quinta do bom dia' },
+  // ספקי בלם
+  { keywords: ['belém', 'belem', 'בלם', 'פסטל', 'pastel', 'pastéis', 'pasteis'], supplier: 'Pastéis de Belém' },
+  // יקבים
+  { keywords: ['fonseca', 'jmf', 'פונסקה', 'אזיטאו', 'azeitão', 'azeitao'], supplier: 'José Maria da Fonseca' },
+  { keywords: ['quinta do beijo', 'beijo'], supplier: 'Quinta do Beijo' },
+  { keywords: ['quinta do bom dia', 'bom dia'], supplier: 'Quinta do Bom Dia' },
   // אוכל ומשקאות בליסבון
-  { keywords: ['bacalhau', 'בקלאו', 'בקאלאו', 'rei do', 'santos ramalho'], supplier: 'rei do bacalhau' },
-  { keywords: ['camões', 'camoes', 'קמואש', 'קמואס'], supplier: 'mercado do camoes' },
-  { keywords: ['horacio', 'horácio', 'אסטבס', 'esteves'], supplier: 'horacio esteves e justo' },
-  { keywords: ['croque', 'קרוקט'], supplier: 'croqueteria' },
-  { keywords: ['padaria', 'פדריה', 'פדאריה'], supplier: 'padaria portuguesa' },
-  { keywords: ['pingo', 'פינגו'], supplier: 'pingo doce' },
-  { keywords: ['decathlon', 'דקתלון', 'דיקטלון'], supplier: 'decathlon' },
-  { keywords: ['arcadia', 'ארקדיה', 'ubbo'], supplier: 'arcadia' },
-  { keywords: ['botequim', 'בוטקים', 'brasileira'], supplier: 'botequim a brasileira' },
+  { keywords: ['bacalhau', 'בקלאו', 'בקאלאו', 'rei do', 'santos ramalho'], supplier: 'Rei do Bacalhau' },
+  { keywords: ['camões', 'camoes', 'קמואש', 'קמואס'], supplier: 'Mercado do Camões' },
+  { keywords: ['horacio', 'horácio', 'אסטבס', 'esteves'], supplier: 'Horacio Esteves e Justo' },
+  { keywords: ['croque', 'קרוקט', 'ribeira'], supplier: 'Croqueteria Mercado Ribeira' },
+  { keywords: ['padaria portuguesa', 'פדריה', 'פדאריה', 'a padaria'], supplier: 'Padaria Portuguesa' },
+  { keywords: ['pingo', 'פינגו'], supplier: 'Pingo Doce' },
+  { keywords: ['decathlon', 'דקתלון', 'דיקטלון'], supplier: 'Decathlon' },
+  { keywords: ['arcadia ubbo', 'ארקדיה ubbo'], supplier: 'Arcadia UBBO' },
+  { keywords: ['arcadia chiado', 'ארקדיה chiado'], supplier: 'Arcadia Chiado' },
+  { keywords: ['arcadia', 'ארקדיה'], supplier: 'Arcadia' },
+  { keywords: ['botequim', 'בוטקים', 'brasileira'], supplier: 'Botequim a Brasileira' },
+  { keywords: ['romaria da bica', 'romaria'], supplier: 'Romaria da Bica' },
+  { keywords: ['flor do mundo'], supplier: 'Past. Flor do Mundo' },
+  { keywords: ['bazar china'], supplier: 'Bazar China' },
+  { keywords: ['cork', 'souvenirs'], supplier: 'Cork & Souvenirs' },
+  { keywords: ['ctouro'], supplier: 'CTOURO' },
+  { keywords: ['dourum', 'experience'], supplier: 'Dourum Experience' },
+  { keywords: ['meu super'], supplier: 'Meu Super' },
+  { keywords: ['super frutas'], supplier: 'Super Frutas do Calhariz' },
   // מונומנטים / כניסות
-  { keywords: ['cristo rei', 'כריסטו', 'cristo', 'אלמדה', 'almada'], supplier: 'cristo rei' },
-  { keywords: ['parques de sintra', 'pena', 'פנה', 'פינה', 'מאורית', 'mourish'], supplier: 'parques de sintra' },
+  { keywords: ['cristo rei', 'כריסטו', 'cristo', 'אלמדה', 'almada'], supplier: 'Santuário de Cristo Rei' },
+  { keywords: ['parques de sintra', 'pena', 'פנה', 'פינה', 'מאורית', 'mourish'], supplier: 'Parques de Sintra' },
   // פורטו
-  { keywords: ['teleférico', 'teleferico', 'gaia', 'רכבל'], supplier: 'teleferico de gaia' },
+  { keywords: ['teleférico', 'teleferico', 'gaia', 'רכבל'], supplier: 'Teleférico de Gaia' },
   // תחבורה
-  { keywords: ['navegante', 'נווגנטה', 'מטרו', 'cp ', 'רכבת', 'metro'], supplier: 'transportation' },
-  { keywords: ['transportation', 'תחבורה', 'אוטובוס', 'taxi', 'uber', 'bolt'], supplier: 'transportation' },
+  { keywords: ['navegante', 'נווגנטה', 'cp ', 'cp-', 'metropolitano'], supplier: 'CP - Navegante Metropolitano' },
+  { keywords: ['transportation', 'תחבורה', 'אוטובוס', 'taxi', 'uber', 'bolt', 'מטרו', 'metro', 'רכבת'], supplier: 'transportation' },
 ];
 
 /**
  * מיפוי tour_type → Entity ברירת מחדל (כשאין התאמה לספק ספציפי).
- * הערכים מבוססים על המוסכמות בקשפלו האמיתי (כמו "food tour lisbon", "tasting tour porto").
+ * הערכים מבוססים על המוסכמות בקשפלו האמיתי.
  */
 const TOUR_TYPE_TO_ENTITY: Record<string, string> = {
   'קלאסי_1': 'food tour lisbon',

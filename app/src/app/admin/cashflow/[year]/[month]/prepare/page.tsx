@@ -426,14 +426,19 @@ function buildCashflowRows(
   for (const e of data.expenses) {
     if (e.cashflow_category !== 'regular') continue;
     // "חסרה קבלה" רק אם הקטלוג דורש קבלה (לא false). פריטים כמו "בירה" שמסומנים
-    // ב-requires_receipt=false → לא מסומנים כדגל.
-    const noReceiptIsFlag = !e.is_admin_added && !e.receipt_url && e.catalog_requires_receipt !== false;
+    // ב-requires_receipt=false → לא מסומנים כדגל, אבל כן מקבלים הערה באנגלית.
+    const isCatalogNoReceipt = e.catalog_requires_receipt === false;
+    const noReceiptIsFlag = !e.is_admin_added && !e.receipt_url && !isCatalogNoReceipt;
+    // Description: לפי מוסכמת Feb26/mar26 — לרוב ריקה. רק כש-no receipt issued, שמים את ההערה.
+    const description = isCatalogNoReceipt && !e.receipt_url
+      ? 'no receipt issued'
+      : (e.is_admin_added ? '' : guideFirstNameLcFromName(e.guide_name));
     rows.push({
       key: `e-${e.id}`,
       type: 'expense',
       date: e.expense_date,
       entity: e.supplier_name || e.item || '',
-      description: e.is_admin_added ? '' : guideFirstNameLcFromName(e.guide_name),
+      description,
       inflow: 0,
       outflow: e.amount,
       expense: e,
@@ -457,13 +462,15 @@ function buildCashflowRows(
   }
 
   // 4. משכורות (Fatura-Recibo עם invoice_date בחודש זה)
+  // Entity = "sallary [שם מלא lowercase]" כפי שמופיע ב-Fatura-Recibo (לדוגמה "sallary maya meidan")
   for (const inv of data.salaryInvoices) {
-    if (!inv.invoice_date) continue; // ל unscheduled יש סקציה נפרדת
+    if (!inv.invoice_date) continue;
+    const fullNameLc = salaryFullNameLc(inv.guide_name);
     rows.push({
       key: `s-${inv.ack_id}`,
       type: 'salary',
       date: inv.invoice_date,
-      entity: `sallary ${guideFirstNameLcFromName(inv.guide_name)}`,
+      entity: `sallary ${fullNameLc}`,
       description: '',
       inflow: 0,
       outflow: inv.amount || 0,
@@ -483,7 +490,7 @@ function buildCashflowRows(
   return rows;
 }
 
-/** ממיר שם מדריך מהמערכת (עברית) ל-first name lowercase */
+/** ממיר שם מדריך מהמערכת (עברית) ל-first name lowercase לעמודת Description בהפקדות */
 function guideFirstNameLcFromName(fullName: string): string {
   const map: Record<string, string> = {
     'אביב': 'aviv',
@@ -501,6 +508,31 @@ function guideFirstNameLcFromName(fullName: string): string {
     if (fullName.startsWith(he)) return en;
   }
   return (fullName.split(/\s+/)[0] || fullName).toLowerCase().trim();
+}
+
+/**
+ * שם מלא lowercase לעמודת Entity במשכורות. דוגמאות מ-mar26:
+ *   "maya meidan", "aviv pollack", "menashe krispi"
+ * (לא "ariel pollack" כפי שמופיע בחשבונית — אלא השם הידוע במערכת)
+ */
+function salaryFullNameLc(fullName: string): string {
+  // מיפוי שמות מערכת (עברית) → שם מלא באנגלית כפי שמופיע ב-Fatura-Recibo
+  const map: Record<string, string> = {
+    'אביב': 'aviv pollack',
+    'יניב': 'yaniv tovi',
+    'מאיה': 'maya meidan',
+    'מני': 'menashe krispi',
+    'תום': 'tom',
+    'דותן': 'dotan',
+    'עומר הבן': 'omer',
+    'ניר': 'nir',
+    'רונה': 'rona',
+  };
+  if (!fullName || fullName === 'אדמין') return '';
+  for (const [he, en] of Object.entries(map)) {
+    if (fullName.startsWith(he)) return en;
+  }
+  return fullName.toLowerCase().trim();
 }
 
 const fmtAmount = (n: number): string =>
