@@ -23,6 +23,7 @@ import {
   addAdminExpense,
   setExpenseReceiptUrl,
   updateInvoiceDate,
+  updateTransferSettledAt,
   deleteAdminExpense,
   type CashflowPrepareData,
   type CashflowExpense,
@@ -158,16 +159,35 @@ export default function CashflowPreparePage() {
       />
 
       {/* Section: הפקדות */}
-      <DepositsSection deposits={data.deposits} />
-
-      {/* Section: משכורות */}
-      <SalarySection
-        invoices={data.salaryInvoices}
-        showOnlyFlagged={showOnlyFlagged}
+      <DepositsSection
+        deposits={data.deposits}
         savingId={savingId}
         setSavingId={setSavingId}
         onChange={reload}
       />
+
+      {/* הפקדות שעדיין ממתינות (informational) */}
+      {data.pendingDeposits.length > 0 && (
+        <PendingDepositsSection deposits={data.pendingDeposits} />
+      )}
+
+      {/* Section: משכורות */}
+      <SalarySection
+        invoices={data.salaryInvoices}
+        savingId={savingId}
+        setSavingId={setSavingId}
+        onChange={reload}
+      />
+
+      {/* קבלות מס שעדיין אין להן תאריך (כל החודשים) — דורשות שיוך */}
+      {data.unscheduledInvoices.length > 0 && (
+        <UnscheduledInvoicesSection
+          invoices={data.unscheduledInvoices}
+          savingId={savingId}
+          setSavingId={setSavingId}
+          onChange={reload}
+        />
+      )}
 
       {/* Bottom summary + continue */}
       <SummaryBar data={data} />
@@ -273,15 +293,19 @@ function ExpenseRow({
   onSavingEnd: () => void;
   onChange: () => void;
 }) {
-  const [supplier, setSupplier] = useState(expense.supplier_name || '');
+  // ברירת מחדל: שם ספק שמור, ואם אין — ניחוש המערכת מתוך פריט/הערות
+  const initialSupplier = expense.supplier_name || expense.suggested_supplier || '';
+  const [supplier, setSupplier] = useState(initialSupplier);
   const [receiptNum, setReceiptNum] = useState(expense.receipt_number || '');
   const [category, setCategory] = useState(expense.cashflow_category);
   const [showReceipt, setShowReceipt] = useState(false);
 
+  // dirty = השדה שונה ממה ששמור ב-DB (לא ממה שהוצע)
   const dirty =
     supplier !== (expense.supplier_name || '') ||
     receiptNum !== (expense.receipt_number || '') ||
     category !== expense.cashflow_category;
+  const isSuggestion = !expense.supplier_name && expense.suggested_supplier && supplier === expense.suggested_supplier;
 
   const flagBg = expense.multibanco_suspect
     ? '#fef3c7'
@@ -350,11 +374,18 @@ function ExpenseRow({
             onChange={(ev) => setSupplier(ev.target.value)}
             list={`suppliers-${expense.id}`}
             placeholder="שם ספק"
-            style={inputStyle()}
+            style={{
+              ...inputStyle(),
+              ...(isSuggestion ? { background: '#fffbeb', borderColor: '#fcd34d', fontStyle: 'italic' } : {}),
+            }}
+            title={isSuggestion ? 'הצעה אוטומטית — לחצי "שמרי" כדי לקבע' : undefined}
           />
           <datalist id={`suppliers-${expense.id}`}>
             {FREQUENT_SUPPLIERS.map((s) => <option key={s} value={s} />)}
           </datalist>
+          {isSuggestion && (
+            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2 }}>הצעה — לחצי שמרי לאשר</div>
+          )}
         </td>
         <td style={tdStyle}>
           <input
@@ -427,7 +458,17 @@ function ExpenseRow({
 // Section: הפקדות לבנק
 // ===========================================================================
 
-function DepositsSection({ deposits }: { deposits: CashflowDeposit[] }) {
+function DepositsSection({
+  deposits,
+  savingId,
+  setSavingId,
+  onChange,
+}: {
+  deposits: CashflowDeposit[];
+  savingId: string | null;
+  setSavingId: (id: string | null) => void;
+  onChange: () => void;
+}) {
   const total = deposits.reduce((s, d) => s + d.amount, 0);
   return (
     <section style={cardStyle}>
@@ -437,6 +478,7 @@ function DepositsSection({ deposits }: { deposits: CashflowDeposit[] }) {
           סה"כ: <strong>{fmtEuro(total, true)}</strong>
         </span>
       </div>
+      <p style={hintStyle}>תאריך ההפקדה בפועל הוא שקובע באיזה חודש קשפלו ההפקדה תופיע. אם רוצה לתקן — אפשר לערוך את התאריך.</p>
       {deposits.length === 0 ? (
         <div style={emptyStyle}>אין הפקדות בחודש זה</div>
       ) : (
@@ -444,34 +486,135 @@ function DepositsSection({ deposits }: { deposits: CashflowDeposit[] }) {
           <table style={tableStyle}>
             <thead>
               <tr style={theadRowStyle}>
-                <th style={thStyle}>תאריך</th>
+                <th style={thStyle}>תאריך הפקדה</th>
                 <th style={thStyle}>מדריך</th>
                 <th style={thStyle}>שם בקשפלו (Description)</th>
                 <th style={thStyle}>סכום</th>
-                <th style={thStyle}>סטטוס</th>
+                <th style={thStyle}></th>
               </tr>
             </thead>
             <tbody>
               {deposits.map((d) => (
-                <tr key={d.id} style={{ borderBottom: `1px solid ${ADMIN_COLORS.gray100}` }}>
-                  <td style={tdStyle}>{fmtDate(d.transfer_date)}</td>
-                  <td style={tdStyle}>{d.guide_name}</td>
-                  <td style={{ ...tdStyle, fontFamily: 'monospace', color: ADMIN_COLORS.gray700 }}>
-                    {d.guide_first_name_lc}
-                  </td>
-                  <td style={{ ...tdStyle, fontWeight: 600 }}>{fmtEuro(d.amount, true)}</td>
-                  <td style={tdStyle}>
-                    {d.is_pending_deposit ? (
-                      <span style={{ fontSize: 11, color: '#a16207' }}>⏳ ממתין</span>
-                    ) : (
-                      <span style={{ fontSize: 11, color: ADMIN_COLORS.green700 }}>✓ הופקד</span>
-                    )}
-                  </td>
-                </tr>
+                <DepositRow
+                  key={d.id}
+                  deposit={d}
+                  isSaving={savingId === d.id}
+                  onSavingStart={() => setSavingId(d.id)}
+                  onSavingEnd={() => setSavingId(null)}
+                  onChange={onChange}
+                />
               ))}
             </tbody>
           </table>
         </div>
+      )}
+    </section>
+  );
+}
+
+function DepositRow({
+  deposit,
+  isSaving,
+  onSavingStart,
+  onSavingEnd,
+  onChange,
+}: {
+  deposit: CashflowDeposit;
+  isSaving: boolean;
+  onSavingStart: () => void;
+  onSavingEnd: () => void;
+  onChange: () => void;
+}) {
+  const [date, setDate] = useState(deposit.effective_date);
+  const dirty = date !== deposit.effective_date;
+
+  const handleSave = async () => {
+    onSavingStart();
+    try {
+      // אם זה אותו תאריך כמו transfer_date המקורי — נקה settled_at;
+      // אחרת — שמור settled_at = הערך החדש.
+      const newSettled = date === deposit.transfer_date ? null : date;
+      await updateTransferSettledAt(deposit.id, newSettled);
+      onChange();
+    } catch (e) {
+      const err = e as { message?: string };
+      alert(err.message || 'שגיאה בשמירה');
+    } finally {
+      onSavingEnd();
+    }
+  };
+
+  const overridden = !!deposit.settled_at;
+
+  return (
+    <tr style={{ borderBottom: `1px solid ${ADMIN_COLORS.gray100}` }}>
+      <td style={tdStyle}>
+        <input
+          type="date"
+          value={date}
+          onChange={(ev) => setDate(ev.target.value)}
+          style={{ ...inputStyle(), width: 140 }}
+        />
+        {overridden && (
+          <div style={{ fontSize: 10, color: ADMIN_COLORS.gray500, marginTop: 2 }}>
+            (סגירה הייתה ב-{fmtDate(deposit.transfer_date)})
+          </div>
+        )}
+      </td>
+      <td style={tdStyle}>{deposit.guide_name}</td>
+      <td style={{ ...tdStyle, fontFamily: 'monospace', color: ADMIN_COLORS.gray700 }}>
+        {deposit.guide_first_name_lc}
+      </td>
+      <td style={{ ...tdStyle, fontWeight: 600 }}>{fmtEuro(deposit.amount, true)}</td>
+      <td style={tdStyle}>
+        {dirty && (
+          <button onClick={handleSave} disabled={isSaving} style={primaryBtnStyle}>
+            {isSaving ? '...' : 'שמרי'}
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+// ===========================================================================
+// Section: הפקדות שעדיין ממתינות (informational — לא נכללות בקשפלו)
+// ===========================================================================
+
+function PendingDepositsSection({ deposits }: { deposits: CashflowDeposit[] }) {
+  const total = deposits.reduce((s, d) => s + d.amount, 0);
+  return (
+    <section style={{ ...cardStyle, background: '#fffbeb', borderColor: '#fcd34d' }}>
+      <div style={sectionHeaderStyle}>
+        <h2 style={{ ...sectionTitleStyle, color: '#78350f' }}>
+          ⏳ ממתינות להפקדה ({deposits.length})
+        </h2>
+        <span style={{ fontSize: 12, color: '#78350f' }}>
+          סה"כ: <strong>{fmtEuro(total, true)}</strong>
+        </span>
+      </div>
+      <p style={{ ...hintStyle, color: '#78350f' }}>
+        אלו הפקדות שהמדריכים סגרו אך עדיין לא הפקידו בבנק. לא נכללות בקשפלו עד שהם יסמנו "הפקדתי" ב-/cash-boxes.
+      </p>
+      {deposits.length > 0 && (
+        <table style={tableStyle}>
+          <thead>
+            <tr style={theadRowStyle}>
+              <th style={thStyle}>תאריך סגירה</th>
+              <th style={thStyle}>מדריך</th>
+              <th style={thStyle}>סכום</th>
+            </tr>
+          </thead>
+          <tbody>
+            {deposits.map((d) => (
+              <tr key={d.id} style={{ borderBottom: `1px solid #fde68a` }}>
+                <td style={tdStyle}>{fmtDate(d.transfer_date)}</td>
+                <td style={tdStyle}>{d.guide_name}</td>
+                <td style={{ ...tdStyle, fontWeight: 600 }}>{fmtEuro(d.amount, true)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
   );
@@ -483,32 +626,30 @@ function DepositsSection({ deposits }: { deposits: CashflowDeposit[] }) {
 
 function SalarySection({
   invoices,
-  showOnlyFlagged,
   savingId,
   setSavingId,
   onChange,
 }: {
   invoices: CashflowSalaryInvoice[];
-  showOnlyFlagged: boolean;
   savingId: string | null;
   setSavingId: (id: string | null) => void;
   onChange: () => void;
 }) {
-  const visible = showOnlyFlagged
-    ? invoices.filter((i) => !i.invoice_date || i.amount === null)
-    : invoices;
   const total = invoices.reduce((s, i) => s + (i.amount || 0), 0);
 
   return (
     <section style={cardStyle}>
       <div style={sectionHeaderStyle}>
-        <h2 style={sectionTitleStyle}>🔵 קבלות מס מהמדריכים ({invoices.length})</h2>
+        <h2 style={sectionTitleStyle}>🔵 קבלות מס בחודש זה ({invoices.length})</h2>
         <span style={{ fontSize: 12, color: ADMIN_COLORS.gray500 }}>
           סה"כ: <strong>{fmtEuro(total, true)}</strong>
         </span>
       </div>
-      {visible.length === 0 ? (
-        <div style={emptyStyle}>אין קבלות {showOnlyFlagged ? 'מסומנות' : 'בחודש זה'}</div>
+      <p style={hintStyle}>
+        מוצגות רק קבלות עם תאריך הוצאת חשבונית בחודש זה. אם יש קבלות שעדיין אין להן תאריך — הן מופיעות בסקציה המיוחדת למטה.
+      </p>
+      {invoices.length === 0 ? (
+        <div style={emptyStyle}>אין קבלות עם תאריך הוצאה בחודש זה</div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={tableStyle}>
@@ -523,7 +664,7 @@ function SalarySection({
               </tr>
             </thead>
             <tbody>
-              {visible.map((inv) => (
+              {invoices.map((inv) => (
                 <SalaryRow
                   key={inv.ack_id}
                   invoice={inv}
@@ -660,6 +801,61 @@ function SalaryRow({
 }
 
 // ===========================================================================
+// Section: קבלות מס שעדיין אין להן תאריך — דורשות שיוך לחודש
+// ===========================================================================
+
+function UnscheduledInvoicesSection({
+  invoices,
+  savingId,
+  setSavingId,
+  onChange,
+}: {
+  invoices: CashflowSalaryInvoice[];
+  savingId: string | null;
+  setSavingId: (id: string | null) => void;
+  onChange: () => void;
+}) {
+  return (
+    <section style={{ ...cardStyle, background: '#fef2f2', borderColor: '#fca5a5' }}>
+      <div style={sectionHeaderStyle}>
+        <h2 style={{ ...sectionTitleStyle, color: '#991b1b' }}>
+          ⚠️ קבלות מס בלי תאריך הוצאת חשבונית ({invoices.length})
+        </h2>
+      </div>
+      <p style={{ ...hintStyle, color: '#991b1b' }}>
+        כדי שקבלה תופיע בקשפלו, צריך להזין את התאריך שבו המדריך הפיק אותה. התאריך הזה קובע באיזה חודש קשפלו היא תיכלל.
+      </p>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={tableStyle}>
+          <thead>
+            <tr style={theadRowStyle}>
+              <th style={thStyle}>מדריך</th>
+              <th style={thStyle}>חודש שירות</th>
+              <th style={thStyle}>תאריך הוצאת חשבונית</th>
+              <th style={thStyle}>סכום</th>
+              <th style={thStyle}>קבלה</th>
+              <th style={thStyle}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoices.map((inv) => (
+              <SalaryRow
+                key={inv.ack_id}
+                invoice={inv}
+                isSaving={savingId === inv.ack_id}
+                onSavingStart={() => setSavingId(inv.ack_id)}
+                onSavingEnd={() => setSavingId(null)}
+                onChange={onChange}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// ===========================================================================
 // Bottom summary bar
 // ===========================================================================
 
@@ -784,12 +980,16 @@ function AddAdminExpenseModal({
               value={supplier}
               onChange={(e) => setSupplier(e.target.value)}
               list="admin-suppliers"
-              placeholder="לדוגמה: Pingo Doce"
+              placeholder="כל שם — בחרי מהרשימה או כתבי חופשי"
               style={inputStyle(true)}
+              autoComplete="off"
             />
             <datalist id="admin-suppliers">
               {FREQUENT_SUPPLIERS.map((s) => <option key={s} value={s} />)}
             </datalist>
+            <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500, marginTop: 2 }}>
+              אפשר לכתוב כל שם ספק — הרשימה היא רק הצעה.
+            </span>
           </Field>
           <Field label="סכום (€) *">
             <input
@@ -887,6 +1087,13 @@ const emptyStyle: React.CSSProperties = {
   padding: 24,
   textAlign: 'center',
   fontSize: 13,
+};
+
+const hintStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: ADMIN_COLORS.gray500,
+  margin: '0 0 12px',
+  lineHeight: 1.5,
 };
 
 function inputStyle(full: boolean = false): React.CSSProperties {

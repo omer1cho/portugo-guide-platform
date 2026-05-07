@@ -493,19 +493,32 @@ function CashBoxesContent() {
     }
 
     // עדכון הרשומות: דגל פנדינג=false, אסמכתא, is_deposit.
-    // חשוב: לא נוגעים ב-transfer_date! הוא נותן את התאריך שהכסף עזב את
-    // הקופה הראשית (= יום סגירת החודש שיצר את ה-pending). דריסה ל"היום"
-    // גרמה לכך שהשורה "קפצה" קדימה לחודש הבא ושיבשה את חישוב הקופה הראשית
-    // של החודש המקורי. אם בעתיד נרצה לעקוב מתי בפועל המדריך הפקיד פיזית
-    // (יום הליכה לבנק), נוסיף עמודה נפרדת settled_at — לא נדרוס.
-    const { error } = await supabase
+    // transfer_date נשאר ביום סגירת החודש שיצר את ה-pending (חשוב לחישוב
+    // הקופה הראשית של החודש המקורי).
+    // settled_at = היום בפועל — קובע באיזה חודש קשפלו ההפקדה תופיע
+    // (אם הפקדה ב-3.5 על pending מ-30.4 → תופיע בקשפלו מאי).
+    let { error } = await supabase
       .from('transfers')
       .update({
         is_pending_deposit: false,
         is_deposit: !settleNotADeposit,
         receipt_url: receiptUrl,
+        settled_at: today,
       })
       .in('id', targetIds);
+
+    // אם עמודת settled_at עדיין לא רצה במיגרציה — ננסה שוב בלעדיה
+    if (error && error.message?.toLowerCase().includes('settled_at')) {
+      const retry = await supabase
+        .from('transfers')
+        .update({
+          is_pending_deposit: false,
+          is_deposit: !settleNotADeposit,
+          receipt_url: receiptUrl,
+        })
+        .in('id', targetIds);
+      error = retry.error;
+    }
 
     setSettleSaving(false);
     if (error) {

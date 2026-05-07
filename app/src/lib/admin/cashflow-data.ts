@@ -170,6 +170,8 @@ export type CashflowExpense = {
   notes: string | null;
   receipt_url: string | null;
   supplier_name: string | null;
+  /** ניחוש מהמערכת לפי טקסט הפריט/הערות — להצגה כברירת מחדל אם supplier_name ריק */
+  suggested_supplier: string | null;
   receipt_number: string | null;
   cashflow_category: 'regular' | 'multibanco' | 'excluded';
   is_admin_added: boolean;
@@ -178,16 +180,20 @@ export type CashflowExpense = {
   multibanco_suspect: boolean;
 };
 
-/** הפקדה לבנק (transfer מסוג to_portugo, כולל pending) */
+/** הפקדה לבנק (transfer מסוג to_portugo). pending unsettled מוחרגות מהקשפלו. */
 export type CashflowDeposit = {
   id: string;
+  /** תאריך השורה ב-DB (יום הסגירה / יום הזנת ההעברה) */
   transfer_date: string;
+  /** תאריך הפקדה בפועל לבנק (אם מולא ידנית). חזר מ-COALESCE(settled_at, transfer_date) לחישוב חודש קשפלו */
+  settled_at: string | null;
+  /** התאריך שקובע באיזה חודש קשפלו ההפקדה תופיע */
+  effective_date: string;
   guide_id: string;
   guide_name: string;
-  guide_first_name_lc: string; // לקשפלו: עמודת Description בעברית קטנה
+  guide_first_name_lc: string;
   amount: number;
   notes: string | null;
-  is_pending_deposit: boolean;
 };
 
 /** קבלת משכורת (Fatura-Recibo) ממדריך */
@@ -212,7 +218,12 @@ export type CashflowPrepareData = {
   month: number;
   expenses: CashflowExpense[];
   deposits: CashflowDeposit[];
+  /** קבלות מס שתאריך הוצאת החשבונית שלהן בחודש זה */
   salaryInvoices: CashflowSalaryInvoice[];
+  /** קבלות מס שעדיין אין להן תאריך הוצאת חשבונית (כל החודשים) — דורשות שיוך */
+  unscheduledInvoices: CashflowSalaryInvoice[];
+  /** הפקדות שעדיין ממתינות (is_pending_deposit=true) — לא נכללות בקשפלו */
+  pendingDeposits: CashflowDeposit[];
   /** סך outflow צפוי (regular + multibanco-confirmed לא נכלל) */
   totalRegularOutflow: number;
   totalDeposits: number;
@@ -226,6 +237,38 @@ const MULTIBANCO_KEYWORDS = ['multibanco', 'mb ', 'visa', 'mastercard', 'card', 
 function looksLikeMultibanco(item: string | null, notes: string | null, supplier: string | null): boolean {
   const blob = `${item || ''} ${notes || ''} ${supplier || ''}`.toLowerCase();
   return MULTIBANCO_KEYWORDS.some((k) => blob.includes(k));
+}
+
+/**
+ * מיפוי מילות מפתח → שם ספק קנוני בקשפלו.
+ * הסדר חשוב: מילים ייחודיות (Belém) לפני כלליות (קלאסי).
+ */
+const SUPPLIER_KEYWORDS: { keywords: string[]; supplier: string }[] = [
+  { keywords: ['belém', 'belem', 'בלם', 'פסטל', 'pastel', 'pastéis', 'pasteis'], supplier: 'Pastéis de Belém' },
+  { keywords: ['fonseca', 'jmf', 'פונסקה', 'אזיטאו', 'azeitão', 'azeitao'], supplier: 'José Maria da Fonseca' },
+  { keywords: ['bacalhau', 'בקלאו', 'בקאלאו', 'rei do', 'santos ramalho'], supplier: 'Rei do Bacalhau' },
+  { keywords: ['camões', 'camoes', 'קמואש', 'קמואס', 'מרקדו'], supplier: 'Mercado do Camões' },
+  { keywords: ['horacio', 'horácio', 'אסטבס', 'esteves'], supplier: 'Horacio Esteves e Justo' },
+  { keywords: ['croque', 'קרוקט', 'ribeira'], supplier: 'Croqueteria' },
+  { keywords: ['padaria', 'פדריה', 'פדאריה'], supplier: 'Padaria Portuguesa' },
+  { keywords: ['pingo', 'פינגו'], supplier: 'Pingo Doce' },
+  { keywords: ['cristo rei', 'כריסטו', 'cristo', 'אלמדה', 'almada'], supplier: 'Santuário de Cristo Rei' },
+  { keywords: ['parques de sintra', 'pena', 'פנה', 'פינה', 'מאורית', 'mourish', 'sintra'], supplier: 'Parques de Sintra' },
+  { keywords: ['teleférico', 'teleferico', 'gaia', 'גאיה', 'רכבל'], supplier: 'Teleférico de Gaia' },
+  { keywords: ['arcadia', 'ארקדיה', 'ubbo'], supplier: 'Arcadia' },
+  { keywords: ['navegante', 'נווגנטה', 'מטרו', 'cp '], supplier: 'CP — Navegante' },
+];
+
+/** ניחוש ספק על בסיס item/notes. מחזיר null אם אין התאמה. */
+export function guessSupplier(item: string | null, notes: string | null): string | null {
+  const blob = `${item || ''} ${notes || ''}`.toLowerCase();
+  if (!blob.trim()) return null;
+  for (const m of SUPPLIER_KEYWORDS) {
+    if (m.keywords.some((k) => blob.includes(k.toLowerCase()))) {
+      return m.supplier;
+    }
+  }
+  return null;
 }
 
 /** שם פרטי בעברית קטנה לעמודת Description בהפקדות */
@@ -270,39 +313,62 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
         .order('expense_date');
     })(),
 
-    // הפקדות לבנק בחודש (transfer_type='to_portugo')
-    supabase
-      .from('transfers')
-      .select('id, transfer_date, guide_id, amount, notes, is_pending_deposit')
-      .eq('transfer_type', 'to_portugo')
-      .gte('transfer_date', start)
-      .lte('transfer_date', end)
-      .order('transfer_date'),
+    // הפקדות לבנק שתאריך ההפקדה בפועל בחודש זה.
+    // effective_date = COALESCE(settled_at, transfer_date).
+    // OR: (settled_at NULL AND transfer_date in month) OR (settled_at in month).
+    // pending unsettled (is_pending_deposit=true) → לא נכלל בקשפלו (הכסף עוד לא בבנק).
+    (async () => {
+      const primary = await supabase
+        .from('transfers')
+        .select('id, transfer_date, settled_at, guide_id, amount, notes, is_pending_deposit')
+        .eq('transfer_type', 'to_portugo')
+        .or(`and(settled_at.is.null,transfer_date.gte.${start},transfer_date.lte.${end}),and(settled_at.gte.${start},settled_at.lte.${end})`)
+        .order('transfer_date');
+      if (!primary.error) return primary;
+      // עמודת settled_at עוד לא קיימת → fallback לפי transfer_date בלבד
+      return supabase
+        .from('transfers')
+        .select('id, transfer_date, guide_id, amount, notes, is_pending_deposit')
+        .eq('transfer_type', 'to_portugo')
+        .gte('transfer_date', start)
+        .lte('transfer_date', end)
+        .order('transfer_date');
+    })(),
 
-    // קבלות מס — נטען את כל הקבלות עם invoice_date בחודש זה
-    // וגם, fallback, את הקבלות של חודש העבודה year+month שעדיין אין להם invoice_date
+    // קבלות מס — STRICT: רק קבלות עם invoice_date בחודש הקשפלו הזה.
+    // קבלות עם invoice_date NULL נטענות בנפרד (unscheduledInvoicesRes).
     (async () => {
       const primary = await supabase
         .from('receipt_acknowledgements')
         .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
-        .or(`and(invoice_date.gte.${start},invoice_date.lte.${end}),and(invoice_date.is.null,year.eq.${year},month.eq.${month})`);
+        .gte('invoice_date', start)
+        .lte('invoice_date', end);
       if (!primary.error) return primary;
-      // אם invoice_date עוד לא קיים בכלל
-      return supabase
-        .from('receipt_acknowledgements')
-        .select('id, guide_id, year, month, acknowledged_at, receipt_url')
-        .eq('year', year)
-        .eq('month', month);
+      // אם invoice_date עוד לא קיים בכלל → אין מה להציג בחודש הזה
+      return { data: [], error: null };
     })(),
 
-    // משכורות (לחישוב הסכום של כל Fatura-Recibo) — לפי חודש העבודה
-    supabase
-      .from('transfers')
-      .select('guide_id, transfer_date, amount')
-      .eq('transfer_type', 'salary_withdrawal')
-      .gte('transfer_date', start)
-      .lte('transfer_date', end),
+    // משכורות (לחישוב הסכום של כל Fatura-Recibo) — חלון רחב כדי לתפוס
+    // קבלות שהוצאו בחודש הקשפלו עבור חודשי עבודה קודמים.
+    (async () => {
+      const back = new Date(year, month - 4, 1);
+      const fwd = new Date(year, month, 0); // סוף חודש הקשפלו
+      const wideStart = `${back.getFullYear()}-${String(back.getMonth() + 1).padStart(2, '0')}-01`;
+      const wideEnd = `${fwd.getFullYear()}-${String(fwd.getMonth() + 1).padStart(2, '0')}-${String(fwd.getDate()).padStart(2, '0')}`;
+      return supabase
+        .from('transfers')
+        .select('guide_id, transfer_date, amount')
+        .eq('transfer_type', 'salary_withdrawal')
+        .gte('transfer_date', wideStart)
+        .lte('transfer_date', wideEnd);
+    })(),
   ]);
+
+  // קבלות מס ללא תאריך הוצאת חשבונית — מכל החודשים (Omer צריכה לשייך אותן)
+  const unscheduledInvoicesRes = await supabase
+    .from('receipt_acknowledgements')
+    .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
+    .is('invoice_date', null);
 
   if (guidesRes.error) throw guidesRes.error;
   if (expensesRes.error) throw expensesRes.error;
@@ -335,6 +401,8 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     const isAdmin = !!e.is_admin_added;
     const guideName = isAdmin ? 'אדמין' : guideById.get(e.guide_id || '')?.name || '—';
     const suspectMb = cat === 'regular' && looksLikeMultibanco(e.item, e.notes, e.supplier_name ?? null);
+    const supplier = e.supplier_name ?? null;
+    const suggested = supplier ? null : guessSupplier(e.item, e.notes);
     return {
       id: e.id,
       expense_date: e.expense_date,
@@ -344,7 +412,8 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       amount: Number(e.amount),
       notes: e.notes,
       receipt_url: e.receipt_url,
-      supplier_name: e.supplier_name ?? null,
+      supplier_name: supplier,
+      suggested_supplier: suggested,
       receipt_number: e.receipt_number ?? null,
       cashflow_category: cat,
       is_admin_added: isAdmin,
@@ -353,30 +422,44 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     };
   });
 
-  // --- deposits
-  const deposits: CashflowDeposit[] = ((depositsRes.data || []) as {
+  // --- deposits — נפרדים ל-pending (לא בקשפלו) ולשאר (בקשפלו)
+  type RawTransfer = {
     id: string;
     transfer_date: string;
+    settled_at?: string | null;
     guide_id: string;
     amount: number;
     notes: string | null;
     is_pending_deposit: boolean | null;
-  }[]).map((t) => {
+  };
+  const depositsAll = (depositsRes.data || []) as RawTransfer[];
+  const deposits: CashflowDeposit[] = [];
+  const pendingDeposits: CashflowDeposit[] = [];
+  for (const t of depositsAll) {
     const gName = guideById.get(t.guide_id)?.name || '—';
-    return {
+    const settled = t.settled_at ?? null;
+    const effective = settled || t.transfer_date;
+    const row: CashflowDeposit = {
       id: t.id,
       transfer_date: t.transfer_date,
+      settled_at: settled,
+      effective_date: effective,
       guide_id: t.guide_id,
       guide_name: gName,
       guide_first_name_lc: depositFirstNameLc(gName),
       amount: Number(t.amount),
       notes: t.notes,
-      is_pending_deposit: !!t.is_pending_deposit,
     };
-  });
+    if (t.is_pending_deposit) {
+      pendingDeposits.push(row);
+    } else {
+      deposits.push(row);
+    }
+  }
+  deposits.sort((a, b) => a.effective_date.localeCompare(b.effective_date));
 
   // --- salary invoices
-  // ממפה: guide_id → amount של salary_withdrawal של אותו חודש עבודה
+  // ממפה: guide_id+year+month → amount של salary_withdrawal של אותו חודש עבודה
   const salaryByGuideMonth = new Map<string, number>();
   for (const s of (salaryTransfersRes.data || []) as { guide_id: string; transfer_date: string; amount: number }[]) {
     const dt = new Date(s.transfer_date);
@@ -387,7 +470,8 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
   }
 
   type RawAck = { id: string; guide_id: string; year: number; month: number; acknowledged_at: string; receipt_url: string | null; invoice_date?: string | null };
-  const salaryInvoices: CashflowSalaryInvoice[] = ((ackRes.data || []) as RawAck[]).map((a) => {
+
+  function mapInvoice(a: RawAck): CashflowSalaryInvoice {
     const gName = guideById.get(a.guide_id)?.name || '—';
     const key = `${a.guide_id}_${a.year}_${a.month}`;
     const amount = salaryByGuideMonth.get(key) ?? null;
@@ -403,7 +487,12 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       service_year: a.year,
       service_month: a.month,
     };
-  });
+  }
+
+  const salaryInvoices: CashflowSalaryInvoice[] = ((ackRes.data || []) as RawAck[]).map(mapInvoice);
+  const unscheduledInvoices: CashflowSalaryInvoice[] = unscheduledInvoicesRes.error
+    ? []
+    : ((unscheduledInvoicesRes.data || []) as RawAck[]).map(mapInvoice);
 
   // --- summaries
   const totalRegularOutflow = expenses
@@ -413,16 +502,19 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
   const totalSalaries = salaryInvoices.reduce((s, i) => s + (i.amount || 0), 0);
 
   // flagged: חשד מולטיבנקו, חסרה תמונת קבלה (להוצאות לא is_admin_added),
-  // חסר סכום ב-Fatura-Recibo, חסר invoice_date
+  // קבלות ללא תאריך הוצאת חשבונית, הפקדות ממתינות שעדיין לא הופקדו
   const flaggedCount = expenses.filter((e) => e.multibanco_suspect).length
     + expenses.filter((e) => !e.is_admin_added && !e.receipt_url).length
-    + salaryInvoices.filter((i) => i.amount === null).length
-    + salaryInvoices.filter((i) => !i.invoice_date).length;
+    + unscheduledInvoices.length
+    + pendingDeposits.length
+    + salaryInvoices.filter((i) => i.amount === null).length;
 
   return {
     year,
     month,
     expenses,
+    pendingDeposits,
+    unscheduledInvoices,
     deposits,
     salaryInvoices,
     totalRegularOutflow,
@@ -488,6 +580,15 @@ export async function updateInvoiceDate(ackId: string, invoiceDate: string | nul
     .from('receipt_acknowledgements')
     .update({ invoice_date: invoiceDate })
     .eq('id', ackId);
+  if (error) throw error;
+}
+
+/** עדכון תאריך הפקדה בפועל של transfer (לעקוף את transfer_date כשההפקדה הייתה אחר כך) */
+export async function updateTransferSettledAt(transferId: string, settledAt: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('transfers')
+    .update({ settled_at: settledAt })
+    .eq('id', transferId);
   if (error) throw error;
 }
 
