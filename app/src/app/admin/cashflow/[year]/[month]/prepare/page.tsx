@@ -167,9 +167,11 @@ export default function CashflowPreparePage() {
         </div>
       )}
 
-      {/* Section: הוצאות */}
-      <ExpensesSection
+      {/* Cashflow chronological — שורות אחת אחרי השנייה לפי תאריך, כמו בגליון Excel */}
+      <CashflowChronologicalTable
         data={data}
+        prevBalance={parseFloat(prevBalance) || 0}
+        toursIncome={parseFloat(toursIncome) || 0}
         showOnlyFlagged={showOnlyFlagged}
         savingId={savingId}
         setSavingId={setSavingId}
@@ -177,26 +179,10 @@ export default function CashflowPreparePage() {
         onChange={reload}
       />
 
-      {/* Section: הפקדות */}
-      <DepositsSection
-        deposits={data.deposits}
-        savingId={savingId}
-        setSavingId={setSavingId}
-        onChange={reload}
-      />
-
       {/* הפקדות שעדיין ממתינות (informational) */}
       {data.pendingDeposits.length > 0 && (
         <PendingDepositsSection deposits={data.pendingDeposits} />
       )}
-
-      {/* Section: משכורות */}
-      <SalarySection
-        invoices={data.salaryInvoices}
-        savingId={savingId}
-        setSavingId={setSavingId}
-        onChange={reload}
-      />
 
       {/* קבלות מס שעדיין אין להן תאריך (כל החודשים) — דורשות שיוך */}
       {data.unscheduledInvoices.length > 0 && (
@@ -346,7 +332,338 @@ function CashflowSetupSection({
 }
 
 // ===========================================================================
-// Section: הוצאות מדריכים + אדמין
+// Section: טבלה כרונולוגית — מבנה הקשפלו האמיתי
+// ===========================================================================
+
+/** שורה אחת בטבלת הקשפלו (Excel rows 15+) */
+type CashflowRow = {
+  key: string;
+  type: 'income' | 'expense' | 'deposit' | 'salary';
+  date: string;
+  entity: string;
+  description: string;
+  inflow: number;
+  outflow: number;
+  // metadata לעריכה
+  expense?: CashflowExpense;
+  deposit?: CashflowDeposit;
+  invoice?: CashflowSalaryInvoice;
+  receipt_url?: string | null;
+  flag?: 'multibanco' | 'no-receipt' | null;
+};
+
+function buildCashflowRows(
+  data: CashflowPrepareData,
+  toursIncome: number
+): CashflowRow[] {
+  const rows: CashflowRow[] = [];
+
+  // 1. שורת tours income — אם יש ערך, מציבים בתחילת החודש
+  if (toursIncome > 0) {
+    const start = `${data.year}-${String(data.month).padStart(2, '0')}-01`;
+    rows.push({
+      key: 'income-1',
+      type: 'income',
+      date: start,
+      entity: '',
+      description: 'tours income',
+      inflow: toursIncome,
+      outflow: 0,
+    });
+  }
+
+  // 2. הוצאות (regular בלבד — multibanco/excluded לא בקשפלו)
+  for (const e of data.expenses) {
+    if (e.cashflow_category !== 'regular') continue;
+    rows.push({
+      key: `e-${e.id}`,
+      type: 'expense',
+      date: e.expense_date,
+      entity: e.supplier_name || e.item || '',
+      description: e.is_admin_added ? '' : guideFirstNameLcFromName(e.guide_name),
+      inflow: 0,
+      outflow: e.amount,
+      expense: e,
+      receipt_url: e.receipt_url,
+      flag: e.multibanco_suspect ? 'multibanco' : (!e.is_admin_added && !e.receipt_url ? 'no-receipt' : null),
+    });
+  }
+
+  // 3. הפקדות (לא pending)
+  for (const d of data.deposits) {
+    rows.push({
+      key: `d-${d.id}`,
+      type: 'deposit',
+      date: d.effective_date,
+      entity: 'deposit',
+      description: d.guide_first_name_lc,
+      inflow: 0,
+      outflow: d.amount,
+      deposit: d,
+    });
+  }
+
+  // 4. משכורות (Fatura-Recibo עם invoice_date בחודש זה)
+  for (const inv of data.salaryInvoices) {
+    if (!inv.invoice_date) continue; // ל unscheduled יש סקציה נפרדת
+    rows.push({
+      key: `s-${inv.ack_id}`,
+      type: 'salary',
+      date: inv.invoice_date,
+      entity: `sallary ${guideFirstNameLcFromName(inv.guide_name)}`,
+      description: '',
+      inflow: 0,
+      outflow: inv.amount || 0,
+      invoice: inv,
+      receipt_url: inv.receipt_url,
+    });
+  }
+
+  // מיון לפי תאריך, ולאחריו לפי סוג (income → expense → deposit → salary)
+  const typeOrder: Record<CashflowRow['type'], number> = { income: 0, expense: 1, deposit: 2, salary: 3 };
+  rows.sort((a, b) => {
+    const c = a.date.localeCompare(b.date);
+    if (c !== 0) return c;
+    return typeOrder[a.type] - typeOrder[b.type];
+  });
+
+  return rows;
+}
+
+/** ממיר שם מדריך מהמערכת (עברית) ל-first name lowercase */
+function guideFirstNameLcFromName(fullName: string): string {
+  const map: Record<string, string> = {
+    'אביב': 'aviv',
+    'יניב': 'yaniv',
+    'מאיה': 'maya',
+    'מני': 'meni',
+    'תום': 'tom',
+    'דותן': 'dotan',
+    'עומר הבן': 'omer',
+    'ניר': 'nir',
+    'רונה': 'rona',
+  };
+  if (!fullName || fullName === 'אדמין') return '';
+  for (const [he, en] of Object.entries(map)) {
+    if (fullName.startsWith(he)) return en;
+  }
+  return (fullName.split(/\s+/)[0] || fullName).toLowerCase().trim();
+}
+
+const fmtAmount = (n: number): string =>
+  n === 0 ? '' : n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€';
+
+function CashflowChronologicalTable({
+  data,
+  prevBalance,
+  toursIncome,
+  showOnlyFlagged,
+  savingId,
+  setSavingId,
+  onAddClick,
+  onChange,
+}: {
+  data: CashflowPrepareData;
+  prevBalance: number;
+  toursIncome: number;
+  showOnlyFlagged: boolean;
+  savingId: string | null;
+  setSavingId: (id: string | null) => void;
+  onAddClick: () => void;
+  onChange: () => void;
+}) {
+  const allRows = buildCashflowRows(data, toursIncome);
+  const visible = showOnlyFlagged
+    ? allRows.filter((r) => !!r.flag)
+    : allRows;
+
+  // יתרה רצה — תמיד על כל השורות (לא על visible)
+  const balanceByKey = new Map<string, number>();
+  let running = prevBalance;
+  for (const r of allRows) {
+    running = running + r.inflow - r.outflow;
+    balanceByKey.set(r.key, running);
+  }
+
+  return (
+    <section style={cardStyle}>
+      <div style={sectionHeaderStyle}>
+        <h2 style={sectionTitleStyle}>📋 קשפלו — תנועות החודש ({allRows.length})</h2>
+        <button onClick={onAddClick} style={primaryBtnStyle}>+ הוסף קבלה ידנית</button>
+      </div>
+      <p style={hintStyle}>
+        כל שורה = שורה אחת בגליון Excel. הסדר כרונולוגי. לחיצה על שורה → עריכה.
+      </p>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={tableStyle}>
+          <thead>
+            <tr style={theadRowStyle}>
+              <th style={thStyle}>#</th>
+              <th style={thStyle}>תאריך</th>
+              <th style={thStyle}>Entity</th>
+              <th style={thStyle}>Description</th>
+              <th style={thStyle}>Inflow</th>
+              <th style={thStyle}>Outflow</th>
+              <th style={thStyle}>Balance</th>
+              <th style={thStyle}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((r, idx) => (
+              <CashflowRowItem
+                key={r.key}
+                row={r}
+                index={idx + 1}
+                balance={balanceByKey.get(r.key) || 0}
+                isSaving={savingId === r.key}
+                onSavingStart={() => setSavingId(r.key)}
+                onSavingEnd={() => setSavingId(null)}
+                onChange={onChange}
+              />
+            ))}
+            {visible.length === 0 && (
+              <tr>
+                <td colSpan={8} style={emptyStyle}>אין תנועות בחודש זה</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function CashflowRowItem({
+  row,
+  index,
+  balance,
+  isSaving,
+  onSavingStart,
+  onSavingEnd,
+  onChange,
+}: {
+  row: CashflowRow;
+  index: number;
+  balance: number;
+  isSaving: boolean;
+  onSavingStart: () => void;
+  onSavingEnd: () => void;
+  onChange: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [entity, setEntity] = useState(row.entity);
+  const [showReceipt, setShowReceipt] = useState(false);
+
+  // צבע רקע לפי דגל
+  const flagBg =
+    row.flag === 'multibanco' ? '#fef3c7'
+    : row.flag === 'no-receipt' ? '#fee2e2'
+    : row.type === 'income' ? ADMIN_COLORS.green25
+    : 'transparent';
+
+  // צבע אייקון לפי סוג
+  const typeIcon =
+    row.type === 'income' ? '📈'
+    : row.type === 'deposit' ? '🏦'
+    : row.type === 'salary' ? '💼'
+    : '🧾';
+
+  const handleSaveEntity = async () => {
+    if (!row.expense) return;
+    onSavingStart();
+    try {
+      await updateExpenseClassification({
+        expenseId: row.expense.id,
+        supplier_name: entity,
+      });
+      onChange();
+      setEditing(false);
+    } catch (e) {
+      const err = e as { message?: string };
+      alert(err.message || 'שגיאה בשמירה');
+    } finally {
+      onSavingEnd();
+    }
+  };
+
+  const isExpenseEditable = !!row.expense;
+
+  return (
+    <>
+      <tr style={{ background: flagBg, borderBottom: `1px solid ${ADMIN_COLORS.gray100}` }}>
+        <td style={{ ...tdStyle, color: ADMIN_COLORS.gray500, fontFamily: 'monospace' }}>{index}</td>
+        <td style={tdStyle}>{fmtDate(row.date)}</td>
+        <td style={tdStyle}>
+          {editing && isExpenseEditable ? (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <input
+                type="text"
+                value={entity}
+                onChange={(ev) => setEntity(ev.target.value)}
+                style={inputStyle()}
+                autoFocus
+              />
+              <button onClick={handleSaveEntity} disabled={isSaving} style={primaryBtnStyle}>
+                {isSaving ? '...' : '✓'}
+              </button>
+              <button onClick={() => { setEntity(row.entity); setEditing(false); }} style={secondaryBtnStyle}>✕</button>
+            </div>
+          ) : (
+            <span
+              style={{ fontFamily: 'monospace', color: ADMIN_COLORS.gray700, cursor: isExpenseEditable ? 'pointer' : 'default' }}
+              onClick={() => isExpenseEditable && setEditing(true)}
+              title={isExpenseEditable ? 'לחיצה לעריכה' : ''}
+            >
+              {typeIcon} {row.entity || <em style={{ color: ADMIN_COLORS.gray500 }}>—</em>}
+            </span>
+          )}
+          {row.flag === 'multibanco' && (
+            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2 }}>🚨 חשד מולטיבנקו</div>
+          )}
+          {row.flag === 'no-receipt' && (
+            <div style={{ fontSize: 10, color: '#991b1b', marginTop: 2 }}>⚠ חסרה תמונת קבלה</div>
+          )}
+        </td>
+        <td style={{ ...tdStyle, fontFamily: 'monospace', color: ADMIN_COLORS.gray700 }}>
+          {row.description}
+        </td>
+        <td style={{ ...tdStyle, fontFamily: 'monospace', color: ADMIN_COLORS.green700, textAlign: 'left' }}>
+          {fmtAmount(row.inflow)}
+        </td>
+        <td style={{ ...tdStyle, fontFamily: 'monospace', color: row.outflow > 0 ? ADMIN_COLORS.red : '', textAlign: 'left' }}>
+          {fmtAmount(row.outflow)}
+        </td>
+        <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600, textAlign: 'left' }}>
+          {fmtAmount(balance)}
+        </td>
+        <td style={tdStyle}>
+          {row.receipt_url && (
+            <button onClick={() => setShowReceipt((v) => !v)} style={linkBtnStyle} type="button">
+              {showReceipt ? 'הסתר' : '📷'}
+            </button>
+          )}
+        </td>
+      </tr>
+      {showReceipt && row.receipt_url && (
+        <tr>
+          <td colSpan={8} style={{ padding: 12, background: ADMIN_COLORS.gray50 }}>
+            <a href={row.receipt_url} target="_blank" rel="noreferrer">
+              {row.receipt_url.endsWith('.pdf') ? (
+                <embed src={row.receipt_url} width="100%" height="500" />
+              ) : (
+                <Image src={row.receipt_url} alt="קבלה" width={400} height={500} style={{ maxWidth: '100%', height: 'auto', borderRadius: 6 }} unoptimized />
+              )}
+            </a>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+// ===========================================================================
+// Section: הוצאות מדריכים + אדמין (legacy — לא בשימוש בעמוד הראשי, כן בסקציות עזר)
 // ===========================================================================
 
 function ExpensesSection({

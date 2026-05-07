@@ -240,35 +240,104 @@ function looksLikeMultibanco(item: string | null, notes: string | null, supplier
 }
 
 /**
- * מיפוי מילות מפתח → שם ספק קנוני בקשפלו.
+ * מיפוי מילות מפתח → "Entity" בקשפלו (כפי שעומר רושמת ידנית באקסל cashflow piro).
+ * כל הערכים באנגלית קטנה (lowercase) כדי להתאים למוסכמות הגיליון.
  * הסדר חשוב: מילים ייחודיות (Belém) לפני כלליות (קלאסי).
  */
 const SUPPLIER_KEYWORDS: { keywords: string[]; supplier: string }[] = [
-  { keywords: ['belém', 'belem', 'בלם', 'פסטל', 'pastel', 'pastéis', 'pasteis'], supplier: 'Pastéis de Belém' },
-  { keywords: ['fonseca', 'jmf', 'פונסקה', 'אזיטאו', 'azeitão', 'azeitao'], supplier: 'José Maria da Fonseca' },
-  { keywords: ['bacalhau', 'בקלאו', 'בקאלאו', 'rei do', 'santos ramalho'], supplier: 'Rei do Bacalhau' },
-  { keywords: ['camões', 'camoes', 'קמואש', 'קמואס', 'מרקדו'], supplier: 'Mercado do Camões' },
-  { keywords: ['horacio', 'horácio', 'אסטבס', 'esteves'], supplier: 'Horacio Esteves e Justo' },
-  { keywords: ['croque', 'קרוקט', 'ribeira'], supplier: 'Croqueteria' },
-  { keywords: ['padaria', 'פדריה', 'פדאריה'], supplier: 'Padaria Portuguesa' },
-  { keywords: ['pingo', 'פינגו'], supplier: 'Pingo Doce' },
-  { keywords: ['cristo rei', 'כריסטו', 'cristo', 'אלמדה', 'almada'], supplier: 'Santuário de Cristo Rei' },
-  { keywords: ['parques de sintra', 'pena', 'פנה', 'פינה', 'מאורית', 'mourish', 'sintra'], supplier: 'Parques de Sintra' },
-  { keywords: ['teleférico', 'teleferico', 'gaia', 'גאיה', 'רכבל'], supplier: 'Teleférico de Gaia' },
-  { keywords: ['arcadia', 'ארקדיה', 'ubbo'], supplier: 'Arcadia' },
-  { keywords: ['navegante', 'נווגנטה', 'מטרו', 'cp '], supplier: 'CP — Navegante' },
+  // ספקי בלם — לרוב מופיעים לפי שם
+  { keywords: ['belém', 'belem', 'בלם', 'פסטל', 'pastel', 'pastéis', 'pasteis'], supplier: 'pasteis de belem' },
+  // ספקי יין
+  { keywords: ['fonseca', 'jmf', 'פונסקה', 'אזיטאו', 'azeitão', 'azeitao'], supplier: 'jose maria da fonseca' },
+  { keywords: ['quinta do beijo', 'beijo', 'קינטה דו ביז'], supplier: 'quinta do beijo' },
+  { keywords: ['quinta do bom dia', 'bom dia'], supplier: 'quinta do bom dia' },
+  // אוכל ומשקאות בליסבון
+  { keywords: ['bacalhau', 'בקלאו', 'בקאלאו', 'rei do', 'santos ramalho'], supplier: 'rei do bacalhau' },
+  { keywords: ['camões', 'camoes', 'קמואש', 'קמואס'], supplier: 'mercado do camoes' },
+  { keywords: ['horacio', 'horácio', 'אסטבס', 'esteves'], supplier: 'horacio esteves e justo' },
+  { keywords: ['croque', 'קרוקט'], supplier: 'croqueteria' },
+  { keywords: ['padaria', 'פדריה', 'פדאריה'], supplier: 'padaria portuguesa' },
+  { keywords: ['pingo', 'פינגו'], supplier: 'pingo doce' },
+  { keywords: ['decathlon', 'דקתלון', 'דיקטלון'], supplier: 'decathlon' },
+  { keywords: ['arcadia', 'ארקדיה', 'ubbo'], supplier: 'arcadia' },
+  { keywords: ['botequim', 'בוטקים', 'brasileira'], supplier: 'botequim a brasileira' },
+  // מונומנטים / כניסות
+  { keywords: ['cristo rei', 'כריסטו', 'cristo', 'אלמדה', 'almada'], supplier: 'cristo rei' },
+  { keywords: ['parques de sintra', 'pena', 'פנה', 'פינה', 'מאורית', 'mourish'], supplier: 'parques de sintra' },
+  // פורטו
+  { keywords: ['teleférico', 'teleferico', 'gaia', 'רכבל'], supplier: 'teleferico de gaia' },
+  // תחבורה
+  { keywords: ['navegante', 'נווגנטה', 'מטרו', 'cp ', 'רכבת', 'metro'], supplier: 'transportation' },
+  { keywords: ['transportation', 'תחבורה', 'אוטובוס', 'taxi', 'uber', 'bolt'], supplier: 'transportation' },
 ];
 
-/** ניחוש ספק על בסיס item/notes. מחזיר null אם אין התאמה. */
-export function guessSupplier(item: string | null, notes: string | null): string | null {
+/**
+ * מיפוי tour_type → Entity ברירת מחדל (כשאין התאמה לספק ספציפי).
+ * הערכים מבוססים על המוסכמות בקשפלו האמיתי (כמו "food tour lisbon", "tasting tour porto").
+ */
+const TOUR_TYPE_TO_ENTITY: Record<string, string> = {
+  'קלאסי_1': 'food tour lisbon',
+  'בלם_1': 'belem tour',
+  'סינטרה': 'sintra tour',
+  'אראבידה': 'arrabida tour',
+  'אובידוש': 'obidos tour',
+  'קולינרי': 'culinary tour lisbon',
+  'פרטי_1': 'private tour lisbon',
+  'פורטו_1': 'porto classic',
+  'טעימות': 'tasting tour porto',
+  'דורו': 'douro tour',
+  'פרטי_2': 'private tour porto',
+};
+
+/** ממפה שם מדריך עברי → first name באנגלית קטנה (לעמודת Description בקשפלו) */
+const GUIDE_NAME_LC: Record<string, string> = {
+  'אביב': 'aviv',
+  'יניב': 'yaniv',
+  'מאיה': 'maya',
+  'מני': 'meni',
+  'תום': 'tom',
+  'דותן': 'dotan',
+  'עומר הבן': 'omer',
+  'ניר': 'nir',
+  'רונה': 'rona',
+};
+
+/** מחזיר first name באנגלית קטנה לפי שם מלא בעברית (או תרגום best-effort) */
+export function guideFirstNameLc(fullName: string): string {
+  if (!fullName) return '';
+  // קודם — האם השם המלא מתחיל באחד השמות הידועים?
+  for (const [he, en] of Object.entries(GUIDE_NAME_LC)) {
+    if (fullName.startsWith(he)) return en;
+  }
+  // fallback — מילה ראשונה lowercase
+  return (fullName.split(/\s+/)[0] || fullName).toLowerCase().trim();
+}
+
+/**
+ * מחזיר את ה-Entity הצפוי בקשפלו לפי הפריט/הערות/סוג סיור.
+ * עדיפויות:
+ *   1. התאמת keyword לספק ספציפי (Pastéis, JMF, וכו') — הכי בטוח
+ *   2. tour_type כידוע (food tour lisbon, sintra tour, וכו')
+ *   3. null — לא הצלחנו לקבוע ↔ אומר fallback ל-item raw
+ */
+export function deriveEntity(item: string | null, notes: string | null, tourType: string | null): string | null {
   const blob = `${item || ''} ${notes || ''}`.toLowerCase();
-  if (!blob.trim()) return null;
-  for (const m of SUPPLIER_KEYWORDS) {
-    if (m.keywords.some((k) => blob.includes(k.toLowerCase()))) {
-      return m.supplier;
+  if (blob.trim()) {
+    for (const m of SUPPLIER_KEYWORDS) {
+      if (m.keywords.some((k) => blob.includes(k.toLowerCase()))) {
+        return m.supplier;
+      }
     }
   }
+  if (tourType && TOUR_TYPE_TO_ENTITY[tourType]) {
+    return TOUR_TYPE_TO_ENTITY[tourType];
+  }
   return null;
+}
+
+/** Alias לשם הישן — נותר לתמיכה לאחור (קוד אחר עשוי לקרוא לזה) */
+export function guessSupplier(item: string | null, notes: string | null): string | null {
+  return deriveEntity(item, notes, null);
 }
 
 /** אצוות עדכון: מילוי אוטומטי של supplier_name להוצאות שיש להן ניחוש בטוח. */
@@ -291,11 +360,9 @@ async function autoFillGuessedSuppliers(
   return applied;
 }
 
-/** שם פרטי בעברית קטנה לעמודת Description בהפקדות */
+/** שם פרטי באנגלית קטנה לעמודת Description בהפקדות (= מה שיופיע בקשפלו האמיתי) */
 function depositFirstNameLc(name: string): string {
-  // לוקח את המילה הראשונה (השם הפרטי בעברית), משאיר תווים בשם.
-  // לקשפלו עצמו (Excel) שם המדריך באנגלית — נטפל בזה בשלב 3 לפי טבלה במסמך הידע.
-  return (name.split(/\s+/)[0] || name).toLowerCase().trim();
+  return guideFirstNameLc(name);
 }
 
 /**
@@ -416,10 +483,10 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     cashflow_category?: string | null;
     is_admin_added?: boolean | null;
   };
-  // שלב א': עיבוד ראשוני וניחוש ספקים
+  // שלב א': עיבוד ראשוני וניחוש Entity (ספק / סוג סיור / לפי מילות מפתח)
   const rawExpenses = ((expensesRes.data || []) as RawExpense[]).map((e) => ({
     raw: e,
-    suggested: e.supplier_name ? null : guessSupplier(e.item, e.notes),
+    suggested: e.supplier_name ? null : deriveEntity(e.item, e.notes, e.tour_type ?? null),
   }));
 
   // שלב ב': מילוי אוטומטי של ניחושים ב-DB (silently — בלי שעומר תאשר)
