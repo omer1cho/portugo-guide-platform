@@ -389,7 +389,9 @@ export const INSIGHTS: { html: string }[] = [
   { html: '<strong>דורו — flip קריטי בקבוצות 8-11.</strong> איבורבס → רווח (4-278€). אנטורס → הפסד (עד 221€). הפער 225€ בעלות הרכב = ההבדל. <strong>חובה לתאם איבורבס/קלבר מראש.</strong>' },
   { html: '<strong>סינטרה — להעלות מחיר?</strong> בקבוצה של 6 חורף-רגיל הרווח 4-23€ בלבד. שווה לשקול 95€ קבוע לכל השנה.' },
   { html: '<strong>אזורי 13-15 וקטן (2-7) באראבידה ובסינטרה — מורטה זול יותר.</strong> שתחזירו אותה כברירת מחדל לסיורים האלו אם זמינה.' },
+  { html: '<strong>בלם — אזור הפסד יחיד: חבילה N=2.</strong> רווח של רגיל מ-N=2 (+7€) ועד +666€ ב-N=40. בחבילה: <strong>זוג מפסיד 3€, שלישייה כבר רווחית +10€</strong>. שווה לזכור כשמציעים חבילה לזוג.' },
   { html: '<strong>קולינרי וטעימות — רווחיים בכל גודל קבוצה.</strong> אין אזורי הפסד. אפילו זוג בחבילה (40€/42€/28€ רווח) מכסה את העלויות. הסיכון בסיורים האלה הוא תפעולי, לא רווחיות.' },
+  { html: '<strong>קלאסיים — מדריך חדש = רווח גדול יותר לחברה.</strong> Transfer של 11€ במקום 10€ מוסיף ~10% לרווח (פחות שכר בסיס שלא משתנה). N=15 = +130€/+145€. N=30 = +275€/+305€.' },
   { html: '<strong>טעימות פורטו — רגישות לקפיצות "פר-3 / פר-4".</strong> מעבר מ-3 ל-4 לקוחות = +12€ (מגש גבינות שני). מעבר מ-4 ל-5 = +8€ (קופסת פאו שניה). הקפיצות מתפזרות על קבוצה גדולה יותר.' },
   { html: '<strong>סרדינים — אנומליה מובנית.</strong> זוג עולה 10€/אדם (פותחים קופסה במיוחד), קבוצה 8.5€/אדם. זה מסביר חלק מהפער ברווח בקבוצה של 2 לעומת 3 בקולינרי.' },
 ];
@@ -428,19 +430,19 @@ export type TastingTour = {
   }[];
 };
 
-// ─── CULINARY MORNING ───
+// ─── CULINARY MORNING (gravana = 1 בקבוק לכל 7 אנשים) ───
 const CULINARY_MORNING_REG_ROWS: TastingScenarioRow[] = [
   { size: 2, income: 130, guideSalary: 35, perPersonFood: 40, sharedCosts: [3], totalCost: 78, profit: profit(52) },
   { size: 3, income: 195, guideSalary: 40, perPersonFood: 56, sharedCosts: [3], totalCost: 98, profit: profit(97) },
   { size: 4, income: 260, guideSalary: 40, perPersonFood: 75, sharedCosts: [3], totalCost: 117, profit: profit(143) },
   { size: 5, income: 325, guideSalary: 40, perPersonFood: 93, sharedCosts: [3], totalCost: 136, profit: profit(189) },
   { size: 6, income: 390, guideSalary: 46, perPersonFood: 112, sharedCosts: [3], totalCost: 160, profit: profit(230) },
-  { size: 7, income: 455, guideSalary: 47, perPersonFood: 130, sharedCosts: [5], totalCost: 182, profit: profit(273) },
+  { size: 7, income: 455, guideSalary: 47, perPersonFood: 130, sharedCosts: [3], totalCost: 180, profit: profit(275) },
   { size: 8, income: 520, guideSalary: 48, perPersonFood: 149, sharedCosts: [5], totalCost: 202, profit: profit(318) },
   { size: 10, income: 650, guideSalary: 50, perPersonFood: 186, sharedCosts: [5], totalCost: 241, profit: profit(409) },
   { size: 12, income: 780, guideSalary: 52, perPersonFood: 224, sharedCosts: [5], totalCost: 281, profit: profit(499) },
   { size: 15, income: 975, guideSalary: 55, perPersonFood: 280, sharedCosts: [8], totalCost: 342, profit: profit(633) },
-  { size: 20, income: 1300, guideSalary: 60, perPersonFood: 373, sharedCosts: [10], totalCost: 443, profit: profit(857) },
+  { size: 20, income: 1300, guideSalary: 60, perPersonFood: 373, sharedCosts: [8], totalCost: 440, profit: profit(860) },
 ];
 
 const CULINARY_MORNING_PKG_ROWS: TastingScenarioRow[] = [
@@ -449,27 +451,27 @@ const CULINARY_MORNING_PKG_ROWS: TastingScenarioRow[] = [
   { size: 4, income: 240, guideSalary: 40, perPersonFood: 75, sharedCosts: [3], totalCost: 117, profit: profit(123) },
   { size: 5, income: 300, guideSalary: 40, perPersonFood: 93, sharedCosts: [3], totalCost: 136, profit: profit(164) },
   { size: 6, income: 360, guideSalary: 46, perPersonFood: 112, sharedCosts: [3], totalCost: 160, profit: profit(200) },
-  { size: 7, income: 420, guideSalary: 47, perPersonFood: 130, sharedCosts: [5], totalCost: 182, profit: profit(238) },
+  { size: 7, income: 420, guideSalary: 47, perPersonFood: 130, sharedCosts: [3], totalCost: 180, profit: profit(240) },
   { size: 8, income: 480, guideSalary: 48, perPersonFood: 149, sharedCosts: [5], totalCost: 202, profit: profit(278) },
   { size: 10, income: 600, guideSalary: 50, perPersonFood: 186, sharedCosts: [5], totalCost: 241, profit: profit(359) },
   { size: 12, income: 720, guideSalary: 52, perPersonFood: 224, sharedCosts: [5], totalCost: 281, profit: profit(439) },
   { size: 15, income: 900, guideSalary: 55, perPersonFood: 280, sharedCosts: [8], totalCost: 342, profit: profit(558) },
-  { size: 20, income: 1200, guideSalary: 60, perPersonFood: 373, sharedCosts: [10], totalCost: 443, profit: profit(757) },
+  { size: 20, income: 1200, guideSalary: 60, perPersonFood: 373, sharedCosts: [8], totalCost: 440, profit: profit(760) },
 ];
 
-// ─── CULINARY LUNCH ───
+// ─── CULINARY LUNCH (gravana = 1 בקבוק לכל 7 אנשים) ───
 const CULINARY_LUNCH_REG_ROWS: TastingScenarioRow[] = [
   { size: 2, income: 130, guideSalary: 35, perPersonFood: 43, sharedCosts: [3], totalCost: 80, profit: profit(50) },
   { size: 3, income: 195, guideSalary: 40, perPersonFood: 60, sharedCosts: [3], totalCost: 102, profit: profit(93) },
   { size: 4, income: 260, guideSalary: 40, perPersonFood: 79, sharedCosts: [3], totalCost: 122, profit: profit(138) },
   { size: 5, income: 325, guideSalary: 40, perPersonFood: 99, sharedCosts: [3], totalCost: 142, profit: profit(183) },
   { size: 6, income: 390, guideSalary: 46, perPersonFood: 119, sharedCosts: [3], totalCost: 168, profit: profit(222) },
-  { size: 7, income: 455, guideSalary: 47, perPersonFood: 139, sharedCosts: [5], totalCost: 191, profit: profit(264) },
+  { size: 7, income: 455, guideSalary: 47, perPersonFood: 139, sharedCosts: [3], totalCost: 189, profit: profit(266) },
   { size: 8, income: 520, guideSalary: 48, perPersonFood: 159, sharedCosts: [5], totalCost: 212, profit: profit(308) },
   { size: 10, income: 650, guideSalary: 50, perPersonFood: 199, sharedCosts: [5], totalCost: 254, profit: profit(396) },
   { size: 12, income: 780, guideSalary: 52, perPersonFood: 238, sharedCosts: [5], totalCost: 295, profit: profit(485) },
   { size: 15, income: 975, guideSalary: 55, perPersonFood: 298, sharedCosts: [8], totalCost: 360, profit: profit(615) },
-  { size: 20, income: 1300, guideSalary: 60, perPersonFood: 397, sharedCosts: [10], totalCost: 467, profit: profit(833) },
+  { size: 20, income: 1300, guideSalary: 60, perPersonFood: 397, sharedCosts: [8], totalCost: 465, profit: profit(835) },
 ];
 
 const CULINARY_LUNCH_PKG_ROWS: TastingScenarioRow[] = [
@@ -478,12 +480,43 @@ const CULINARY_LUNCH_PKG_ROWS: TastingScenarioRow[] = [
   { size: 4, income: 240, guideSalary: 40, perPersonFood: 79, sharedCosts: [3], totalCost: 122, profit: profit(118) },
   { size: 5, income: 300, guideSalary: 40, perPersonFood: 99, sharedCosts: [3], totalCost: 142, profit: profit(158) },
   { size: 6, income: 360, guideSalary: 46, perPersonFood: 119, sharedCosts: [3], totalCost: 168, profit: profit(192) },
-  { size: 7, income: 420, guideSalary: 47, perPersonFood: 139, sharedCosts: [5], totalCost: 191, profit: profit(229) },
+  { size: 7, income: 420, guideSalary: 47, perPersonFood: 139, sharedCosts: [3], totalCost: 189, profit: profit(231) },
   { size: 8, income: 480, guideSalary: 48, perPersonFood: 159, sharedCosts: [5], totalCost: 212, profit: profit(268) },
   { size: 10, income: 600, guideSalary: 50, perPersonFood: 199, sharedCosts: [5], totalCost: 254, profit: profit(346) },
   { size: 12, income: 720, guideSalary: 52, perPersonFood: 238, sharedCosts: [5], totalCost: 295, profit: profit(425) },
   { size: 15, income: 900, guideSalary: 55, perPersonFood: 298, sharedCosts: [8], totalCost: 360, profit: profit(540) },
-  { size: 20, income: 1200, guideSalary: 60, perPersonFood: 397, sharedCosts: [10], totalCost: 467, profit: profit(733) },
+  { size: 20, income: 1200, guideSalary: 60, perPersonFood: 397, sharedCosts: [8], totalCost: 465, profit: profit(735) },
+];
+
+// ─── BELEM (פשטל בלם 1.6€/אדם · אין פריטים משותפים) ───
+const BELEM_REG_ROWS: TastingScenarioRow[] = [
+  { size: 2, income: 40, guideSalary: 30, perPersonFood: 3, sharedCosts: [], totalCost: 33, profit: profit(7) },
+  { size: 3, income: 60, guideSalary: 30, perPersonFood: 5, sharedCosts: [], totalCost: 35, profit: profit(25) },
+  { size: 4, income: 80, guideSalary: 34, perPersonFood: 6, sharedCosts: [], totalCost: 40, profit: profit(40) },
+  { size: 5, income: 100, guideSalary: 35, perPersonFood: 8, sharedCosts: [], totalCost: 43, profit: profit(57) },
+  { size: 6, income: 120, guideSalary: 36, perPersonFood: 10, sharedCosts: [], totalCost: 46, profit: profit(74) },
+  { size: 7, income: 140, guideSalary: 37, perPersonFood: 11, sharedCosts: [], totalCost: 48, profit: profit(92) },
+  { size: 8, income: 160, guideSalary: 38, perPersonFood: 13, sharedCosts: [], totalCost: 51, profit: profit(109) },
+  { size: 10, income: 200, guideSalary: 40, perPersonFood: 16, sharedCosts: [], totalCost: 56, profit: profit(144) },
+  { size: 15, income: 300, guideSalary: 45, perPersonFood: 24, sharedCosts: [], totalCost: 69, profit: profit(231) },
+  { size: 20, income: 400, guideSalary: 50, perPersonFood: 32, sharedCosts: [], totalCost: 82, profit: profit(318) },
+  { size: 30, income: 600, guideSalary: 60, perPersonFood: 48, sharedCosts: [], totalCost: 108, profit: profit(492) },
+  { size: 40, income: 800, guideSalary: 70, perPersonFood: 64, sharedCosts: [], totalCost: 134, profit: profit(666) },
+];
+
+const BELEM_PKG_ROWS: TastingScenarioRow[] = [
+  { size: 2, income: 30, guideSalary: 30, perPersonFood: 3, sharedCosts: [], totalCost: 33, profit: loss(-3) },
+  { size: 3, income: 45, guideSalary: 30, perPersonFood: 5, sharedCosts: [], totalCost: 35, profit: marginal(10) },
+  { size: 4, income: 60, guideSalary: 34, perPersonFood: 6, sharedCosts: [], totalCost: 40, profit: profit(20) },
+  { size: 5, income: 75, guideSalary: 35, perPersonFood: 8, sharedCosts: [], totalCost: 43, profit: profit(32) },
+  { size: 6, income: 90, guideSalary: 36, perPersonFood: 10, sharedCosts: [], totalCost: 46, profit: profit(44) },
+  { size: 7, income: 105, guideSalary: 37, perPersonFood: 11, sharedCosts: [], totalCost: 48, profit: profit(57) },
+  { size: 8, income: 120, guideSalary: 38, perPersonFood: 13, sharedCosts: [], totalCost: 51, profit: profit(69) },
+  { size: 10, income: 150, guideSalary: 40, perPersonFood: 16, sharedCosts: [], totalCost: 56, profit: profit(94) },
+  { size: 15, income: 225, guideSalary: 45, perPersonFood: 24, sharedCosts: [], totalCost: 69, profit: profit(156) },
+  { size: 20, income: 300, guideSalary: 50, perPersonFood: 32, sharedCosts: [], totalCost: 82, profit: profit(218) },
+  { size: 30, income: 450, guideSalary: 60, perPersonFood: 48, sharedCosts: [], totalCost: 108, profit: profit(342) },
+  { size: 40, income: 600, guideSalary: 70, perPersonFood: 64, sharedCosts: [], totalCost: 134, profit: profit(466) },
 ];
 
 // ─── TASTINGS PORTO ───
@@ -519,10 +552,21 @@ const TASTINGS_PKG_ROWS: TastingScenarioRow[] = [
 
 export const TASTING_TOURS: TastingTour[] = [
   {
+    slug: 'belem',
+    name: 'בלם',
+    priceInfo: 'מחיר ללקוח: 20€ רגיל · 15€ חבילה · כולל: שכר מדריך + פשטל בלם 1.6€/אדם',
+    perPersonLabel: 'פשטל',
+    sharedCostLabels: [],
+    scenarios: [
+      { id: 'reg', label: 'מחיר רגיל (20€)', rows: BELEM_REG_ROWS },
+      { id: 'pkg', label: 'חבילה (15€)', rows: BELEM_PKG_ROWS },
+    ],
+  },
+  {
     slug: 'culinary-morning',
     name: 'קולינרי בוקר',
     priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מזון פר-אדם + גווארנה משותפת',
-    priceInfoExtra: 'פר-אדם: קפה ומאפה ~2.5€, פשטל 2€, מרק 1.92€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 6',
+    priceInfoExtra: 'פר-אדם: קפה ומאפה ~2.5€, פשטל 2€, מרק 1.92€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 7',
     perPersonLabel: 'מזון פר-אדם',
     sharedCostLabels: ['גווארנה'],
     scenarios: [
@@ -534,7 +578,7 @@ export const TASTING_TOURS: TastingTour[] = [
     slug: 'culinary-lunch',
     name: 'קולינרי צהריים',
     priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מזון פר-אדם + גווארנה משותפת',
-    priceInfoExtra: 'פר-אדם: בקלאו 4€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, אמפדה 1.7€, קרוקט 1.95€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 6',
+    priceInfoExtra: 'פר-אדם: בקלאו 4€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, אמפדה 1.7€, קרוקט 1.95€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 7',
     perPersonLabel: 'מזון פר-אדם',
     sharedCostLabels: ['גווארנה'],
     scenarios: [
@@ -556,7 +600,113 @@ export const TASTING_TOURS: TastingTour[] = [
   },
 ];
 
+// ──────────────────────────────────────────────────────────────────────────
+// CLASSIC TOURS — קלאסי ליסבון, קלאסי פורטו (free tour, מודל transfer)
+// ──────────────────────────────────────────────────────────────────────────
+// אין מחיר ללקוח (free tour, הלקוח משלם רק טיפ). הכסף שנכנס לחברה הוא
+// ה-transfer של המדריך — 10€ לראש למדריך רגיל, 11€ למדריך חדש (כמו ניר).
+// העלות לחברה: שכר בסיס שהמדריך מקבל לפי טבלה.
+// רווח לחברה = transfer × N - שכר בסיס.
+
+export type ClassicScenarioRow = {
+  size: number;
+  income: number;        // transfer × N
+  guideSalary: number;   // base
+  profit: ProfitCell;
+};
+
+export type ClassicTour = {
+  slug: string;
+  name: string;
+  priceInfo: string;
+  scenarios: {
+    id: string;
+    label: string;
+    transferRate: number;  // 10 or 11
+    rows: ClassicScenarioRow[];
+  }[];
+};
+
+const CLASSIC_GUIDE_10_ROWS: ClassicScenarioRow[] = [
+  { size: 1, income: 10, guideSalary: 5, profit: profit(5) },
+  { size: 2, income: 20, guideSalary: 10, profit: profit(10) },
+  { size: 3, income: 30, guideSalary: 15, profit: profit(15) },
+  { size: 4, income: 40, guideSalary: 15, profit: profit(25) },
+  { size: 5, income: 50, guideSalary: 15, profit: profit(35) },
+  { size: 6, income: 60, guideSalary: 15, profit: profit(45) },
+  { size: 8, income: 80, guideSalary: 15, profit: profit(65) },
+  { size: 10, income: 100, guideSalary: 15, profit: profit(85) },
+  { size: 12, income: 120, guideSalary: 15, profit: profit(105) },
+  { size: 15, income: 150, guideSalary: 20, profit: profit(130) },
+  { size: 20, income: 200, guideSalary: 20, profit: profit(180) },
+  { size: 25, income: 250, guideSalary: 25, profit: profit(225) },
+  { size: 30, income: 300, guideSalary: 25, profit: profit(275) },
+  { size: 40, income: 400, guideSalary: 30, profit: profit(370) },
+];
+
+const CLASSIC_GUIDE_11_ROWS: ClassicScenarioRow[] = [
+  { size: 1, income: 11, guideSalary: 5, profit: profit(6) },
+  { size: 2, income: 22, guideSalary: 10, profit: profit(12) },
+  { size: 3, income: 33, guideSalary: 15, profit: profit(18) },
+  { size: 4, income: 44, guideSalary: 15, profit: profit(29) },
+  { size: 5, income: 55, guideSalary: 15, profit: profit(40) },
+  { size: 6, income: 66, guideSalary: 15, profit: profit(51) },
+  { size: 8, income: 88, guideSalary: 15, profit: profit(73) },
+  { size: 10, income: 110, guideSalary: 15, profit: profit(95) },
+  { size: 12, income: 132, guideSalary: 15, profit: profit(117) },
+  { size: 15, income: 165, guideSalary: 20, profit: profit(145) },
+  { size: 20, income: 220, guideSalary: 20, profit: profit(200) },
+  { size: 25, income: 275, guideSalary: 25, profit: profit(250) },
+  { size: 30, income: 330, guideSalary: 25, profit: profit(305) },
+  { size: 40, income: 440, guideSalary: 30, profit: profit(410) },
+];
+
+export const CLASSIC_TOURS: ClassicTour[] = [
+  {
+    slug: 'classic-lisbon',
+    name: 'ליסבון הקלאסית',
+    priceInfo: 'free tour · ההכנסה לחברה = transfer של המדריך × N (ילדים מתחת ל-10 חינם). העלות = שכר בסיס שהמדריך מקבל מהחברה.',
+    scenarios: [
+      { id: 'guide-10', label: 'מדריך רגיל (10€/ראש)', transferRate: 10, rows: CLASSIC_GUIDE_10_ROWS },
+      { id: 'guide-11', label: 'מדריך חדש (11€/ראש — כמו ניר)', transferRate: 11, rows: CLASSIC_GUIDE_11_ROWS },
+    ],
+  },
+  {
+    slug: 'classic-porto',
+    name: 'פורטו הקלאסית',
+    priceInfo: 'free tour · אותה נוסחה כמו קלאסי ליסבון. ההכנסה לחברה = transfer × N. העלות = שכר בסיס.',
+    scenarios: [
+      { id: 'guide-10', label: 'מדריך רגיל (10€/ראש)', transferRate: 10, rows: CLASSIC_GUIDE_10_ROWS },
+      { id: 'guide-11', label: 'מדריך חדש (11€/ראש)', transferRate: 11, rows: CLASSIC_GUIDE_11_ROWS },
+    ],
+  },
+];
+
+export const CLASSIC_SUMMARY_CARDS: SummaryCard[] = [
+  {
+    title: 'קלאסי — רווח לחברה לפי גודל קבוצה',
+    rows: [
+      { label: 'מדריך 10€ · 5 אנשים', value: '+35€' },
+      { label: 'מדריך 11€ · 5 אנשים', value: '+40€' },
+      { label: 'מדריך 10€ · 15 אנשים', value: '+130€' },
+      { label: 'מדריך 11€ · 15 אנשים', value: '+145€' },
+      { label: 'מדריך 10€ · 30 אנשים', value: '+275€' },
+      { label: 'מדריך 11€ · 30 אנשים', value: '+305€' },
+    ],
+  },
+];
+
 export const TASTING_SUMMARY_CARDS: SummaryCard[] = [
+  {
+    title: 'בלם — רווח לפי גודל קבוצה',
+    rows: [
+      { label: 'רגיל (20€) · 2 אנשים', value: '+7€' },
+      { label: '⚠️ חבילה (15€) · 2 אנשים', value: '−3€' },
+      { label: '⚠️ חבילה (15€) · 3 אנשים', value: '+10€' },
+      { label: 'רגיל (20€) · 10 אנשים', value: '+144€' },
+      { label: 'חבילה (15€) · 10 אנשים', value: '+94€' },
+    ],
+  },
   {
     title: 'קולינרי בוקר — רווח מינימלי',
     rows: [
@@ -586,5 +736,5 @@ export const TASTING_SUMMARY_CARDS: SummaryCard[] = [
   },
 ];
 
-export const PRICING_VALIDATION_VERSION = 4;
-export const PRICING_VALIDATION_UPDATED = '7 במאי 2026';
+export const PRICING_VALIDATION_VERSION = 5;
+export const PRICING_VALIDATION_UPDATED = '8 במאי 2026';

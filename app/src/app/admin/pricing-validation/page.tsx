@@ -16,16 +16,20 @@ import { useState } from 'react';
 import {
   TOURS,
   TASTING_TOURS,
+  CLASSIC_TOURS,
   SUMMARY_CARDS,
   TASTING_SUMMARY_CARDS,
+  CLASSIC_SUMMARY_CARDS,
   INSIGHTS,
   PRICING_VALIDATION_VERSION,
   PRICING_VALIDATION_UPDATED,
   type Tour,
   type TastingTour,
+  type ClassicTour,
   type Scenario,
   type ScenarioRow,
   type TastingScenarioRow,
+  type ClassicScenarioRow,
   type ProfitCell,
 } from '@/lib/pricing-validation-data';
 
@@ -143,6 +147,36 @@ export default function PricingValidationPage() {
         <TastingSection key={tour.slug} tour={tour} />
       ))}
 
+      {/* ─── Classic tours section ─── */}
+      <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1">
+        סיורים קלאסיים — מודל transfer
+      </h2>
+      <p className="text-xs text-gray-600 mb-5">
+        free tour · אין מחיר ללקוח, רק טיפים. ההכנסה לחברה = transfer של המדריך × N (מדריך רגיל 10€/ראש, מדריך חדש 11€/ראש). העלות = שכר בסיס שהחברה משלמת למדריך.
+      </p>
+
+      {/* Classic summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-9">
+        {CLASSIC_SUMMARY_CARDS.map((c, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="text-base font-bold text-slate-800 mb-3">{c.title}</h3>
+            <div className="space-y-1">
+              {c.rows.map((r, j) => (
+                <div key={j} className="flex justify-between text-xs">
+                  <span className="text-gray-500">{r.label}</span>
+                  <span className="font-semibold text-gray-900">{r.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Classic tour sections */}
+      {CLASSIC_TOURS.map((tour) => (
+        <ClassicSection key={tour.slug} tour={tour} />
+      ))}
+
       {/* Insights */}
       <div className="bg-sky-50 border-r-4 border-sky-600 rounded-md p-4 md:p-5 mt-7 text-sm">
         <h3 className="text-base font-bold text-sky-900 mt-0 mb-2">תובנות מרכזיות</h3>
@@ -154,7 +188,7 @@ export default function PricingValidationPage() {
       </div>
 
       <div className="text-center text-xs text-gray-400 mt-7 mb-4">
-        פורטוגו · מודל תמחור · גרסה {PRICING_VALIDATION_VERSION} (+ קולינרי וטעימות) · {PRICING_VALIDATION_UPDATED}
+        פורטוגו · מודל תמחור · גרסה {PRICING_VALIDATION_VERSION} (+ בלם, קלאסיים, תיקון גווארנה) · {PRICING_VALIDATION_UPDATED}
       </div>
     </div>
   );
@@ -457,5 +491,89 @@ function TastingMobileCard({ tour, row }: { tour: TastingTour; row: TastingScena
         </div>
       </details>
     </div>
+  );
+}
+
+// ─── Classic section (קלאסי ליסבון / פורטו — free tour) ───────────────────
+function ClassicSection({ tour }: { tour: ClassicTour }) {
+  const [activeScenarioId, setActiveScenarioId] = useState(tour.scenarios[0].id);
+  const activeScenario = tour.scenarios.find((s) => s.id === activeScenarioId) ?? tour.scenarios[0];
+
+  return (
+    <section className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 mb-6 shadow-sm">
+      <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-1">{tour.name}</h2>
+      <p className="text-sm text-gray-600 mb-3">{tour.priceInfo}</p>
+
+      {/* Scenario tabs */}
+      <div className="flex flex-wrap gap-2 mb-3 mt-4">
+        {tour.scenarios.map((s) => {
+          const active = s.id === activeScenarioId;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setActiveScenarioId(s.id)}
+              className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-all ${
+                active
+                  ? 'bg-slate-700 text-white border-slate-700'
+                  : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+              }`}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-right text-slate-600">
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל קבוצה</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">הכנסה לחברה ({activeScenario.transferRate}€×N)</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">שכר בסיס למדריך</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">רווח לחברה</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activeScenario.rows.map((row) => (
+              <tr key={row.size} className="border-b border-gray-100">
+                <td className="px-2.5 py-2.5 font-bold">{row.size}</td>
+                <td className="px-2.5 py-2.5">{fmtEuro(row.income)}</td>
+                <td className="px-2.5 py-2.5">{fmtEuro(row.guideSalary)}</td>
+                <td className={`px-2.5 py-2.5 ${profitCellClasses(row.profit)}`}>
+                  {profitCellText(row.profit)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-2 mt-2">
+        {activeScenario.rows.map((row) => (
+          <div key={row.size} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+            <div className="flex justify-between items-baseline mb-2">
+              <div>
+                <span className="text-xs text-gray-500">קבוצה</span>{' '}
+                <span className="text-2xl font-bold text-slate-800">{row.size}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">הכנסה </span>
+                <span className="font-bold text-slate-800">{fmtEuro(row.income)}</span>
+              </div>
+            </div>
+            <div className={`rounded-lg p-3 text-center ${profitCellClasses(row.profit)}`}>
+              <div className="text-[11px] opacity-80 font-normal">רווח לחברה</div>
+              <div className="text-lg mt-0.5">{profitCellText(row.profit)}</div>
+            </div>
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              שכר בסיס למדריך: {fmtEuro(row.guideSalary)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
