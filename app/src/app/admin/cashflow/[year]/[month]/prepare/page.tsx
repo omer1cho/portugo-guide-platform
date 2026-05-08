@@ -429,10 +429,9 @@ function buildCashflowRows(
     // ב-requires_receipt=false → לא מסומנים כדגל, אבל כן מקבלים הערה באנגלית.
     const isCatalogNoReceipt = e.catalog_requires_receipt === false;
     const noReceiptIsFlag = !e.is_admin_added && !e.receipt_url && !isCatalogNoReceipt;
-    // Description: לפי מוסכמת Feb26/mar26 — לרוב ריקה. רק כש-no receipt issued, שמים את ההערה.
-    const description = isCatalogNoReceipt && !e.receipt_url
-      ? 'no receipt issued'
-      : (e.is_admin_added ? '' : guideFirstNameLcFromName(e.guide_name));
+    // Description בהוצאות רגילות = ריק (תואם mar26). שם מדריך מופיע רק בהפקדות.
+    // היחיד יוצא דופן: פריט קטלוג ללא קבלה → "no receipt issued".
+    const description = isCatalogNoReceipt && !e.receipt_url ? 'no receipt issued' : '';
     rows.push({
       key: `e-${e.id}`,
       type: 'expense',
@@ -488,26 +487,6 @@ function buildCashflowRows(
   });
 
   return rows;
-}
-
-/** ממיר שם מדריך מהמערכת (עברית) ל-first name lowercase לעמודת Description בהפקדות */
-function guideFirstNameLcFromName(fullName: string): string {
-  const map: Record<string, string> = {
-    'אביב': 'aviv',
-    'יניב': 'yaniv',
-    'מאיה': 'maya',
-    'מני': 'meni',
-    'תום': 'tom',
-    'דותן': 'dotan',
-    'עומר הבן': 'omer',
-    'ניר': 'nir',
-    'רונה': 'rona',
-  };
-  if (!fullName || fullName === 'אדמין') return '';
-  for (const [he, en] of Object.entries(map)) {
-    if (fullName.startsWith(he)) return en;
-  }
-  return (fullName.split(/\s+/)[0] || fullName).toLowerCase().trim();
 }
 
 /**
