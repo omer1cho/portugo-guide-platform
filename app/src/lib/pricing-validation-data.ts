@@ -391,7 +391,7 @@ export const INSIGHTS: { html: string }[] = [
   { html: '<strong>אזורי 13-15 וקטן (2-7) באראבידה ובסינטרה — מורטה זול יותר.</strong> שתחזירו אותה כברירת מחדל לסיורים האלו אם זמינה.' },
   { html: '<strong>בלם — אזור הפסד יחיד: חבילה N=2.</strong> רווח של רגיל מ-N=2 (+7€) ועד +666€ ב-N=40. בחבילה: <strong>זוג מפסיד 3€, שלישייה כבר רווחית +10€</strong>. שווה לזכור כשמציעים חבילה לזוג.' },
   { html: '<strong>קולינרי וטעימות — רווחיים בכל גודל קבוצה.</strong> אין אזורי הפסד. אפילו זוג בחבילה (40€/42€/28€ רווח) מכסה את העלויות. הסיכון בסיורים האלה הוא תפעולי, לא רווחיות.' },
-  { html: '<strong>קלאסיים — מדריך חדש = רווח גדול יותר לחברה.</strong> Transfer של 11€ במקום 10€ מוסיף ~10% לרווח (פחות שכר בסיס שלא משתנה). N=15 = +130€/+145€. N=30 = +275€/+305€.' },
+  { html: '<strong>קלאסיים — מדריך חדש = רווח גדול יותר לחברה.</strong> מדריך מפריש 11€/ראש במקום 10€ מוסיף ~10% לרווח (כי שכר הבסיס לא משתנה). N=15 = +130€/+145€. N=30 = +275€/+305€.' },
   { html: '<strong>טעימות פורטו — רגישות לקפיצות "פר-3 / פר-4".</strong> מעבר מ-3 ל-4 לקוחות = +12€ (מגש גבינות שני). מעבר מ-4 ל-5 = +8€ (קופסת פאו שניה). הקפיצות מתפזרות על קבוצה גדולה יותר.' },
   { html: '<strong>סרדינים — אנומליה מובנית.</strong> זוג עולה 10€/אדם (פותחים קופסה במיוחד), קבוצה 8.5€/אדם. זה מסביר חלק מהפער ברווח בקבוצה של 2 לעומת 3 בקולינרי.' },
 ];
@@ -565,9 +565,9 @@ export const TASTING_TOURS: TastingTour[] = [
   {
     slug: 'culinary-morning',
     name: 'קולינרי בוקר',
-    priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מזון פר-אדם + גווארנה משותפת',
-    priceInfoExtra: 'פר-אדם: קפה ומאפה ~2.5€, פשטל 2€, מרק 1.92€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 7',
-    perPersonLabel: 'מזון פר-אדם',
+    priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מוצרים לאדם + גווארנה משותפת',
+    priceInfoExtra: 'לאדם: קפה ומאפה ~2.5€, פשטל 2€, מרק 1.92€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 7',
+    perPersonLabel: 'מוצרים לאדם',
     sharedCostLabels: ['גווארנה'],
     scenarios: [
       { id: 'reg', label: 'מחיר רגיל (65€)', rows: CULINARY_MORNING_REG_ROWS },
@@ -577,9 +577,9 @@ export const TASTING_TOURS: TastingTour[] = [
   {
     slug: 'culinary-lunch',
     name: 'קולינרי צהריים',
-    priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מזון פר-אדם + גווארנה משותפת',
-    priceInfoExtra: 'פר-אדם: בקלאו 4€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, אמפדה 1.7€, קרוקט 1.95€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 7',
-    perPersonLabel: 'מזון פר-אדם',
+    priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מוצרים לאדם + גווארנה משותפת',
+    priceInfoExtra: 'לאדם: בקלאו 4€, ויטור ~2.15€, סרדינים 8.5€/10€, ז\'ינז\'יניה 1.5€, אמפדה 1.7€, קרוקט 1.95€, כוס · משותף: גווארנה 2.5€/בקבוק לכל 7',
+    perPersonLabel: 'מוצרים לאדם',
     sharedCostLabels: ['גווארנה'],
     scenarios: [
       { id: 'reg', label: 'מחיר רגיל (65€)', rows: CULINARY_LUNCH_REG_ROWS },
@@ -589,9 +589,9 @@ export const TASTING_TOURS: TastingTour[] = [
   {
     slug: 'tastings-porto',
     name: 'טעימות פורטו',
-    priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מזון פר-אדם + פריטים משותפים',
-    priceInfoExtra: 'פר-אדם: לביבה 2.7€, יקב 10€, יין אדום 3.5€, בריגדיירו 2.12€, בירה 1€, כוס · משותף: מגש גבינות 12.19€ לכל 3 · פאו דה קז\'ו ~7.75€ לכל 4 · יין ירוק ~3.5€ לכל 6',
-    perPersonLabel: 'מזון פר-אדם',
+    priceInfo: 'מחיר ללקוח: 65€ רגיל · 60€ חבילה · כולל: שכר מדריך + מוצרים לאדם + פריטים משותפים',
+    priceInfoExtra: 'לאדם: לביבה 2.7€, יקב 10€, יין אדום 3.5€, בריגדיירו 2.12€, בירה 1€, כוס · משותף: מגש גבינות 12.19€ לכל 3 · פאו דה קז\'ו ~7.75€ לכל 4 · יין ירוק ~3.5€ לכל 6',
+    perPersonLabel: 'מוצרים לאדם',
     sharedCostLabels: ['גבינות', 'פאו', 'יין ירוק'],
     scenarios: [
       { id: 'reg', label: 'מחיר רגיל (65€)', rows: TASTINGS_REG_ROWS },
@@ -601,90 +601,60 @@ export const TASTING_TOURS: TastingTour[] = [
 ];
 
 // ──────────────────────────────────────────────────────────────────────────
-// CLASSIC TOURS — קלאסי ליסבון, קלאסי פורטו (free tour, מודל transfer)
+// CLASSIC TOURS — קלאסי ליסבון + קלאסי פורטו (אותו מודל סיור חינמי)
 // ──────────────────────────────────────────────────────────────────────────
-// אין מחיר ללקוח (free tour, הלקוח משלם רק טיפ). הכסף שנכנס לחברה הוא
-// ה-transfer של המדריך — 10€ לראש למדריך רגיל, 11€ למדריך חדש (כמו ניר).
-// העלות לחברה: שכר בסיס שהמדריך מקבל לפי טבלה.
+// סיור חינמי (free tour) — אין מחיר ללקוח, הלקוח משלם רק טיפ. הכסף שנכנס
+// לחברה הוא ה-transfer של המדריך:
+//   • מדריך רגיל מפריש 10€ לראש
+//   • מדריך חדש (כמו ניר) מפריש 11€ לראש
+// ילדים מתחת ל-10 חינם. העלות לחברה: שכר בסיס שהמדריך מקבל לפי גודל קבוצה.
 // רווח לחברה = transfer × N - שכר בסיס.
 
 export type ClassicScenarioRow = {
   size: number;
-  income: number;        // transfer × N
-  guideSalary: number;   // base
-  profit: ProfitCell;
+  guideSalary: number;
+  income10: number;     // 10 × N
+  income11: number;     // 11 × N
+  profit10: ProfitCell; // רווח עם מדריך מפריש 10€
+  profit11: ProfitCell; // רווח עם מדריך מפריש 11€
 };
 
 export type ClassicTour = {
   slug: string;
   name: string;
   priceInfo: string;
-  scenarios: {
-    id: string;
-    label: string;
-    transferRate: number;  // 10 or 11
-    rows: ClassicScenarioRow[];
-  }[];
+  rows: ClassicScenarioRow[];
 };
 
-const CLASSIC_GUIDE_10_ROWS: ClassicScenarioRow[] = [
-  { size: 1, income: 10, guideSalary: 5, profit: profit(5) },
-  { size: 2, income: 20, guideSalary: 10, profit: profit(10) },
-  { size: 3, income: 30, guideSalary: 15, profit: profit(15) },
-  { size: 4, income: 40, guideSalary: 15, profit: profit(25) },
-  { size: 5, income: 50, guideSalary: 15, profit: profit(35) },
-  { size: 6, income: 60, guideSalary: 15, profit: profit(45) },
-  { size: 8, income: 80, guideSalary: 15, profit: profit(65) },
-  { size: 10, income: 100, guideSalary: 15, profit: profit(85) },
-  { size: 12, income: 120, guideSalary: 15, profit: profit(105) },
-  { size: 15, income: 150, guideSalary: 20, profit: profit(130) },
-  { size: 20, income: 200, guideSalary: 20, profit: profit(180) },
-  { size: 25, income: 250, guideSalary: 25, profit: profit(225) },
-  { size: 30, income: 300, guideSalary: 25, profit: profit(275) },
-  { size: 40, income: 400, guideSalary: 30, profit: profit(370) },
-];
-
-const CLASSIC_GUIDE_11_ROWS: ClassicScenarioRow[] = [
-  { size: 1, income: 11, guideSalary: 5, profit: profit(6) },
-  { size: 2, income: 22, guideSalary: 10, profit: profit(12) },
-  { size: 3, income: 33, guideSalary: 15, profit: profit(18) },
-  { size: 4, income: 44, guideSalary: 15, profit: profit(29) },
-  { size: 5, income: 55, guideSalary: 15, profit: profit(40) },
-  { size: 6, income: 66, guideSalary: 15, profit: profit(51) },
-  { size: 8, income: 88, guideSalary: 15, profit: profit(73) },
-  { size: 10, income: 110, guideSalary: 15, profit: profit(95) },
-  { size: 12, income: 132, guideSalary: 15, profit: profit(117) },
-  { size: 15, income: 165, guideSalary: 20, profit: profit(145) },
-  { size: 20, income: 220, guideSalary: 20, profit: profit(200) },
-  { size: 25, income: 275, guideSalary: 25, profit: profit(250) },
-  { size: 30, income: 330, guideSalary: 25, profit: profit(305) },
-  { size: 40, income: 440, guideSalary: 30, profit: profit(410) },
+const CLASSIC_ROWS: ClassicScenarioRow[] = [
+  { size: 1, guideSalary: 5, income10: 10, income11: 11, profit10: profit(5), profit11: profit(6) },
+  { size: 2, guideSalary: 10, income10: 20, income11: 22, profit10: profit(10), profit11: profit(12) },
+  { size: 3, guideSalary: 15, income10: 30, income11: 33, profit10: profit(15), profit11: profit(18) },
+  { size: 4, guideSalary: 15, income10: 40, income11: 44, profit10: profit(25), profit11: profit(29) },
+  { size: 5, guideSalary: 15, income10: 50, income11: 55, profit10: profit(35), profit11: profit(40) },
+  { size: 6, guideSalary: 15, income10: 60, income11: 66, profit10: profit(45), profit11: profit(51) },
+  { size: 8, guideSalary: 15, income10: 80, income11: 88, profit10: profit(65), profit11: profit(73) },
+  { size: 10, guideSalary: 15, income10: 100, income11: 110, profit10: profit(85), profit11: profit(95) },
+  { size: 12, guideSalary: 15, income10: 120, income11: 132, profit10: profit(105), profit11: profit(117) },
+  { size: 15, guideSalary: 20, income10: 150, income11: 165, profit10: profit(130), profit11: profit(145) },
+  { size: 20, guideSalary: 20, income10: 200, income11: 220, profit10: profit(180), profit11: profit(200) },
+  { size: 25, guideSalary: 25, income10: 250, income11: 275, profit10: profit(225), profit11: profit(250) },
+  { size: 30, guideSalary: 25, income10: 300, income11: 330, profit10: profit(275), profit11: profit(305) },
+  { size: 40, guideSalary: 30, income10: 400, income11: 440, profit10: profit(370), profit11: profit(410) },
 ];
 
 export const CLASSIC_TOURS: ClassicTour[] = [
   {
-    slug: 'classic-lisbon',
-    name: 'ליסבון הקלאסית',
-    priceInfo: 'free tour · ההכנסה לחברה = transfer של המדריך × N (ילדים מתחת ל-10 חינם). העלות = שכר בסיס שהמדריך מקבל מהחברה.',
-    scenarios: [
-      { id: 'guide-10', label: 'מדריך רגיל (10€/ראש)', transferRate: 10, rows: CLASSIC_GUIDE_10_ROWS },
-      { id: 'guide-11', label: 'מדריך חדש (11€/ראש — כמו ניר)', transferRate: 11, rows: CLASSIC_GUIDE_11_ROWS },
-    ],
-  },
-  {
-    slug: 'classic-porto',
-    name: 'פורטו הקלאסית',
-    priceInfo: 'free tour · אותה נוסחה כמו קלאסי ליסבון. ההכנסה לחברה = transfer × N. העלות = שכר בסיס.',
-    scenarios: [
-      { id: 'guide-10', label: 'מדריך רגיל (10€/ראש)', transferRate: 10, rows: CLASSIC_GUIDE_10_ROWS },
-      { id: 'guide-11', label: 'מדריך חדש (11€/ראש)', transferRate: 11, rows: CLASSIC_GUIDE_11_ROWS },
-    ],
+    slug: 'classic-lisbon-porto',
+    name: 'ליסבון הקלאסית + פורטו הקלאסית',
+    priceInfo: 'מודל סיור חינמי — אותו חישוב לשתי הערים. ההכנסה לחברה = transfer של המדריך × N (ילדים מתחת ל-10 חינם). העלות = שכר בסיס שהמדריך מקבל מהחברה. שתי עמודות רווח זו לצד זו: מדריך רגיל (10€/ראש) ומדריך חדש כמו ניר (11€/ראש).',
+    rows: CLASSIC_ROWS,
   },
 ];
 
 export const CLASSIC_SUMMARY_CARDS: SummaryCard[] = [
   {
-    title: 'קלאסי — רווח לחברה לפי גודל קבוצה',
+    title: 'סיורים קלאסיים — רווח לחברה לפי גודל קבוצה',
     rows: [
       { label: 'מדריך 10€ · 5 אנשים', value: '+35€' },
       { label: 'מדריך 11€ · 5 אנשים', value: '+40€' },
@@ -736,5 +706,5 @@ export const TASTING_SUMMARY_CARDS: SummaryCard[] = [
   },
 ];
 
-export const PRICING_VALIDATION_VERSION = 5;
+export const PRICING_VALIDATION_VERSION = 6;
 export const PRICING_VALIDATION_UPDATED = '8 במאי 2026';

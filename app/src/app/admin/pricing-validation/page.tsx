@@ -64,7 +64,7 @@ export default function PricingValidationPage() {
           רווחיות סיורים — אימות תמחור
         </h1>
         <p className="text-sm text-gray-500">
-          סינטרה · אראבידה · אובידוש · דורו · קולינרי בוקר · קולינרי צהריים · טעימות פורטו · עודכן: {PRICING_VALIDATION_UPDATED}
+          סינטרה · אראבידה · אובידוש · דורו · בלם · קולינרי בוקר · קולינרי צהריים · טעימות פורטו · ליסבון/פורטו הקלאסיות · עודכן: {PRICING_VALIDATION_UPDATED}
         </p>
       </header>
 
@@ -77,7 +77,10 @@ export default function PricingValidationPage() {
           <strong>סיורים יומיים</strong> (סינטרה, אראבידה, אובידוש, דורו): שני ערכי רווח/הפסד זה לצד זה — ספק זול / ספק יקר. כך רואים בעין אחת את שתי האפשרויות.
         </p>
         <p className="text-emerald-900 mt-1">
-          <strong>סיורי טעימות</strong> (קולינרי בוקר/צהריים, טעימות פורטו): טור רווח אחד — אין השוואת ספקים, אבל יש פירוט עלויות (מזון פר-אדם + פריטים משותפים).
+          <strong>סיורים בעיר</strong> (בלם, קולינרי בוקר/צהריים, טעימות פורטו): טור רווח אחד — אין השוואת ספקים, אבל יש פירוט עלויות (מוצרים לאדם + פריטים משותפים).
+        </p>
+        <p className="text-emerald-900 mt-1">
+          <strong>סיורים קלאסיים</strong> (ליסבון, פורטו): מודל סיור חינמי — אין מחיר ללקוח, רק transfer של המדריך לחברה. שתי עמודות רווח: מדריך רגיל (10€/ראש) ומדריך חדש (11€/ראש).
         </p>
         <p className="mt-2 text-emerald-900 flex flex-wrap items-center gap-2">
           צביעת תאים:{' '}
@@ -117,12 +120,12 @@ export default function PricingValidationPage() {
         <TourSection key={tour.slug} tour={tour} />
       ))}
 
-      {/* ─── Tasting tours section ─── */}
+      {/* ─── City tours section ─── */}
       <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1">
-        סיורי טעימות — תלויי מזון
+        סיורים בעיר
       </h2>
       <p className="text-xs text-gray-600 mb-5">
-        ללא רכב · עיקר העלות: שכר + מזון פר-אדם + פריטים משותפים. אין השוואת ספקים, אבל יש רגישות לגודל קבוצה דרך פריטים שמתחלקים (מגש גבינות, פאו דה קז&apos;ו, יין ירוק, גווארנה)
+        בלם · קולינרי בוקר · קולינרי צהריים · טעימות פורטו · ללא רכב, עיקר העלות: שכר + מוצרים לאדם + פריטים משותפים. אין השוואת ספקים, אבל יש רגישות לגודל קבוצה דרך פריטים שמתחלקים (מגש גבינות, פאו דה קז&apos;ו, יין ירוק, גווארנה)
       </p>
 
       {/* Tasting summary cards */}
@@ -149,10 +152,10 @@ export default function PricingValidationPage() {
 
       {/* ─── Classic tours section ─── */}
       <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1">
-        סיורים קלאסיים — מודל transfer
+        סיורים קלאסיים — מודל סיור חינמי
       </h2>
       <p className="text-xs text-gray-600 mb-5">
-        free tour · אין מחיר ללקוח, רק טיפים. ההכנסה לחברה = transfer של המדריך × N (מדריך רגיל 10€/ראש, מדריך חדש 11€/ראש). העלות = שכר בסיס שהחברה משלמת למדריך.
+        ליסבון + פורטו · אותו מודל לשתי הערים. אין מחיר ללקוח, הלקוח משלם רק טיפ. ההכנסה לחברה = transfer של המדריך × N (ילדים מתחת ל-10 חינם). העלות לחברה = שכר בסיס שהחברה משלמת למדריך. שתי עמודות רווח זו לצד זו: מדריך רגיל (10€/ראש) ומדריך חדש (11€/ראש).
       </p>
 
       {/* Classic summary cards */}
@@ -188,7 +191,7 @@ export default function PricingValidationPage() {
       </div>
 
       <div className="text-center text-xs text-gray-400 mt-7 mb-4">
-        פורטוגו · מודל תמחור · גרסה {PRICING_VALIDATION_VERSION} (+ בלם, קלאסיים, תיקון גווארנה) · {PRICING_VALIDATION_UPDATED}
+        פורטוגו · מודל תמחור · גרסה {PRICING_VALIDATION_VERSION} · {PRICING_VALIDATION_UPDATED}
       </div>
     </div>
   );
@@ -494,55 +497,38 @@ function TastingMobileCard({ tour, row }: { tour: TastingTour; row: TastingScena
   );
 }
 
-// ─── Classic section (קלאסי ליסבון / פורטו — free tour) ───────────────────
+// ─── Classic section (סיורים קלאסיים — מודל סיור חינמי) ────────────────────
 function ClassicSection({ tour }: { tour: ClassicTour }) {
-  const [activeScenarioId, setActiveScenarioId] = useState(tour.scenarios[0].id);
-  const activeScenario = tour.scenarios.find((s) => s.id === activeScenarioId) ?? tour.scenarios[0];
-
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 mb-6 shadow-sm">
       <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-1">{tour.name}</h2>
       <p className="text-sm text-gray-600 mb-3">{tour.priceInfo}</p>
 
-      {/* Scenario tabs */}
-      <div className="flex flex-wrap gap-2 mb-3 mt-4">
-        {tour.scenarios.map((s) => {
-          const active = s.id === activeScenarioId;
-          return (
-            <button
-              key={s.id}
-              onClick={() => setActiveScenarioId(s.id)}
-              className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-all ${
-                active
-                  ? 'bg-slate-700 text-white border-slate-700'
-                  : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-              }`}
-            >
-              {s.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto">
+      {/* Desktop table — שתי עמודות רווח זו לצד זו */}
+      <div className="hidden md:block overflow-x-auto mt-4">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="text-right text-slate-600">
               <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל קבוצה</th>
-              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">הכנסה לחברה ({activeScenario.transferRate}€×N)</th>
-              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">שכר בסיס למדריך</th>
-              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">רווח לחברה</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">שכר בסיס</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">הכנסה · מדריך 10€</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">רווח · מדריך 10€</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">הכנסה · מדריך 11€</th>
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">רווח · מדריך 11€</th>
             </tr>
           </thead>
           <tbody>
-            {activeScenario.rows.map((row) => (
+            {tour.rows.map((row) => (
               <tr key={row.size} className="border-b border-gray-100">
                 <td className="px-2.5 py-2.5 font-bold">{row.size}</td>
-                <td className="px-2.5 py-2.5">{fmtEuro(row.income)}</td>
                 <td className="px-2.5 py-2.5">{fmtEuro(row.guideSalary)}</td>
-                <td className={`px-2.5 py-2.5 ${profitCellClasses(row.profit)}`}>
-                  {profitCellText(row.profit)}
+                <td className="px-2.5 py-2.5">{fmtEuro(row.income10)}</td>
+                <td className={`px-2.5 py-2.5 ${profitCellClasses(row.profit10)}`}>
+                  {profitCellText(row.profit10)}
+                </td>
+                <td className="px-2.5 py-2.5">{fmtEuro(row.income11)}</td>
+                <td className={`px-2.5 py-2.5 ${profitCellClasses(row.profit11)}`}>
+                  {profitCellText(row.profit11)}
                 </td>
               </tr>
             ))}
@@ -552,24 +538,28 @@ function ClassicSection({ tour }: { tour: ClassicTour }) {
 
       {/* Mobile cards */}
       <div className="md:hidden space-y-2 mt-2">
-        {activeScenario.rows.map((row) => (
+        {tour.rows.map((row) => (
           <div key={row.size} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
             <div className="flex justify-between items-baseline mb-2">
               <div>
                 <span className="text-xs text-gray-500">קבוצה</span>{' '}
                 <span className="text-2xl font-bold text-slate-800">{row.size}</span>
               </div>
-              <div className="text-sm">
-                <span className="text-gray-500">הכנסה </span>
-                <span className="font-bold text-slate-800">{fmtEuro(row.income)}</span>
+              <div className="text-xs text-gray-500">
+                שכר בסיס: <span className="font-semibold text-slate-700">{fmtEuro(row.guideSalary)}</span>
               </div>
             </div>
-            <div className={`rounded-lg p-3 text-center ${profitCellClasses(row.profit)}`}>
-              <div className="text-[11px] opacity-80 font-normal">רווח לחברה</div>
-              <div className="text-lg mt-0.5">{profitCellText(row.profit)}</div>
-            </div>
-            <div className="mt-2 text-xs text-gray-500 text-center">
-              שכר בסיס למדריך: {fmtEuro(row.guideSalary)}
+            <div className="grid grid-cols-2 gap-2">
+              <div className={`rounded-lg p-2 text-center ${profitCellClasses(row.profit10)}`}>
+                <div className="text-[11px] opacity-80 font-normal">מדריך 10€/ראש</div>
+                <div className="text-[10px] opacity-60 font-normal">הכנסה {fmtEuro(row.income10)}</div>
+                <div className="text-base mt-0.5">{profitCellText(row.profit10)}</div>
+              </div>
+              <div className={`rounded-lg p-2 text-center ${profitCellClasses(row.profit11)}`}>
+                <div className="text-[11px] opacity-80 font-normal">מדריך 11€/ראש</div>
+                <div className="text-[10px] opacity-60 font-normal">הכנסה {fmtEuro(row.income11)}</div>
+                <div className="text-base mt-0.5">{profitCellText(row.profit11)}</div>
+              </div>
             </div>
           </div>
         ))}
