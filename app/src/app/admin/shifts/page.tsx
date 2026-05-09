@@ -203,12 +203,11 @@ const PORTO_ROSTER: PortoSlot[] = [
 /**
  * אוטופיל שקט של קבע פורטו, רץ בכל טעינה של שבוע.
  *
- * 3 שלבים:
+ * 2 שלבים:
  *   1) על שיבוצים קיימים (מהאתר) — להצמיד מדריך ראשי לפי הקבע + להשלים notes.
  *   2) על שיבוצים קיימים — אם ל-slot יש secondary (תום-גיבוי), ליצור shift ידני נוסף.
- *   3) על ימים בעתיד שבהם הקבע "מצפה" ל-slot שלא קיים בכלל (האתר לא פרסם) —
- *      ליצור את הראשי + secondary ידנית, עם תווית "🤖 קבע" כדי שעומר תזהה.
- *      זה הכרחי לימי שישי שבהם פעמים רבות פורטו_1 לא מופיע באתר.
+ *
+ * (שלב 3 — יצירת קבע גם כשהאתר לא פרסם — בוטל ב-8.5.26. ראי הערה למטה.)
  *
  * מחזיר את כמות הפעולות שבוצעו — אם > 0, הקורא ירענן.
  */
@@ -277,60 +276,11 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
     } catch { /* ignore */ }
   }
 
-  // === שלב 3: ימים בקבע שאין להם שיבוץ בכלל — האתר לא פרסם, אנחנו ניצור ידנית ===
-  // זה תופס בדיוק את המקרה של שישי שבו לפעמים פורטו_1 לא מופיע באתר.
-  // יוצרים רק לעתיד (כולל היום), לא לימים שעברו.
-  const todayIso = toIsoDate(new Date());
-  for (let i = 0; i < 7; i++) {
-    const d = addDays(weekStart, i);
-    const isoDate = toIsoDate(d);
-    if (isoDate < todayIso) continue;
-    const dow = d.getDay();
-    const slotsForDay = PORTO_ROSTER.filter((r) => r.dayOfWeek === dow);
-    for (const slot of slotsForDay) {
-      // עומר מחקה ידנית את ה-slot הזה (גם primary וגם secondary לא יחזרו)
-      if (skipped.has(rosterSlotKey(isoDate, slot.defaultTime, slot.tour_type, 'porto'))) continue;
-      // האם קיים shift כלשהו על היום הזה לסוג הסיור הזה?
-      const exists = allShifts.some(
-        (x) =>
-          x.shift_date === isoDate &&
-          x.tour_type === slot.tour_type &&
-          x.city === 'porto' &&
-          x.status !== 'cancelled',
-      );
-      if (exists) continue;
-      const primary = guideByName.get(slot.guide_name);
-      if (!primary || isGuideOnVacation(primary, isoDate)) continue;
-      const baseNotes = ROSTER_AUTOFILL_PREFIX;
-      try {
-        await createManualShift({
-          shift_date: isoDate,
-          shift_time: slot.defaultTime,
-          tour_type: slot.tour_type,
-          city: 'porto',
-          guide_id: primary.id,
-          notes: slot.notes ? `${baseNotes} · ${slot.notes}` : baseNotes,
-        });
-        actions++;
-      } catch { /* ignore */ }
-      if (slot.secondary) {
-        const sec = guideByName.get(slot.secondary.guide_name);
-        if (sec && !isGuideOnVacation(sec, isoDate)) {
-          try {
-            await createManualShift({
-              shift_date: isoDate,
-              shift_time: slot.defaultTime,
-              tour_type: slot.tour_type,
-              city: 'porto',
-              guide_id: sec.id,
-              notes: `${baseNotes} · ${slot.secondary.notes}`,
-            });
-            actions++;
-          } catch { /* ignore */ }
-        }
-      }
-    }
-  }
+  // === שלב 3 בוטל (8.5.26) ===
+  // עד אז שלב 3 היה יוצר אוטומטית ימי קבע פורטו (פורטו_1 ב-ב'/ה'/ש' + דורו ב-ד'/ו')
+  // גם כשהאתר לא פרסם אותם. הבעיה: מקור האמת אמור להיות האתר. ה-cron היומי
+  // לא מנקה shifts שמקורם 'manual', ולכן הסיורים האלה היו תקועים במערכת
+  // עד מחיקה ידנית. עומר ביטלה את שלב 3 ב-8.5.26.
 
   return actions;
 }
