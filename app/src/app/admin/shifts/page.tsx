@@ -16,7 +16,7 @@
  *   - "מלאי קבע פורטו" — תום/דותן לפי הקבע
  */
 
-import { useEffect, useMemo, useState, Suspense } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
 import {
   loadShiftsForWeek,
@@ -351,6 +351,9 @@ function ShiftsContent() {
   const assignedDraftCount = shifts.filter((s) => s.status === 'draft' && s.guide_id).length;
   const unassignedCount = shifts.filter((s) => !s.guide_id && s.status !== 'cancelled').length;
   const publishedCount = shifts.filter((s) => s.status === 'published').length;
+
+  // ref לקלט התאריך — מאפשר ל-label לפתוח את ה-native picker מכל מקום בלחיצה
+  const datePickerRef = useRef<HTMLInputElement>(null);
   // אם אין יותר drafts אבל יש published — מציגים "פרסמי מחדש" ו-"בטלי פרסום" במקום "פרסמי שבוע"
   const allPublished = totalDraftCount === 0 && publishedCount > 0;
 
@@ -566,44 +569,54 @@ function ShiftsContent() {
           <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={navBtnStyle}>
             השבוע
           </button>
-          {/* קפיצה לתאריך — בוחרת תאריך, קופצת לשבוע שלו (ראשון של אותו שבוע).
-              עטופה ב-label עם טקסט מפורש ורוחב מוגבל כדי שלא תתפרש על כל ה-flex. */}
-          <label
+          {/* קפיצה לתאריך — לחיצה בכל מקום בכפתור פותחת את הלוח הנייטיבי דרך showPicker(). */}
+          <button
+            type="button"
             data-jump-date
             title="קפיצה לשבוע של תאריך מסוים"
+            onClick={() => {
+              const el = datePickerRef.current;
+              if (!el) return;
+              // showPicker זמין בכל הדפדפנים המודרניים (Chrome 99+, Safari 16+, Firefox 101+).
+              // לפני זה — fallback לפוקוס שעדיין מאפשר הקלדה ידנית.
+              if (typeof el.showPicker === 'function') el.showPicker();
+              else el.focus();
+            }}
             style={{
               ...navBtnStyle,
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              padding: '4px 10px',
+              padding: '6px 12px',
               cursor: 'pointer',
               flex: '0 0 auto',
             }}
           >
             <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>📅 בחירת תאריך</span>
-            <input
-              type="date"
-              value={toIsoDate(weekStart)}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (!v) return;
-                const [y, m, d] = v.split('-').map(Number);
-                setWeekStart(weekStartOf(new Date(y, m - 1, d)));
-              }}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                fontSize: 13,
-                fontFamily: 'inherit',
-                color: ADMIN_COLORS.gray700,
-                padding: 0,
-                cursor: 'pointer',
-                outline: 'none',
-                width: 120,
-              }}
-            />
-          </label>
+          </button>
+          {/* הקלט עצמו מוסתר ויזואלית אבל נשאר נגיש — showPicker צריך אלמנט מחובר ל-DOM */}
+          <input
+            ref={datePickerRef}
+            type="date"
+            value={toIsoDate(weekStart)}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v) return;
+              const [y, m, d] = v.split('-').map(Number);
+              setWeekStart(weekStartOf(new Date(y, m - 1, d)));
+            }}
+            aria-label="קפיצה לשבוע של תאריך"
+            style={{
+              position: 'absolute',
+              opacity: 0,
+              pointerEvents: 'none',
+              width: 1,
+              height: 1,
+              border: 0,
+              padding: 0,
+              margin: 0,
+            }}
+          />
         </div>
         <button
           data-nav-next
