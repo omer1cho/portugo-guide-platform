@@ -598,6 +598,15 @@ function ShiftsContent() {
                 const [y, m, d] = v.split('-').map(Number);
                 setWeekStart(weekStartOf(new Date(y, m - 1, d)));
               }}
+              onClick={(e) => {
+                // בדסקטופ, native click על input[type=date] פותח picker רק
+                // מהאייקון. showPicker מתוך onClick הוא user-activated → תקין.
+                // במובייל זה מיותר (הקליק עצמו פותח picker) אבל בלתי מזיק.
+                const el = e.currentTarget;
+                if (typeof el.showPicker === 'function') {
+                  try { el.showPicker(); } catch { /* ignore — לא ב-user activation */ }
+                }
+              }}
               aria-label="קפיצה לשבוע של תאריך"
               style={{
                 position: 'absolute',
