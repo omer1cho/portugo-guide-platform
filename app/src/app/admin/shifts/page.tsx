@@ -566,19 +566,44 @@ function ShiftsContent() {
           <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={navBtnStyle}>
             השבוע
           </button>
-          {/* קפיצה לתאריך — בוחרת תאריך, קופצת לשבוע שלו (ראשון של אותו שבוע) */}
-          <input
-            type="date"
-            value={toIsoDate(weekStart)}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (!v) return;
-              const [y, m, d] = v.split('-').map(Number);
-              setWeekStart(weekStartOf(new Date(y, m - 1, d)));
-            }}
+          {/* קפיצה לתאריך — בוחרת תאריך, קופצת לשבוע שלו (ראשון של אותו שבוע).
+              עטופה ב-label עם טקסט מפורש ורוחב מוגבל כדי שלא תתפרש על כל ה-flex. */}
+          <label
+            data-jump-date
             title="קפיצה לשבוע של תאריך מסוים"
-            style={{ ...navBtnStyle, padding: '5px 8px' }}
-          />
+            style={{
+              ...navBtnStyle,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 10px',
+              cursor: 'pointer',
+              flex: '0 0 auto',
+            }}
+          >
+            <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>📅 בחירת תאריך</span>
+            <input
+              type="date"
+              value={toIsoDate(weekStart)}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (!v) return;
+                const [y, m, d] = v.split('-').map(Number);
+                setWeekStart(weekStartOf(new Date(y, m - 1, d)));
+              }}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                fontSize: 13,
+                fontFamily: 'inherit',
+                color: ADMIN_COLORS.gray700,
+                padding: 0,
+                cursor: 'pointer',
+                outline: 'none',
+                width: 120,
+              }}
+            />
+          </label>
         </div>
         <button
           data-nav-next
