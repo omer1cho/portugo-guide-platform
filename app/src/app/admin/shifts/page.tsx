@@ -1118,10 +1118,18 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     }
   }
 
-  // מסגרת לכרטיס לפי סטטוס. סיור "כנראה פרטי" — מסגרת מקווקווית + רקע קרם
+  // האם זה סיור פרטי סגור סופית (לא "כנראה" טנטטיבי)?
+  const isConfirmedPrivate = isPrivate && !isTentative && shift.status !== 'cancelled';
+
+  // מסגרת לכרטיס לפי סטטוס.
+  //   • cancelled → רקע אדום בהיר
+  //   • tentative private (🤔) → רקע קרם + מסגרת מקווקווית
+  //   • confirmed private (🔒) → רקע ירוק בהיר + מסגרת ירוקה עבה (להבליט מהרגיל)
+  //   • published → מסגרת תכלת
   let cardBg: string = '#fff';
   let cardBorder: string = ADMIN_COLORS.gray300;
   let cardBorderStyle: string = 'solid';
+  let cardBorderWidth: number = 1;
   if (shift.status === 'cancelled') {
     cardBg = '#fef2f2';
     cardBorder = '#fca5a5';
@@ -1129,6 +1137,10 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     cardBg = '#fffbeb';
     cardBorder = '#a37b00';
     cardBorderStyle = 'dashed';
+  } else if (isConfirmedPrivate) {
+    cardBg = '#ecfdf5';
+    cardBorder = ADMIN_COLORS.green600;
+    cardBorderWidth = 2;
   } else if (shift.status === 'published') {
     cardBorder = '#93c5fd';
   }
@@ -1166,7 +1178,7 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
       data-shift-card
       style={{
         background: cardBg,
-        border: `1px ${cardBorderStyle} ${cardBorder}`,
+        border: `${cardBorderWidth}px ${cardBorderStyle} ${cardBorder}`,
         borderRadius: 4,
         padding: '3px 4px',
         opacity: shift.status === 'cancelled' ? 0.7 : 1,
@@ -1191,6 +1203,14 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
             style={{ fontSize: 10, flexShrink: 0 }}
           >
             🤔
+          </span>
+        )}
+        {isConfirmedPrivate && (
+          <span
+            title="סיור פרטי סגור סופית"
+            style={{ fontSize: 10, flexShrink: 0 }}
+          >
+            🔒
           </span>
         )}
         <span

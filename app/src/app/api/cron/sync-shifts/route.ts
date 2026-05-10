@@ -12,7 +12,8 @@
  *       - אם status='draft' ויש guide_id (טנטטיבי משובץ) → השאר + הערה
  *       - אם status='draft' ובלי guide_id → מחיקה
  *
- * הגבלה: רק 90 יום קדימה. שיבוצים ישנים לא נוגעים.
+ * הגבלה: רק 180 יום קדימה (6 חודשים). שיבוצים ישנים לא נוגעים.
+ *   (האתר עצמו לרוב מפרסם עד סוף 4 חודשים; 180 נותן buffer.)
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -148,8 +149,8 @@ export async function GET(req: NextRequest) {
   };
 
   try {
-    // 1. Fetch from website
-    const websiteShifts = await fetchWebsiteShifts(90);
+    // 1. Fetch from website (180 days = 6 months ahead — covers full publishing horizon)
+    const websiteShifts = await fetchWebsiteShifts(180);
     result.fetched_from_website = websiteShifts.length;
 
     // 2. Get all existing website-source shifts that are today or future
