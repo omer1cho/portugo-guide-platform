@@ -566,6 +566,19 @@ function ShiftsContent() {
           <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={navBtnStyle}>
             השבוע
           </button>
+          {/* קפיצה לתאריך — בוחרת תאריך, קופצת לשבוע שלו (ראשון של אותו שבוע) */}
+          <input
+            type="date"
+            value={toIsoDate(weekStart)}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v) return;
+              const [y, m, d] = v.split('-').map(Number);
+              setWeekStart(weekStartOf(new Date(y, m - 1, d)));
+            }}
+            title="קפיצה לשבוע של תאריך מסוים"
+            style={{ ...navBtnStyle, padding: '5px 8px' }}
+          />
         </div>
         <button
           data-nav-next
