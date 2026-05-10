@@ -569,54 +569,50 @@ function ShiftsContent() {
           <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={navBtnStyle}>
             השבוע
           </button>
-          {/* קפיצה לתאריך — לחיצה בכל מקום בכפתור פותחת את הלוח הנייטיבי דרך showPicker(). */}
-          <button
-            type="button"
+          {/* קפיצה לתאריך — הקלט עצמו שקוף ופרוס על כל שטח הכפתור,
+              כך שכל לחיצה (גם במובייל!) פותחת את הלוח הנייטיבי. showPicker
+              לא יציב במובייל אם הקלט מוסתר, לכן הטריק הזה. */}
+          <label
             data-jump-date
             title="קפיצה לשבוע של תאריך מסוים"
-            onClick={() => {
-              const el = datePickerRef.current;
-              if (!el) return;
-              // showPicker זמין בכל הדפדפנים המודרניים (Chrome 99+, Safari 16+, Firefox 101+).
-              // לפני זה — fallback לפוקוס שעדיין מאפשר הקלדה ידנית.
-              if (typeof el.showPicker === 'function') el.showPicker();
-              else el.focus();
-            }}
             style={{
               ...navBtnStyle,
+              position: 'relative',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
               padding: '6px 12px',
               cursor: 'pointer',
               flex: '0 0 auto',
+              overflow: 'hidden',
             }}
           >
             <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>📅 בחירת תאריך</span>
-          </button>
-          {/* הקלט עצמו מוסתר ויזואלית אבל נשאר נגיש — showPicker צריך אלמנט מחובר ל-DOM */}
-          <input
-            ref={datePickerRef}
-            type="date"
-            value={toIsoDate(weekStart)}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (!v) return;
-              const [y, m, d] = v.split('-').map(Number);
-              setWeekStart(weekStartOf(new Date(y, m - 1, d)));
-            }}
-            aria-label="קפיצה לשבוע של תאריך"
-            style={{
-              position: 'absolute',
-              opacity: 0,
-              pointerEvents: 'none',
-              width: 1,
-              height: 1,
-              border: 0,
-              padding: 0,
-              margin: 0,
-            }}
-          />
+            <input
+              ref={datePickerRef}
+              type="date"
+              value={toIsoDate(weekStart)}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (!v) return;
+                const [y, m, d] = v.split('-').map(Number);
+                setWeekStart(weekStartOf(new Date(y, m - 1, d)));
+              }}
+              aria-label="קפיצה לשבוע של תאריך"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                opacity: 0,
+                cursor: 'pointer',
+                border: 0,
+                padding: 0,
+                margin: 0,
+                fontSize: 16, // 16+ מונע auto-zoom של iOS Safari
+              }}
+            />
+          </label>
         </div>
         <button
           data-nav-next
