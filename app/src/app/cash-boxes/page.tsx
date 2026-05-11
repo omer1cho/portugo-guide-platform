@@ -7,6 +7,7 @@ import { supabase, SYSTEM_START_DATE } from '@/lib/supabase';
 import { useAuthGuard } from '@/lib/auth';
 import { uploadTransferReceipt } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
+import { canEditMonth } from '@/lib/month-policy';
 
 type Totals = {
   collected: number;        // all cash collected (any tour category)
@@ -27,6 +28,9 @@ type Movement = {
   date: string;
   description: string;
   amount: number;     // חיובי = נכנס, שלילי = יצא
+  /** אם מוגדר — תנועה ניתנת לביטול ע"י המדריך (חיזוקי מעטפה בלבד).
+   * המחיקה תסיר את שורת ה-transfer מ-DB. תוצג רק אם החודש פתוח לעריכה. */
+  cancellable?: { transfer_id: string };
 };
 
 function formatShortDate(d: string): string {
@@ -35,7 +39,17 @@ function formatShortDate(d: string): string {
 }
 
 /** רכיב טיימליין: שורות עם תאריך, תיאור, סכום (+/-) */
-function Timeline({ movements }: { movements: Movement[] }) {
+function Timeline({
+  movements,
+  canCancel,
+  onCancel,
+}: {
+  movements: Movement[];
+  /** האם החודש פתוח לעריכה — קובע אם להציג כפתורי ביטול */
+  canCancel: boolean;
+  /** callback שנקרא בלחיצה על ❌ ליד תנועה ניתנת לביטול */
+  onCancel: (transferId: string, description: string) => void;
+}) {
   if (movements.length === 0) {
     return (
       <div className="text-center text-xs text-gray-400 py-3">אין תנועות בחודש זה</div>
@@ -45,6 +59,7 @@ function Timeline({ movements }: { movements: Movement[] }) {
     <ul className="space-y-1.5 text-sm pt-2 border-t mt-3">
       {movements.map((m, idx) => {
         const isPositive = m.amount > 0;
+        const showCancel = canCancel && m.cancellable;
         return (
           <li key={idx} className="flex justify-between items-center gap-2">
             <span className="text-xs text-gray-500 font-mono shrink-0 w-12">
@@ -54,6 +69,16 @@ function Timeline({ movements }: { movements: Movement[] }) {
             <span className={`font-semibold shrink-0 ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
               {isPositive ? '+' : ''}{m.amount.toFixed(2)}€
             </span>
+            {showCancel && (
+              <button
+                onClick={() => onCancel(m.cancellable!.transfer_id, m.description)}
+                className="shrink-0 text-xs text-red-600 hover:bg-red-50 active:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                aria-label="ביטול פעולה"
+                title="ביטול הפעולה הזו"
+              >
+                ❌
+              </button>
+            )}
           </li>
         );
       })}
@@ -132,6 +157,13 @@ function CashBoxesContent() {
   const [refillSaving, setRefillSaving] = useState(false);
   const [refillError, setRefillError] = useState('');
 
+  // טריגר רענון — מועלה ב-1 אחרי ביטול תנועה כדי לטעון מחדש את הנתונים
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  // מודאל אישור ביטול תנועה ("בטוח.ה?")
+  const [cancelModal, setCancelModal] = useState<{ transfer_id: string; description: string } | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
   useEffect(() => {
     const id = localStorage.getItem('portugo_guide_id');
     if (!id) {
@@ -140,7 +172,35 @@ function CashBoxesContent() {
     }
     setGuideId(id);
     loadTotals(id);
-  }, [router, year, month]);
+  }, [router, year, month, reloadTrigger]);
+
+  /**
+   * האם החודש הנבחר פתוח לעריכה — קובע אם להציג כפתורי ❌ בטיימליין.
+   * חודש נוכחי תמיד פתוח. חודש קודם פתוח ב-5 הימים הראשונים של החודש העוקב
+   * אם המדריך עוד לא סגר משכורת. חודש ישן יותר נעול.
+   */
+  const canEdit = canEditMonth(year, month, totals.salaryWithdrawn > 0);
+
+  /**
+   * מבטל פעולת חיזוק (cash_refill / expenses_refill) — מוחק את שורת ה-transfer
+   * מ-DB. המאזנים יחזרו אוטומטית כי הם מחושבים מסכומי השורות הקיימות.
+   */
+  async function handleCancelRefill() {
+    if (!cancelModal) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from('transfers')
+      .delete()
+      .eq('id', cancelModal.transfer_id)
+      .in('transfer_type', ['cash_refill', 'expenses_refill']); // הגנה: לא למחוק סוגים אחרים בטעות
+    setCancelling(false);
+    if (error) {
+      alert('משהו השתבש במחיקה: ' + error.message);
+      return;
+    }
+    setCancelModal(null);
+    setReloadTrigger((n) => n + 1);
+  }
 
   async function loadTotals(id: string) {
     setLoading(true);
@@ -282,16 +342,17 @@ function CashBoxesContent() {
     const expensesMov: Movement[] = [];
 
     (transfers || []).forEach(
-      (t: { amount: number; transfer_type: string; transfer_date: string; notes: string | null; is_pending_deposit?: boolean | null }) => {
+      (t: { id: string; amount: number; transfer_type: string; transfer_date: string; notes: string | null; is_pending_deposit?: boolean | null }) => {
         const amt = t.amount || 0;
         if (t.transfer_type === 'cash_refill') {
           cashRefill += amt;
-          mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת עודף', amount: -amt });
-          changeMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt });
+          // שתי השורות מסומנות cancellable עם אותו transfer_id — מחיקה מאחת תסיר את שתיהן בריענון
+          mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת עודף', amount: -amt, cancellable: { transfer_id: t.id } });
+          changeMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt, cancellable: { transfer_id: t.id } });
         } else if (t.transfer_type === 'expenses_refill') {
           expensesRefill += amt;
-          mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת הוצאות', amount: -amt });
-          expensesMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt });
+          mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת הוצאות', amount: -amt, cancellable: { transfer_id: t.id } });
+          expensesMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt, cancellable: { transfer_id: t.id } });
         } else if (t.transfer_type === 'salary_withdrawal') {
           salaryWithdrawn += amt;
           mainMov.push({ date: t.transfer_date, description: 'משיכת משכורת (סגירת חודש)', amount: -amt });
@@ -662,7 +723,13 @@ function CashBoxesContent() {
               >
                 {showMainTimeline ? '▲ הסתר.י פירוט תנועות' : '▼ פירוט תנועות לפי תאריך'}
               </button>
-              {showMainTimeline && <Timeline movements={mainMovements} />}
+              {showMainTimeline && (
+                <Timeline
+                  movements={mainMovements}
+                  canCancel={canEdit}
+                  onCancel={(transfer_id, description) => setCancelModal({ transfer_id, description })}
+                />
+              )}
 
               <Link
                 href={`/transfers?year=${year}&month=${month + 1}`}
@@ -722,7 +789,13 @@ function CashBoxesContent() {
               >
                 {showChangeTimeline ? '▲ הסתר.י פירוט תנועות' : '▼ פירוט תנועות לפי תאריך'}
               </button>
-              {showChangeTimeline && <Timeline movements={changeMovements} />}
+              {showChangeTimeline && (
+                <Timeline
+                  movements={changeMovements}
+                  canCancel={canEdit}
+                  onCancel={(transfer_id, description) => setCancelModal({ transfer_id, description })}
+                />
+              )}
 
               {needsChangeRefill && (
                 <div className="mt-3 p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-900 text-sm font-medium">
@@ -788,7 +861,13 @@ function CashBoxesContent() {
               >
                 {showExpensesTimeline ? '▲ הסתר.י פירוט תנועות' : '▼ פירוט תנועות לפי תאריך'}
               </button>
-              {showExpensesTimeline && <Timeline movements={expensesMovements} />}
+              {showExpensesTimeline && (
+                <Timeline
+                  movements={expensesMovements}
+                  canCancel={canEdit}
+                  onCancel={(transfer_id, description) => setCancelModal({ transfer_id, description })}
+                />
+              )}
 
               <div className="flex gap-2 mt-3">
                 <Link
@@ -818,6 +897,44 @@ function CashBoxesContent() {
           </>
         )}
       </main>
+
+      {/* Cancel-refill confirmation modal — אישור ביטול תנועת חיזוק */}
+      {cancelModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              ביטול הפעולה?
+            </h3>
+            <p className="text-sm text-gray-700 mb-2">
+              את עומדת לבטל את התנועה:
+            </p>
+            <p className="text-sm font-semibold text-gray-900 mb-2 bg-gray-50 rounded p-2">
+              {cancelModal.description}
+            </p>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              הפעולה תוסר משתי הקופות (גם מהראשית וגם מהמעטפת), והיתרות יחזרו למצב לפני החיזוק.
+              שימי לב — אם הכסף כבר זז פיזית, צריך להחזיר אותו ידנית.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleCancelRefill}
+                disabled={cancelling}
+                className="w-full bg-red-600 hover:bg-red-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                {cancelling ? 'מבטלת...' : 'כן, בטלי את הפעולה'}
+              </button>
+              <button
+                onClick={() => setCancelModal(null)}
+                disabled={cancelling}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                לא, השאירי
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Refill modal */}
       {refillModal && (
