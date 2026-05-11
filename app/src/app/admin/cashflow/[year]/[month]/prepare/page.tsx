@@ -704,6 +704,31 @@ function CashflowRowItem({
               ℹ פריט שלא דורש קבלה לפי הקטלוג
             </div>
           )}
+          {/* קבלת משכורת שכוללת חודשים דחויים — מציין למה הסכום שונה מהמשכורת של החודש */}
+          {row.invoice && row.invoice.absorbed_deferred.length > 0 && (
+            <div style={{
+              fontSize: 11,
+              color: '#5b21b6',
+              marginTop: 4,
+              background: '#f5f3ff',
+              border: '1px solid #ddd6fe',
+              borderRadius: 4,
+              padding: '4px 6px',
+              lineHeight: 1.5,
+            }}>
+              ↪️ כולל חודשים שנדחו:
+              <span style={{ marginInlineStart: 4 }}>
+                {row.invoice.absorbed_deferred.map((d, i) => (
+                  <span key={`${d.year}-${d.month}`}>
+                    {i > 0 && ' · '}
+                    {monthName(d.year, d.month - 1)}: {d.amount.toFixed(2)}€
+                  </span>
+                ))}
+                {' · '}
+                <strong>{monthName(row.invoice.service_year, row.invoice.service_month - 1)}: {(row.invoice.own_amount ?? 0).toFixed(2)}€</strong>
+              </span>
+            </div>
+          )}
         </td>
         <td style={{ ...tdStyle, fontFamily: 'monospace', color: ADMIN_COLORS.gray700 }}>
           {row.description}

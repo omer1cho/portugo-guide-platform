@@ -166,9 +166,17 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(justSaved);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  // תזכורות הוצאת קבלה — חודשים שבהם הייתה משכורת לקבלה ולא נלחץ "הוצאתי".
+  // תזכורות הוצאת קבלה — חודשים שבהם הייתה משכורת לקבלה ולא נלחץ "הוצאתי" וגם לא נדחה.
   // נצברות עד שלוחצים אישור לכל חודש — אם יש כמה חודשים פתוחים, יוצגו כמה באנרים.
-  type PendingReceipt = { year: number; month: number; receipt_amount: number };
+  // included_deferred — חודשים שהאדמין סימן כדחויים והקבלה הזו תכלול גם אותם
+  // (חל רק על הבאנר העתיק ביותר; הקבלה הראשונה שתוצא היא זו שסופגת).
+  type DeferredMonth = { year: number; month: number; receipt_amount: number };
+  type PendingReceipt = {
+    year: number;
+    month: number;
+    receipt_amount: number;
+    included_deferred: DeferredMonth[];
+  };
   const [pendingReceipts, setPendingReceipts] = useState<PendingReceipt[]>([]);
   // מודאל העלאת אסמכתא לקבלה החודשית — נפתח כשלוחצים על באנר תזכורת
   const [receiptUploadModal, setReceiptUploadModal] = useState<PendingReceipt | null>(null);
@@ -406,17 +414,34 @@ function HomeContent() {
 
   // טעינת תזכורות הוצאת קבלה — סורק חודשים מ-SYSTEM_START_DATE עד החודש שלפני הנוכחי.
   // לכל חודש שלא אושר ויש בו receipt_amount > 0 → מוסיפים לרשימה.
+  // חודשים שסומנו "דחויים" ע"י האדמין: לא יוצרים באנר משלהם, אלא נספגים אל הבאנר
+  // העתיק ביותר שעוד פתוח (כי הקבלה הראשונה שתוצא תכלול אותם).
   useEffect(() => {
     async function loadPendingReceipts() {
       const id = localStorage.getItem('portugo_guide_id');
       if (!id) return;
 
-      const { data: acks } = await supabase
-        .from('receipt_acknowledgements')
-        .select('year, month')
-        .eq('guide_id', id);
-      const ackSet = new Set(
-        (acks || []).map((a: { year: number; month: number }) => `${a.year}-${a.month}`),
+      // ננסה עם is_deferred. fallback אם המיגרציה עוד לא רצה.
+      type AckRow = { year: number; month: number; is_deferred?: boolean };
+      let acks: AckRow[] = [];
+      {
+        const primary = await supabase
+          .from('receipt_acknowledgements')
+          .select('year, month, is_deferred')
+          .eq('guide_id', id);
+        if (!primary.error) {
+          acks = (primary.data || []) as AckRow[];
+        } else {
+          const fb = await supabase
+            .from('receipt_acknowledgements')
+            .select('year, month')
+            .eq('guide_id', id);
+          acks = (fb.data || []) as AckRow[];
+        }
+      }
+      const ackSet = new Set(acks.map((a) => `${a.year}-${a.month}`));
+      const deferredSet = new Set(
+        acks.filter((a) => a.is_deferred).map((a) => `${a.year}-${a.month}`),
       );
 
       // בונים רשימת חודשים מ-SYSTEM_START_DATE ועד (לא כולל) החודש הנוכחי
@@ -429,10 +454,12 @@ function HomeContent() {
         monthsToCheck.push({ year: cursor.getFullYear(), month: cursor.getMonth() + 1 });
         cursor.setMonth(cursor.getMonth() + 1);
       }
-      const unacknowledged = monthsToCheck.filter(
-        (m) => !ackSet.has(`${m.year}-${m.month}`),
-      );
-      if (unacknowledged.length === 0) {
+      // חודשים שלא אושרו (אין רשומה כלל) — אלה שיופיעו כבאנרים
+      const openMonths = monthsToCheck.filter((m) => !ackSet.has(`${m.year}-${m.month}`));
+      // חודשים דחויים שעוד לא נספגו — אלה שיתווספו לבאנר הראשון
+      const deferredMonths = monthsToCheck.filter((m) => deferredSet.has(`${m.year}-${m.month}`));
+
+      if (openMonths.length === 0 && deferredMonths.length === 0) {
         setPendingReceipts([]);
         return;
       }
@@ -458,8 +485,8 @@ function HomeContent() {
         bookings: { people: number; kids: number; price: number; tip: number }[] | null;
       };
 
-      const results: PendingReceipt[] = [];
-      for (const m of unacknowledged) {
+      // helper: חישוב receipt_amount לחודש בודד
+      async function calcReceiptForMonth(m: { year: number; month: number }): Promise<number> {
         const start = `${m.year}-${String(m.month).padStart(2, '0')}-01`;
         const lastDay = new Date(m.year, m.month, 0).getDate();
         const end = `${m.year}-${String(m.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
@@ -497,9 +524,32 @@ function HomeContent() {
             notes: a.notes || '',
           }),
         );
-        const s = calculateMonthlySalary(g, sTours, sActs);
-        if (s.receipt_amount > 0) {
-          results.push({ year: m.year, month: m.month, receipt_amount: s.receipt_amount });
+        const s = calculateMonthlySalary(g!, sTours, sActs);
+        return s.receipt_amount;
+      }
+
+      // 1. חישוב חודשים דחויים שלא נספגו עדיין (סדר כרונולוגי)
+      const deferredWithAmounts: DeferredMonth[] = [];
+      for (const m of deferredMonths) {
+        const amt = await calcReceiptForMonth(m);
+        if (amt > 0) {
+          deferredWithAmounts.push({ year: m.year, month: m.month, receipt_amount: amt });
+        }
+      }
+
+      // 2. חישוב חודשים פתוחים (ללא רשומה) + צירוף הדחויים אל הראשון
+      const results: PendingReceipt[] = [];
+      let firstOpenPending = true;
+      for (const m of openMonths) {
+        const amt = await calcReceiptForMonth(m);
+        if (amt > 0) {
+          results.push({
+            year: m.year,
+            month: m.month,
+            receipt_amount: amt,
+            included_deferred: firstOpenPending ? deferredWithAmounts : [],
+          });
+          firstOpenPending = false;
         }
       }
       setPendingReceipts(results);
@@ -770,34 +820,54 @@ function HomeContent() {
         )}
 
         {/* תזכורות הוצאת קבלה — באנר אחד לכל חודש פתוח. נשארות עד שלוחצים אישור. */}
-        {pendingReceipts.map((r) => (
-          <div
-            key={`${r.year}-${r.month}`}
-            className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 shadow"
-          >
-            <div className="flex items-start gap-3 mb-3">
-              <span className="text-2xl">🧾</span>
-              <div className="flex-1">
-                <div className="font-bold text-amber-900 text-base">
-                  תזכורת: יש להוציא קבלה על {formatMonthLabel(r.year, r.month - 1)}
-                </div>
-                <div className="text-xs text-amber-800 mt-1">
-                  סכום הקבלה: {r.receipt_amount.toFixed(2)}€
+        {pendingReceipts.map((r) => {
+          const deferredSum = r.included_deferred.reduce((s, d) => s + d.receipt_amount, 0);
+          const totalSum = r.receipt_amount + deferredSum;
+          const hasDeferred = r.included_deferred.length > 0;
+          return (
+            <div
+              key={`${r.year}-${r.month}`}
+              className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 shadow"
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-2xl">🧾</span>
+                <div className="flex-1">
+                  <div className="font-bold text-amber-900 text-base">
+                    תזכורת: יש להוציא קבלה על {formatMonthLabel(r.year, r.month - 1)}
+                  </div>
+                  <div className="text-xs text-amber-800 mt-1">
+                    סכום הקבלה: <strong>{totalSum.toFixed(2)}€</strong>
+                  </div>
+                  {hasDeferred && (
+                    <div className="text-xs text-purple-800 mt-2 bg-purple-50 border border-purple-200 rounded p-2 leading-relaxed">
+                      ↪️ הקבלה הזו תכלול גם חודשים שנדחו:
+                      <ul className="mt-1 mr-4 list-disc">
+                        {r.included_deferred.map((d) => (
+                          <li key={`${d.year}-${d.month}`}>
+                            {formatMonthLabel(d.year, d.month - 1)}: {d.receipt_amount.toFixed(2)}€
+                          </li>
+                        ))}
+                        <li className="font-semibold">
+                          {formatMonthLabel(r.year, r.month - 1)}: {r.receipt_amount.toFixed(2)}€
+                        </li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  setReceiptUploadModal(r);
+                  setReceiptFile(null);
+                  setReceiptError('');
+                }}
+                className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-lg py-2.5 font-semibold text-sm"
+              >
+                שלחתי קבלה — צירוף אסמכתא 🧾
+              </button>
             </div>
-            <button
-              onClick={() => {
-                setReceiptUploadModal(r);
-                setReceiptFile(null);
-                setReceiptError('');
-              }}
-              className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-lg py-2.5 font-semibold text-sm"
-            >
-              שלחתי קבלה — צירוף אסמכתא 🧾
-            </button>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Month summary with navigation */}
         <section className="bg-white rounded-2xl shadow p-5">
@@ -1230,9 +1300,34 @@ function HomeContent() {
             <p className="text-sm text-gray-600 mb-1">
               קבלה על {formatMonthLabel(receiptUploadModal.year, receiptUploadModal.month - 1)}
             </p>
-            <p className="text-xs text-gray-500 mb-4">
-              סכום הקבלה: {receiptUploadModal.receipt_amount.toFixed(2)}€
-            </p>
+            {(() => {
+              const deferredSum = receiptUploadModal.included_deferred.reduce((s, d) => s + d.receipt_amount, 0);
+              const totalSum = receiptUploadModal.receipt_amount + deferredSum;
+              const hasDeferred = receiptUploadModal.included_deferred.length > 0;
+              return (
+                <>
+                  <p className="text-xs text-gray-500 mb-2">
+                    סכום הקבלה: <strong>{totalSum.toFixed(2)}€</strong>
+                  </p>
+                  {hasDeferred && (
+                    <div className="text-xs text-purple-800 mb-4 bg-purple-50 border border-purple-200 rounded p-2 leading-relaxed">
+                      ↪️ הקבלה הזו תכלול גם חודשים שנדחו:
+                      <ul className="mt-1 mr-4 list-disc">
+                        {receiptUploadModal.included_deferred.map((d) => (
+                          <li key={`${d.year}-${d.month}`}>
+                            {formatMonthLabel(d.year, d.month - 1)}: {d.receipt_amount.toFixed(2)}€
+                          </li>
+                        ))}
+                        <li className="font-semibold">
+                          {formatMonthLabel(receiptUploadModal.year, receiptUploadModal.month - 1)}: {receiptUploadModal.receipt_amount.toFixed(2)}€
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                  {!hasDeferred && <div className="mb-4" />}
+                </>
+              );
+            })()}
 
             <div className="mb-4">
               <label className="block text-sm font-semibold mb-2">

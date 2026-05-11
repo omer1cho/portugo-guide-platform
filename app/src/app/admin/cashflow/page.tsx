@@ -19,6 +19,7 @@ import {
   loadGuidesCashflowStatus,
   loadCashflowRunsForMonth,
   monthNameHe,
+  setReceiptDeferred,
   type CashflowGuideStatus,
   type CashflowRun,
 } from '@/lib/admin/cashflow-data';
@@ -48,6 +49,8 @@ export default function AdminCashflowPage() {
   const [runs, setRuns] = useState<CashflowRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deferringId, setDeferringId] = useState<string | null>(null); // guide_id בפעולת defer/undo
+  const [reloadCounter, setReloadCounter] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +68,43 @@ export default function AdminCashflowPage() {
       .catch((e) => !cancelled && setError(e.message || 'משהו השתבש'))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [year, month]);
+  }, [year, month, reloadCounter]);
+
+  async function handleDefer(g: CashflowGuideStatus) {
+    if (deferringId) return;
+    const ok = window.confirm(
+      `לדחות את הקבלה של ${g.guide_name} עבור ${monthNameHe(month)} ${year} לחודש הבא?\n\n` +
+      `התזכורת תיעלם אצל המדריך. הסכום ייכלל אוטומטית בקבלה הבאה שיוציא.`
+    );
+    if (!ok) return;
+    setDeferringId(g.guide_id);
+    try {
+      await setReceiptDeferred({ action: 'defer', guideId: g.guide_id, year, month });
+      setReloadCounter((c) => c + 1);
+    } catch (e) {
+      alert('משהו השתבש: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeferringId(null);
+    }
+  }
+
+  async function handleUndoDefer(g: CashflowGuideStatus) {
+    if (deferringId || !g.ack_id) return;
+    const ok = window.confirm(
+      `לבטל את דחיית הקבלה של ${g.guide_name} עבור ${monthNameHe(month)} ${year}?\n\n` +
+      `התזכורת תחזור להופיע אצל המדריך.`
+    );
+    if (!ok) return;
+    setDeferringId(g.guide_id);
+    try {
+      await setReceiptDeferred({ action: 'undo', guideId: g.guide_id, year, month, ackId: g.ack_id });
+      setReloadCounter((c) => c + 1);
+    } catch (e) {
+      alert('משהו השתבש: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeferringId(null);
+    }
+  }
 
   const closedCount = guides.filter((g) => g.is_closed).length;
   const totalCount = guides.length;
@@ -198,8 +237,49 @@ export default function AdminCashflowPage() {
                     )}
                   </td>
                   <td style={{ padding: '8px 6px' }}>
-                    {g.has_receipt ? (
+                    {g.receipt_status === 'issued' ? (
                       <span style={{ color: ADMIN_COLORS.green700 }}>✓</span>
+                    ) : g.receipt_status === 'deferred' ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#7c3aed', fontWeight: 600 }} title="הקבלה נדחתה — הסכום ייכלל בקבלה הבאה">
+                          ↪️ דחוי
+                        </span>
+                        <button
+                          onClick={() => handleUndoDefer(g)}
+                          disabled={deferringId === g.guide_id}
+                          style={{
+                            fontSize: 11,
+                            padding: '2px 6px',
+                            border: `1px solid ${ADMIN_COLORS.gray300}`,
+                            borderRadius: 4,
+                            background: '#fff',
+                            cursor: deferringId === g.guide_id ? 'wait' : 'pointer',
+                            color: ADMIN_COLORS.gray700,
+                            fontFamily: 'inherit',
+                          }}
+                          title="ביטול הדחייה — התזכורת תחזור אצל המדריך"
+                        >
+                          ↩️ בטלי
+                        </button>
+                      </span>
+                    ) : g.salary_withdrawn != null && g.salary_withdrawn > 0 ? (
+                      <button
+                        onClick={() => handleDefer(g)}
+                        disabled={deferringId === g.guide_id}
+                        style={{
+                          fontSize: 11,
+                          padding: '3px 8px',
+                          border: `1px solid ${ADMIN_COLORS.gray300}`,
+                          borderRadius: 4,
+                          background: '#fff',
+                          cursor: deferringId === g.guide_id ? 'wait' : 'pointer',
+                          color: ADMIN_COLORS.gray700,
+                          fontFamily: 'inherit',
+                        }}
+                        title="דחיית הקבלה לחודש הבא — מסירה את התזכורת אצל המדריך"
+                      >
+                        ↪️ דחיי
+                      </button>
                     ) : (
                       <span style={{ color: ADMIN_COLORS.gray500 }}>—</span>
                     )}

@@ -15,7 +15,17 @@ export type CashflowGuideStatus = {
   city: 'lisbon' | 'porto';
   is_closed: boolean;
   closed_at: string | null;       // תאריך מתי "נמשכה משכורת" (= סגירת חודש)
-  has_receipt: boolean;            // האם המדריך הוציא קבלה החודש (Fatura-Recibo) ב-/home
+  /**
+   * סטטוס הקבלה החודשית:
+   *   'issued'   — המדריך הוציא קבלה (יש receipt_url)
+   *   'deferred' — האדמין דחתה את הקבלה לחודש הבא (יוצא ביחד עם הקבלה הבאה)
+   *   'pending'  — אין רשומה עדיין (תזכורת אצל המדריך עדיין פתוחה)
+   */
+  receipt_status: 'issued' | 'deferred' | 'pending';
+  /** האם יש רשומה כלשהי (deferred או issued). שמור ל-backwards-compatibility בקוד צרכן. */
+  has_receipt: boolean;
+  /** id של רשומת receipt_acknowledgements (אם קיימת) — לצורך פעולת undo defer */
+  ack_id: string | null;
   salary_withdrawn: number | null; // סכום שהמדריך משך לעצמו (transfer salary_withdrawal)
 };
 
@@ -76,12 +86,24 @@ export async function loadGuidesCashflowStatus(year: number, month: number): Pro
       .eq('transfer_type', 'salary_withdrawal')
       .gte('transfer_date', start)
       .lte('transfer_date', end),
-    // קבלות חודשיות שהמדריך הוציא לפורטוגו
-    supabase
-      .from('receipt_acknowledgements')
-      .select('guide_id, acknowledged_at')
-      .eq('year', year)
-      .eq('month', month),
+    // קבלות חודשיות שהמדריך הוציא לפורטוגו (כולל deferred)
+    // fallback אם is_deferred עוד לא קיים בעמודה
+    (async () => {
+      const primary = await supabase
+        .from('receipt_acknowledgements')
+        .select('id, guide_id, acknowledged_at, is_deferred')
+        .eq('year', year)
+        .eq('month', month);
+      if (!primary.error) return primary;
+      if (primary.error.message?.toLowerCase().includes('is_deferred')) {
+        return supabase
+          .from('receipt_acknowledgements')
+          .select('id, guide_id, acknowledged_at')
+          .eq('year', year)
+          .eq('month', month);
+      }
+      return primary;
+    })(),
   ]);
 
   if (guidesRes.error) throw guidesRes.error;
@@ -95,20 +117,67 @@ export async function loadGuidesCashflowStatus(year: number, month: number): Pro
       salaryMap.set(t.guide_id, { transfer_date: t.transfer_date, amount: t.amount });
     }
   }
-  const ackSet = new Set(((ackRes.data || []) as { guide_id: string }[]).map((a) => a.guide_id));
+  type AckRow = { id: string; guide_id: string; is_deferred?: boolean };
+  const ackByGuide = new Map<string, AckRow>();
+  for (const a of (ackRes.data || []) as AckRow[]) {
+    if (!ackByGuide.has(a.guide_id)) ackByGuide.set(a.guide_id, a);
+  }
 
   return ((guidesRes.data || []) as { id: string; name: string; city: 'lisbon' | 'porto' }[]).map((g) => {
     const salary = salaryMap.get(g.id);
+    const ack = ackByGuide.get(g.id);
+    let receipt_status: 'issued' | 'deferred' | 'pending' = 'pending';
+    if (ack) receipt_status = ack.is_deferred ? 'deferred' : 'issued';
     return {
       guide_id: g.id,
       guide_name: g.name,
       city: g.city,
       is_closed: !!salary,
       closed_at: salary?.transfer_date ?? null,
-      has_receipt: ackSet.has(g.id),
+      receipt_status,
+      has_receipt: !!ack,
+      ack_id: ack?.id ?? null,
       salary_withdrawn: salary?.amount ?? null,
     };
   });
+}
+
+/**
+ * סימון/ביטול דחיית קבלה חודשית.
+ * 'defer'  — יוצר רשומת receipt_acknowledgements עם is_deferred=true ובלי receipt_url.
+ *            התוצאה: התזכורת אצל המדריך נעלמת, הסכום של החודש הזה ייכלל אוטומטית
+ *            בקבלה הבאה שהמדריך יוציא (ראי `expandDeferredAmount`).
+ * 'undo'   — מוחק את רשומת ה-deferred (לפי ack_id). חוזר למצב 'pending'.
+ *
+ * הערה: ניתן להפעיל רק על חודשים שאין להם קבלה אמיתית כבר.
+ */
+export async function setReceiptDeferred(opts: {
+  action: 'defer' | 'undo';
+  guideId: string;
+  year: number;
+  month: number;
+  ackId?: string | null; // נדרש ל-undo
+}): Promise<void> {
+  if (opts.action === 'defer') {
+    const { error } = await supabase
+      .from('receipt_acknowledgements')
+      .insert({
+        guide_id: opts.guideId,
+        year: opts.year,
+        month: opts.month,
+        receipt_url: null,
+        is_deferred: true,
+      });
+    if (error) throw error;
+  } else {
+    if (!opts.ackId) throw new Error('Missing ack_id for undo');
+    const { error } = await supabase
+      .from('receipt_acknowledgements')
+      .delete()
+      .eq('id', opts.ackId)
+      .eq('is_deferred', true); // הגנה: לא למחוק קבלות אמיתיות
+    if (error) throw error;
+  }
 }
 
 /** מחזיר את היסטוריית הרצות הקשפלו של חודש מסוים (אחרון ראשון) */
@@ -211,8 +280,21 @@ export type CashflowSalaryInvoice = {
   invoice_date: string | null;
   acknowledged_at: string;
   receipt_url: string | null;
-  /** סכום הקבלה = amount של ה-salary_withdrawal transfer של אותו חודש עבודה */
+  /**
+   * סכום הקבלה = amount של ה-salary_withdrawal של אותו חודש עבודה
+   * + סכומי כל החודשים הדחויים שלפניה ("נצברו" אל הקבלה הזו).
+   */
   amount: number | null;
+  /**
+   * הסכום של החודש הזה בלבד (בלי הצברים מחודשים דחויים).
+   * שווה ל-amount כשאין דחויים. שימושי לתצוגה מפורטת.
+   */
+  own_amount: number | null;
+  /**
+   * חודשי עבודה דחויים שצורפו לקבלה הזו (היו דחויים, ועכשיו "נסגרים" איתה).
+   * רשימה ריקה כשאין צירוף.
+   */
+  absorbed_deferred: { year: number; month: number; amount: number }[];
   /** חודש העבודה שאליו הקבלה מתייחסת */
   service_year: number;
   service_month: number;
@@ -439,16 +521,27 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
         .order('transfer_date');
     })(),
 
-    // קבלות מס — STRICT: רק קבלות עם invoice_date בחודש הקשפלו הזה.
+    // קבלות מס — STRICT: רק קבלות אמיתיות (לא דחויות) עם invoice_date בחודש הקשפלו הזה.
     // קבלות עם invoice_date NULL נטענות בנפרד (unscheduledInvoicesRes).
+    // קבלות עם is_deferred=true לא מופיעות בקשפלו בכלל (נטענות בנפרד לחישוב הצברה).
     (async () => {
       const primary = await supabase
         .from('receipt_acknowledgements')
-        .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
+        .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date, is_deferred')
+        .eq('is_deferred', false)
         .gte('invoice_date', start)
         .lte('invoice_date', end);
       if (!primary.error) return primary;
-      // אם invoice_date עוד לא קיים בכלל → אין מה להציג בחודש הזה
+      if (primary.error.message?.toLowerCase().includes('is_deferred')) {
+        // עמודת is_deferred עוד לא קיימת → fallback בלי הסינון
+        const fb = await supabase
+          .from('receipt_acknowledgements')
+          .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
+          .gte('invoice_date', start)
+          .lte('invoice_date', end);
+        return fb;
+      }
+      // invoice_date לא קיים בכלל → אין מה להציג
       return { data: [], error: null };
     })(),
 
@@ -468,11 +561,40 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     })(),
   ]);
 
-  // קבלות מס ללא תאריך הוצאת חשבונית — מכל החודשים (Omer צריכה לשייך אותן)
-  const unscheduledInvoicesRes = await supabase
-    .from('receipt_acknowledgements')
-    .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
-    .is('invoice_date', null);
+  // קבלות מס ללא תאריך הוצאת חשבונית — מכל החודשים (Omer צריכה לשייך אותן).
+  // לא כוללים deferred (אלה לא קבלות אמיתיות, רק סימון שהחודש נדחה).
+  const unscheduledInvoicesRes = await (async () => {
+    const primary = await supabase
+      .from('receipt_acknowledgements')
+      .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date, is_deferred')
+      .eq('is_deferred', false)
+      .is('invoice_date', null);
+    if (!primary.error) return primary;
+    if (primary.error.message?.toLowerCase().includes('is_deferred')) {
+      return supabase
+        .from('receipt_acknowledgements')
+        .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
+        .is('invoice_date', null);
+    }
+    return primary;
+  })();
+
+  // כל הקבלות (issued + deferred) של כל המדריכים — נדרש לחישוב הצברה נכון:
+  // קבלה אמיתית סופגת רק את הדחויות שמאז הקבלה האמיתית הקודמת (לא את כולן מההיסטוריה).
+  const allAcksRes = await (async () => {
+    const primary = await supabase
+      .from('receipt_acknowledgements')
+      .select('id, guide_id, year, month, is_deferred');
+    if (!primary.error) return primary;
+    if (primary.error.message?.toLowerCase().includes('is_deferred')) {
+      // עמודת is_deferred עוד לא קיימת → כל הקבלות הקיימות הן issued
+      const fb = await supabase
+        .from('receipt_acknowledgements')
+        .select('id, guide_id, year, month');
+      return fb;
+    }
+    return { data: [], error: null };
+  })();
 
   if (guidesRes.error) throw guidesRes.error;
   if (expensesRes.error) throw expensesRes.error;
@@ -595,11 +717,46 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
   }
 
   type RawAck = { id: string; guide_id: string; year: number; month: number; acknowledged_at: string; receipt_url: string | null; invoice_date?: string | null };
+  type AllAck = { id: string; guide_id: string; year: number; month: number; is_deferred?: boolean };
+
+  // בונים מפת "מה כל קבלת issued סופגת" לפי כרונולוגיה:
+  // עוברים על כל הקבלות של המדריך לפי סדר (year, month). כל קבלת issued סופגת את כל
+  // הדחויות שאחרי הקבלה האמיתית הקודמת ולפניה.
+  const absorbedByAckId = new Map<string, { year: number; month: number; amount: number }[]>();
+  {
+    const acksByGuide = new Map<string, AllAck[]>();
+    for (const a of (allAcksRes.data || []) as AllAck[]) {
+      if (!acksByGuide.has(a.guide_id)) acksByGuide.set(a.guide_id, []);
+      acksByGuide.get(a.guide_id)!.push(a);
+    }
+    for (const [, arr] of acksByGuide) {
+      arr.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+      let pendingDeferred: AllAck[] = [];
+      for (const a of arr) {
+        if (a.is_deferred) {
+          pendingDeferred.push(a);
+        } else {
+          // קבלה אמיתית — סופגת את הדחויות הצבורות
+          const absorbed = pendingDeferred.map((d) => {
+            const dKey = `${d.guide_id}_${d.year}_${d.month}`;
+            const dAmount = salaryByGuideMonth.get(dKey);
+            return { year: d.year, month: d.month, amount: dAmount ?? 0 };
+          });
+          if (absorbed.length > 0) absorbedByAckId.set(a.id, absorbed);
+          pendingDeferred = [];
+        }
+      }
+    }
+  }
 
   function mapInvoice(a: RawAck): CashflowSalaryInvoice {
     const gName = guideById.get(a.guide_id)?.name || '—';
     const key = `${a.guide_id}_${a.year}_${a.month}`;
-    const amount = salaryByGuideMonth.get(key) ?? null;
+    const ownAmount = salaryByGuideMonth.get(key) ?? null;
+    const absorbed = absorbedByAckId.get(a.id) || [];
+    const totalAmount = ownAmount == null && absorbed.length === 0
+      ? null
+      : (ownAmount || 0) + absorbed.reduce((s, x) => s + x.amount, 0);
     return {
       ack_id: a.id,
       guide_id: a.guide_id,
@@ -608,7 +765,9 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       invoice_date: a.invoice_date ?? null,
       acknowledged_at: a.acknowledged_at,
       receipt_url: a.receipt_url,
-      amount,
+      amount: totalAmount,
+      own_amount: ownAmount,
+      absorbed_deferred: absorbed,
       service_year: a.year,
       service_month: a.month,
     };
