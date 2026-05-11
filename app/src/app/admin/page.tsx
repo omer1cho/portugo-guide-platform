@@ -589,6 +589,21 @@ function ReceiptsInlineList({
     onChange();
   }
 
+  async function deferManually(guideId: string, year: number, month: number) {
+    const { error } = await supabase.from('receipt_acknowledgements').insert({
+      guide_id: guideId,
+      year,
+      month: month + 1,
+      receipt_url: null,
+      is_deferred: true,
+    });
+    if (error) {
+      alert('משהו השתבש: ' + error.message);
+      return;
+    }
+    onChange();
+  }
+
   return (
     <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {outstanding.map((o) => (
@@ -611,7 +626,7 @@ function ReceiptsInlineList({
               {monthName(o.year, o.month)}
             </span>
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {o.admin_notified_at && (
               <span style={{ fontSize: 11, color: '#a37b00' }}>📨 נשלחה התראה</span>
             )}
@@ -622,6 +637,11 @@ function ReceiptsInlineList({
               label="✓ סמן.י כהופקה"
               confirmLabel="בטוח.ה?"
               onConfirm={() => approveManually(o.guide.id, o.year, o.month)}
+            />
+            <InlineConfirmButton
+              label="↪️ דחיי לחודש הבא"
+              confirmLabel="בטוח.ה?"
+              onConfirm={() => deferManually(o.guide.id, o.year, o.month)}
             />
           </span>
         </li>
