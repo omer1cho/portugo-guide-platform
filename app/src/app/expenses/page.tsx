@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   supabase,
+  SYSTEM_START_DATE,
   TOUR_TYPES,
   TOURS_WITH_EXPENSE_CATALOG,
   type ExpenseCatalogItem,
@@ -30,7 +31,11 @@ type Expense = {
   quantity?: number | null;
   expected_amount?: number | null;
   price_mismatch?: boolean | null;
+  /** מקור התשלום: 'expenses_box' = קופת הוצאות, 'food_market_card' = כרטיס טיים אאוט */
+  payment_source?: 'expenses_box' | 'food_market_card';
 };
+
+type PaymentSource = 'expenses_box' | 'food_market_card';
 
 const OTHER_OPTION_VALUE = '__other__';
 const GENERAL_TOUR_VALUE = '__general__'; // הוצאה שלא קשורה לסיור ספציפי
@@ -83,6 +88,14 @@ function ExpensesContent() {
   const [deletingExpense, setDeletingExpense] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // ─── תת-קופת "כרטיס טיים אאוט" — רק למדריכי קולינרי ───
+  // hasCulinaryHistory = יש לו ולו סיור קולינרי אחד בעבר (בדיקה דינמית)
+  // cardBalance = יתרה נוכחית בכרטיס (sum(card_load) − sum(expenses from card))
+  const [hasCulinaryHistory, setHasCulinaryHistory] = useState(false);
+  const [cardBalance, setCardBalance] = useState(0);
+  // מקור התשלום של ההוצאה הנוכחית בטופס
+  const [paymentSource, setPaymentSource] = useState<PaymentSource>('expenses_box');
+
   useEffect(() => {
     const id = localStorage.getItem('portugo_guide_id');
     const city = localStorage.getItem('portugo_guide_city') as 'lisbon' | 'porto' | null;
@@ -94,9 +107,62 @@ function ExpensesContent() {
     setGuideCity(city || 'lisbon');
     loadExpenses(id);
     loadCatalog();
+    loadCardState(id);
     // טעינת סטטוס סגירת משכורת כדי לדעת אם להציג כפתור הוספה
     checkSalaryClosed(supabase, id, year, month).then(setSalaryClosed);
   }, [router, year, month]);
+
+  /**
+   * טוען את מצב תת-קופת "כרטיס טיים אאוט":
+   * 1. בודק אם המדריך עשה אי פעם סיור קולינרי
+   * 2. מחשב יתרה נוכחית: sum(card_load) − sum(expenses where payment_source='food_market_card')
+   *    מ-SYSTEM_START_DATE ועד סוף החודש הנבחר (היתרה ממשיכה לחודש הבא כמו כסף פיזי).
+   *
+   * נופל ל-fallback אם המיגרציה עדיין לא רצה — מציג 0 בלי לשבור את המסך.
+   */
+  async function loadCardState(id: string) {
+    // ─ זיהוי "מדריך קולינרי" ─
+    const culinaryCheck = await supabase
+      .from('tours')
+      .select('id', { count: 'exact', head: true })
+      .eq('guide_id', id)
+      .eq('tour_type', 'קולינרי');
+    const isCulinary = (culinaryCheck.count || 0) > 0;
+    setHasCulinaryHistory(isCulinary);
+
+    // ─ יתרה: סוכמים card_load ב-transfers ומורידים expenses מהכרטיס ─
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    const cardLoadRes = await supabase
+      .from('transfers')
+      .select('amount')
+      .eq('guide_id', id)
+      .eq('transfer_type', 'card_load')
+      .gte('transfer_date', SYSTEM_START_DATE)
+      .lte('transfer_date', end);
+    const cardLoadSum = (cardLoadRes.data || []).reduce(
+      (s: number, t: { amount: number }) => s + (t.amount || 0),
+      0,
+    );
+
+    let cardExpSum = 0;
+    const cardExpRes = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('guide_id', id)
+      .eq('payment_source', 'food_market_card')
+      .gte('expense_date', SYSTEM_START_DATE)
+      .lte('expense_date', end);
+    if (!cardExpRes.error) {
+      cardExpSum = (cardExpRes.data || []).reduce(
+        (s: number, e: { amount: number }) => s + (e.amount || 0),
+        0,
+      );
+    }
+    // אם הקולומה לא קיימת — cardExpSum נשאר 0 → balance = cardLoadSum (סביר ל-fallback)
+    setCardBalance(cardLoadSum - cardExpSum);
+  }
 
   async function loadExpenses(id: string) {
     setLoading(true);
@@ -191,6 +257,7 @@ function ExpensesContent() {
     setNotes('');
     setReceipt(null);
     setEditingExpense(null);
+    setPaymentSource('expenses_box');
   };
 
   /** טעינת הוצאה לטופס לעריכה — פותחת את הטופס ממולא */
@@ -211,6 +278,7 @@ function ExpensesContent() {
     setQuantity(e.quantity ? String(e.quantity) : '');
     setAmount(String(e.amount || ''));
     setNotes(e.notes || '');
+    setPaymentSource(e.payment_source || 'expenses_box');
     setReceipt(null); // אם רוצים להחליף קבלה — יבחרו חדשה. אחרת — נשארת הקיימת.
     // Scroll to top so the form is visible
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -274,6 +342,21 @@ function ExpensesContent() {
       setFormError('נשאר להזין סכום');
       return;
     }
+    // ─ ולידציה למקור התשלום: הוצאה מכרטיס לא יכולה לעלות על היתרה ─
+    if (paymentSource === 'food_market_card') {
+      // אם זו עריכה והסכום הקודם היה גם מהכרטיס — היתרה הזמינה כוללת אותו
+      const oldFromCard =
+        editingExpense?.payment_source === 'food_market_card'
+          ? editingExpense.amount || 0
+          : 0;
+      const availableInCard = cardBalance + oldFromCard;
+      if (amt > availableInCard + 0.001) {
+        setFormError(
+          `אין מספיק בכרטיס טיים אאוט (יש ${availableInCard.toFixed(2)}€, ביקשת ${amt.toFixed(2)}€). אפשר להטעין את הכרטיס מהקופות.`,
+        );
+        return;
+      }
+    }
     // קבלה — חובה אלא אם הפריט מסומן כ-requires_receipt=false.
     // בעריכה: אם כבר יש קבלה קיימת והמדריך לא צירף חדשה — בסדר.
     const requiresReceipt = selectedCatalogItem?.requires_receipt !== false;
@@ -289,22 +372,34 @@ function ExpensesContent() {
     const tourTypeToSave = tourType === GENERAL_TOUR_VALUE ? null : tourType;
 
     let savedId: string | null = null;
+    // אובייקט עם payment_source — אם המיגרציה עוד לא רצה והקולומה לא קיימת,
+    // ננסה שוב בלעדיה כדי לא לשבור הזנת הוצאות רגילות.
+    const payloadBase = {
+      expense_date: date,
+      item: itemName,
+      amount: amt,
+      notes,
+      tour_type: tourTypeToSave,
+      catalog_item_id: catalogId,
+      quantity: qtyValue,
+      expected_amount: expectedValue,
+      price_mismatch: hasMismatch,
+    };
+    const payloadWithSource = { ...payloadBase, payment_source: paymentSource };
+
     if (editingExpense) {
       // ─── מצב עריכה: UPDATE ───
-      const { error: updErr } = await supabase
+      let updErr = (await supabase
         .from('expenses')
-        .update({
-          expense_date: date,
-          item: itemName,
-          amount: amt,
-          notes,
-          tour_type: tourTypeToSave,
-          catalog_item_id: catalogId,
-          quantity: qtyValue,
-          expected_amount: expectedValue,
-          price_mismatch: hasMismatch,
-        })
-        .eq('id', editingExpense.id);
+        .update(payloadWithSource)
+        .eq('id', editingExpense.id)).error;
+      if (updErr && updErr.message?.toLowerCase().includes('payment_source')) {
+        // fallback בלי payment_source — אם המיגרציה עדיין לא רצה
+        updErr = (await supabase
+          .from('expenses')
+          .update(payloadBase)
+          .eq('id', editingExpense.id)).error;
+      }
       if (updErr) {
         setSaving(false);
         setFormError('משהו השתבש: ' + updErr.message);
@@ -313,22 +408,27 @@ function ExpensesContent() {
       savedId = editingExpense.id;
     } else {
       // ─── מצב יצירה: INSERT ───
-      const { data: inserted, error } = await supabase
-        .from('expenses')
-        .insert({
-          guide_id: guideId,
-          expense_date: date,
-          item: itemName,
-          amount: amt,
-          notes,
-          tour_type: tourTypeToSave,
-          catalog_item_id: catalogId,
-          quantity: qtyValue,
-          expected_amount: expectedValue,
-          price_mismatch: hasMismatch,
-        })
-        .select('id')
-        .single();
+      let inserted: { id: string } | null = null;
+      let error = null as null | { message?: string };
+      {
+        const r = await supabase
+          .from('expenses')
+          .insert({ ...payloadWithSource, guide_id: guideId })
+          .select('id')
+          .single();
+        inserted = r.data as { id: string } | null;
+        error = r.error;
+      }
+      if (error && error.message?.toLowerCase().includes('payment_source')) {
+        // fallback בלי payment_source
+        const r = await supabase
+          .from('expenses')
+          .insert({ ...payloadBase, guide_id: guideId })
+          .select('id')
+          .single();
+        inserted = r.data as { id: string } | null;
+        error = r.error;
+      }
 
       if (error) {
         setSaving(false);
@@ -363,10 +463,21 @@ function ExpensesContent() {
     setSaving(false);
     resetForm();
     loadExpenses(guideId);
+    loadCardState(guideId); // עדכון יתרת הכרטיס אחרי שמירה
   };
 
-  const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  // ─── סיכומים מפוצלים: מקופת הוצאות / מהכרטיס / סה"כ ───
+  const totalFromCard = expenses
+    .filter((e) => e.payment_source === 'food_market_card')
+    .reduce((s, e) => s + (e.amount || 0), 0);
+  const totalFromExpensesBox = expenses
+    .filter((e) => e.payment_source !== 'food_market_card')
+    .reduce((s, e) => s + (e.amount || 0), 0);
+  const total = totalFromCard + totalFromExpensesBox;
   const tourHasCatalog = TOURS_WITH_EXPENSE_CATALOG.has(tourType);
+  // האם להציג בחירת מקור תשלום בטופס: רק למדריכי קולינרי
+  // (גם אם הכרטיס כרגע ריק — שיוכלו לראות שזה קיים. ולידציה תיתפס בלחיצת שמירה.)
+  const showPaymentSourcePicker = hasCulinaryHistory;
 
   return (
     <div className="min-h-screen pb-20 bg-gray-50">
@@ -391,8 +502,27 @@ function ExpensesContent() {
       <main className="max-w-md mx-auto p-4 space-y-3">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="text-xs text-gray-500 mb-1">📅 {formatMonthLabel(year, month)}</div>
-          <div className="text-sm text-gray-600">סה"כ הוצאות (מקופת הוצאות)</div>
-          <div className="text-2xl font-bold text-amber-700">{total.toFixed(2)}€</div>
+          {showPaymentSourcePicker && (totalFromCard > 0 || totalFromExpensesBox > 0) ? (
+            <>
+              <div className="text-sm text-gray-600 mb-1">סה"כ הוצאות החודש</div>
+              <div className="text-2xl font-bold text-amber-700 mb-2">{total.toFixed(2)}€</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  <div className="text-gray-600">מקופת הוצאות</div>
+                  <div className="font-bold text-amber-800">{totalFromExpensesBox.toFixed(2)}€</div>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+                  <div className="text-gray-600">🍴 מכרטיס טיים אאוט</div>
+                  <div className="font-bold text-orange-800">{totalFromCard.toFixed(2)}€</div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm text-gray-600">סה"כ הוצאות (מקופת הוצאות)</div>
+              <div className="text-2xl font-bold text-amber-700">{total.toFixed(2)}€</div>
+            </>
+          )}
         </div>
 
         {!showForm && editable && (
@@ -561,6 +691,44 @@ function ExpensesContent() {
               </div>
             )}
 
+            {/* מקור התשלום — רק למדריכי קולינרי (כרטיס טיים אאוט) */}
+            {showPaymentSourcePicker && selectedItemValue && (
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  מאיפה שולם?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentSource('expenses_box')}
+                    className={`text-sm py-2.5 rounded-lg border-2 font-semibold transition-all ${
+                      paymentSource === 'expenses_box'
+                        ? 'border-amber-600 bg-amber-50 text-amber-900'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    💼 קופת הוצאות
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentSource('food_market_card')}
+                    className={`text-sm py-2.5 rounded-lg border-2 font-semibold transition-all ${
+                      paymentSource === 'food_market_card'
+                        ? 'border-orange-600 bg-orange-50 text-orange-900'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    🍴 כרטיס טיים אאוט
+                  </button>
+                </div>
+                {paymentSource === 'food_market_card' && (
+                  <p className="text-xs text-orange-700 mt-1.5">
+                    יש בכרטיס: <span className="font-bold">{cardBalance.toFixed(2)}€</span>
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* הערות */}
             <div>
               <label className="block text-sm font-semibold mb-1">הערות (לא חובה)</label>
@@ -650,6 +818,14 @@ function ExpensesContent() {
                           className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-medium"
                         >
                           ⚠️ אי-התאמה
+                        </span>
+                      )}
+                      {e.payment_source === 'food_market_card' && (
+                        <span
+                          title="הוצאה מכרטיס טיים אאוט (לא מקופת הוצאות)"
+                          className="text-[11px] bg-orange-100 text-orange-900 px-2 py-0.5 rounded-full font-medium"
+                        >
+                          🍴 מהכרטיס
                         </span>
                       )}
                     </div>

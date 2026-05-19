@@ -14,14 +14,17 @@ type Totals = {
   changeGiven: number;      // sum of change given to customers
   transferred: number;      // money sent to Portugo
   cashRefill: number;       // guide self-reinforcing: main → change envelope
-  expenses: number;         // expenses from expenses envelope
+  expenses: number;         // expenses from expenses envelope (excl. card)
+  expensesFromCard: number; // expenses from food-market (Time Out) card
+  cardLoad: number;         // money loaded onto food-market card (out of expenses envelope)
   expensesRefill: number;   // guide self-reinforcing: main → expenses envelope
   salaryWithdrawn: number;  // salary withdrawn from main box at month-close
   adminTopupChange: number; // אדמין הוסיף למעטפת עודף (לא מהקופה הראשית)
   adminTopupExpenses: number; // אדמין הוסיף למעטפת הוצאות (לא מהקופה הראשית)
 };
 
-type RefillKind = 'change' | 'expenses';
+// 'card' = הטענת כרטיס טיים אאוט (מקופת הוצאות → כרטיס)
+type RefillKind = 'change' | 'expenses' | 'card';
 
 /** תנועה אחת בקופה — לטיימליין */
 type Movement = {
@@ -129,11 +132,23 @@ function CashBoxesContent() {
     transferred: 0,
     cashRefill: 0,
     expenses: 0,
+    expensesFromCard: 0,
+    cardLoad: 0,
     expensesRefill: 0,
     salaryWithdrawn: 0,
     adminTopupChange: 0,
     adminTopupExpenses: 0,
   });
+
+  // האם המדריך הזה הוא מדריך קולינרי (קביעה דינמית: יש לו ולו סיור קולינרי
+  // אחד בעבר). רק אז הוא רואה את תת-קופת "כרטיס טיים אאוט".
+  const [hasCulinaryHistory, setHasCulinaryHistory] = useState(false);
+
+  // יתרת תת-קופת כרטיס טיים אאוט — מצטברת על פני זמן (כסף פיזי על כרטיס).
+  // sum(card_load) − sum(expenses where payment_source='food_market_card'),
+  // מ-SYSTEM_START_DATE ועד סוף החודש הנבחר.
+  const [cumCardLoad, setCumCardLoad] = useState(0);
+  const [cumExpensesFromCard, setCumExpensesFromCard] = useState(0);
   // יתרות מצטברות על פני זמן — מעטפות עוברות מחודש לחודש לפי כסף פיזי
   // שיש בהן בפועל. הסכומים האלו צוברים את כל החיזוקים, ההורדות וה-topups
   // עד סוף החודש הנבחר (לא תלוי בחודש בלבד).
@@ -146,9 +161,11 @@ function CashBoxesContent() {
   const [mainMovements, setMainMovements] = useState<Movement[]>([]);
   const [changeMovements, setChangeMovements] = useState<Movement[]>([]);
   const [expensesMovements, setExpensesMovements] = useState<Movement[]>([]);
+  const [cardMovements, setCardMovements] = useState<Movement[]>([]);
   const [showMainTimeline, setShowMainTimeline] = useState(false);
   const [showChangeTimeline, setShowChangeTimeline] = useState(false);
   const [showExpensesTimeline, setShowExpensesTimeline] = useState(false);
+  const [showCardTimeline, setShowCardTimeline] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Refill modal state
@@ -192,7 +209,7 @@ function CashBoxesContent() {
       .from('transfers')
       .delete()
       .eq('id', cancelModal.transfer_id)
-      .in('transfer_type', ['cash_refill', 'expenses_refill']); // הגנה: לא למחוק סוגים אחרים בטעות
+      .in('transfer_type', ['cash_refill', 'expenses_refill', 'card_load']); // הגנה: לא למחוק סוגים אחרים בטעות
     setCancelling(false);
     if (error) {
       alert('משהו השתבש במחיקה: ' + error.message);
@@ -283,7 +300,31 @@ function CashBoxesContent() {
     // המעטפות הן כסף פיזי שהמדריך נושא, אז היתרה ממשיכה מחודש לחודש.
     // אבל נתוני ארכיון מלפני SYSTEM_START_DATE לא נספרים — יתרת הפתיחה כבר
     // מייצגת את המצב הפיזי של המעטפות באותו רגע.
-    const [cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
+    // הוצאות נטענות עם payment_source כדי להפריד בין הוצאות רגילות לבין
+    // הוצאות מכרטיס טיים אאוט. נופלים ל-fallback בלי השדה אם המיגרציה
+    // עוד לא רצה.
+    let cumExpRaw: { amount: number; payment_source?: string | null }[] = [];
+    {
+      const withPS = await supabase
+        .from('expenses')
+        .select('amount, payment_source')
+        .eq('guide_id', id)
+        .gte('expense_date', SYSTEM_START_DATE)
+        .lte('expense_date', end);
+      if (withPS.error && withPS.error.message?.toLowerCase().includes('payment_source')) {
+        const fb = await supabase
+          .from('expenses')
+          .select('amount')
+          .eq('guide_id', id)
+          .gte('expense_date', SYSTEM_START_DATE)
+          .lte('expense_date', end);
+        cumExpRaw = (fb.data || []) as { amount: number }[];
+      } else {
+        cumExpRaw = (withPS.data || []) as { amount: number; payment_source?: string | null }[];
+      }
+    }
+
+    const [cumTrRes, cumChangeGivenRes] = await Promise.all([
       supabase
         .from('transfers')
         .select('amount, transfer_type')
@@ -296,24 +337,20 @@ function CashBoxesContent() {
         .eq('guide_id', id)
         .gte('tour_date', SYSTEM_START_DATE)
         .lte('tour_date', end),
-      supabase
-        .from('expenses')
-        .select('amount')
-        .eq('guide_id', id)
-        .gte('expense_date', SYSTEM_START_DATE)
-        .lte('expense_date', end),
     ]);
 
     let _cumChangeRefill = 0;
     let _cumExpensesRefill = 0;
     let _cumAdminTopupChange = 0;
     let _cumAdminTopupExpenses = 0;
+    let _cumCardLoad = 0;
     (cumTrRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
       const a = t.amount || 0;
       if (t.transfer_type === 'cash_refill') _cumChangeRefill += a;
       else if (t.transfer_type === 'expenses_refill') _cumExpensesRefill += a;
       else if (t.transfer_type === 'admin_topup_change') _cumAdminTopupChange += a;
       else if (t.transfer_type === 'admin_topup_expenses') _cumAdminTopupExpenses += a;
+      else if (t.transfer_type === 'card_load') _cumCardLoad += a;
     });
     let _cumChangeGiven = 0;
     type RawTour = { bookings: { change_given: number }[] | null };
@@ -322,10 +359,14 @@ function CashBoxesContent() {
         _cumChangeGiven += b.change_given || 0;
       });
     });
-    const _cumExpenses = (cumExpRes.data || []).reduce(
-      (s: number, e: { amount: number }) => s + (e.amount || 0),
-      0,
-    );
+    // הפרדת הוצאות לפי מקור: ה"רגילות" יורדות מקופת הוצאות, אלו מהכרטיס יורדות מהכרטיס.
+    let _cumExpenses = 0;
+    let _cumExpensesFromCard = 0;
+    cumExpRaw.forEach((e) => {
+      const a = e.amount || 0;
+      if (e.payment_source === 'food_market_card') _cumExpensesFromCard += a;
+      else _cumExpenses += a;
+    });
 
     setCumChangeRefill(_cumChangeRefill);
     setCumExpensesRefill(_cumExpensesRefill);
@@ -333,13 +374,26 @@ function CashBoxesContent() {
     setCumAdminTopupExpenses(_cumAdminTopupExpenses);
     setCumChangeGiven(_cumChangeGiven);
     setCumExpenses(_cumExpenses);
+    setCumCardLoad(_cumCardLoad);
+    setCumExpensesFromCard(_cumExpensesFromCard);
+
+    // ─── זיהוי "מדריך קולינרי" — האם יש לו ולו סיור קולינרי אחד בעבר? ───
+    // בדיקה זריזה ב-count מבלי לטעון את כל הסיורים.
+    const culinaryCheck = await supabase
+      .from('tours')
+      .select('id', { count: 'exact', head: true })
+      .eq('guide_id', id)
+      .eq('tour_type', 'קולינרי');
+    setHasCulinaryHistory((culinaryCheck.count || 0) > 0);
     let transferred = 0;
     let cashRefill = 0;
     let expensesRefill = 0;
     let salaryWithdrawn = 0;
     let adminTopupChange = 0;
     let adminTopupExpenses = 0;
+    let cardLoadMonth = 0;
     const expensesMov: Movement[] = [];
+    const cardMov: Movement[] = [];
 
     (transfers || []).forEach(
       (t: { id: string; amount: number; transfer_type: string; transfer_date: string; notes: string | null; is_pending_deposit?: boolean | null }) => {
@@ -353,6 +407,11 @@ function CashBoxesContent() {
           expensesRefill += amt;
           mainMov.push({ date: t.transfer_date, description: 'חיזוק למעטפת הוצאות', amount: -amt, cancellable: { transfer_id: t.id } });
           expensesMov.push({ date: t.transfer_date, description: 'חיזוק מהקופה הראשית', amount: amt, cancellable: { transfer_id: t.id } });
+        } else if (t.transfer_type === 'card_load') {
+          // הטענת כרטיס טיים אאוט: יוצא ממעטפת הוצאות, נכנס לתת-קופה
+          cardLoadMonth += amt;
+          expensesMov.push({ date: t.transfer_date, description: 'הטענת כרטיס טיים אאוט', amount: -amt, cancellable: { transfer_id: t.id } });
+          cardMov.push({ date: t.transfer_date, description: 'הטענה ממעטפת הוצאות', amount: amt, cancellable: { transfer_id: t.id } });
         } else if (t.transfer_type === 'salary_withdrawal') {
           salaryWithdrawn += amt;
           mainMov.push({ date: t.transfer_date, description: 'משיכת משכורת (סגירת חודש)', amount: -amt });
@@ -381,35 +440,60 @@ function CashBoxesContent() {
       },
     );
 
-    // Expenses (כולל תאריך ופריט לטיימליין)
-    const { data: expenses } = await supabase
-      .from('expenses')
-      .select('amount, expense_date, item')
-      .eq('guide_id', id)
-      .gte('expense_date', start)
-      .lte('expense_date', end)
-      .order('expense_date', { ascending: true });
-    const expensesTotal = (expenses || []).reduce(
-      (s: number, e: { amount: number }) => s + (e.amount || 0),
-      0,
-    );
+    // Expenses (כולל תאריך, פריט ומקור תשלום לטיימליין)
+    // נופלים ל-fallback בלי payment_source אם המיגרציה עוד לא רצה.
+    type RawExpense = { amount: number; expense_date: string; item: string; payment_source?: string | null };
+    let monthExpenses: RawExpense[] = [];
+    {
+      const withPS = await supabase
+        .from('expenses')
+        .select('amount, expense_date, item, payment_source')
+        .eq('guide_id', id)
+        .gte('expense_date', start)
+        .lte('expense_date', end)
+        .order('expense_date', { ascending: true });
+      if (withPS.error && withPS.error.message?.toLowerCase().includes('payment_source')) {
+        const fb = await supabase
+          .from('expenses')
+          .select('amount, expense_date, item')
+          .eq('guide_id', id)
+          .gte('expense_date', start)
+          .lte('expense_date', end)
+          .order('expense_date', { ascending: true });
+        monthExpenses = (fb.data || []) as RawExpense[];
+      } else {
+        monthExpenses = (withPS.data || []) as RawExpense[];
+      }
+    }
 
-    (expenses || []).forEach(
-      (e: { amount: number; expense_date: string; item: string }) => {
-        if (e.amount > 0) {
-          expensesMov.push({
-            date: e.expense_date,
-            description: e.item || 'הוצאה',
-            amount: -(e.amount || 0),
-          });
-        }
-      },
-    );
+    let expensesTotal = 0;          // הוצאות שיורדות מקופת הוצאות (לא מהכרטיס)
+    let expensesFromCardTotal = 0;  // הוצאות שיורדות מהכרטיס
+
+    monthExpenses.forEach((e) => {
+      if (!e.amount || e.amount <= 0) return;
+      const fromCard = e.payment_source === 'food_market_card';
+      if (fromCard) {
+        expensesFromCardTotal += e.amount;
+        cardMov.push({
+          date: e.expense_date,
+          description: e.item || 'הוצאה מהכרטיס',
+          amount: -e.amount,
+        });
+      } else {
+        expensesTotal += e.amount;
+        expensesMov.push({
+          date: e.expense_date,
+          description: e.item || 'הוצאה',
+          amount: -e.amount,
+        });
+      }
+    });
 
     // יתרה בתחילת החודש הנבחר = יתרה בסוף החודש הקודם.
     // מחשבים מצטבר עד תחילת החודש: opening + (cum_until_end - this_month) על כל הסוגים.
     // בחודש הראשון של המערכת (SYSTEM_START_DATE) זה יוצא בדיוק opening_*_balance —
     // ושם נציג את התווית "יתרת פתיחה". בכל חודש אחר: "יתרה שעברה מחודש קודם".
+    // מעטפת הוצאות: הטענת כרטיס יורדת ממנה ולא מוחזרת.
     const changeCarriedOver =
       (guideRow?.opening_change_balance || 0) +
       (_cumChangeRefill - cashRefill) +
@@ -419,7 +503,11 @@ function CashBoxesContent() {
       (guideRow?.opening_expenses_balance || 0) +
       (_cumExpensesRefill - expensesRefill) +
       (_cumAdminTopupExpenses - adminTopupExpenses) -
-      (_cumExpenses - expensesTotal);
+      (_cumExpenses - expensesTotal) -
+      (_cumCardLoad - cardLoadMonth);
+    // יתרת כרטיס שעברה מחודש קודם = sum(הטענות עד תחילת חודש) − sum(הוצאות מכרטיס עד תחילת חודש)
+    const cardCarriedOver =
+      (_cumCardLoad - cardLoadMonth) - (_cumExpensesFromCard - expensesFromCardTotal);
     const carriedLabel = start === SYSTEM_START_DATE ? 'יתרת פתיחה' : 'יתרה שעברה מחודש קודם';
 
     if (changeCarriedOver > 0.001) {
@@ -436,15 +524,24 @@ function CashBoxesContent() {
         amount: expensesCarriedOver,
       });
     }
+    if (cardCarriedOver > 0.001) {
+      cardMov.unshift({
+        date: start,
+        description: carriedLabel,
+        amount: cardCarriedOver,
+      });
+    }
 
     // מיון לפי תאריך עולה
     mainMov.sort((a, b) => a.date.localeCompare(b.date));
     changeMov.sort((a, b) => a.date.localeCompare(b.date));
     expensesMov.sort((a, b) => a.date.localeCompare(b.date));
+    cardMov.sort((a, b) => a.date.localeCompare(b.date));
 
     setMainMovements(mainMov);
     setChangeMovements(changeMov);
     setExpensesMovements(expensesMov);
+    setCardMovements(cardMov);
 
     setTotals({
       collected,
@@ -452,6 +549,8 @@ function CashBoxesContent() {
       transferred,
       cashRefill,
       expenses: expensesTotal,
+      expensesFromCard: expensesFromCardTotal,
+      cardLoad: cardLoadMonth,
       expensesRefill,
       salaryWithdrawn,
       adminTopupChange,
@@ -473,15 +572,30 @@ function CashBoxesContent() {
     totals.salaryWithdrawn;
   // היתרה במעטפות מצטברת על פני זמן — כסף פיזי שהמדריך נושא, ממשיך מחודש לחודש.
   // יתרת פתיחה (חד-פעמית) + כל החיזוקים + תוספות מאדמין − כל המשיכות, עד סוף החודש הנבחר.
+  // מעטפת הוצאות: הטענת כרטיס טיים אאוט יורדת ממנה (העברה פנימית).
   const changeBalance = openingChange + cumChangeRefill + cumAdminTopupChange - cumChangeGiven;
-  const expensesBalance = openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses;
+  const expensesBalance =
+    openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses - cumCardLoad;
+  // יתרת תת-קופת כרטיס טיים אאוט = הטענות − הוצאות מהכרטיס
+  const cardBalance = cumCardLoad - cumExpensesFromCard;
+  // האם להציג את תת-הקופה: רק למדריך קולינרי, או אם יש כרגע יתרה / תנועות
+  const showCardBox = hasCulinaryHistory || cardBalance > 0.001 || cumCardLoad > 0;
   // קופה רביעית: סך הכל ממתין להפקדה (חוצה חודשים — לא תלוי בחודש הנבחר)
   const pendingTotal = pendingDeposits.reduce((s, p) => s + (p.amount || 0), 0);
   const needsChangeRefill = totals.changeGiven > 0 && changeBalance < 51;
 
   const refillAmt = parseFloat(refillAmount) || 0;
-  const refillTargetLabel = refillModal === 'change' ? 'מעטפת העודף' : 'מעטפת ההוצאות';
-  const currentEnvelope = refillModal === 'change' ? changeBalance : expensesBalance;
+  // תווית יעד + מקור: הטענת כרטיס יוצאת ממעטפת הוצאות, השאר מהקופה הראשית.
+  const refillTargetLabel =
+    refillModal === 'change' ? 'מעטפת העודף'
+    : refillModal === 'expenses' ? 'מעטפת ההוצאות'
+    : 'כרטיס טיים אאוט';
+  const refillSourceLabel = refillModal === 'card' ? 'מעטפת ההוצאות' : 'הקופה הראשית';
+  const refillSourceBalance = refillModal === 'card' ? expensesBalance : mainBalance;
+  const currentEnvelope =
+    refillModal === 'change' ? changeBalance
+    : refillModal === 'expenses' ? expensesBalance
+    : cardBalance;
 
   async function handleRefill() {
     if (!guideId || !refillModal) return;
@@ -491,17 +605,25 @@ function CashBoxesContent() {
       setRefillError('נשאר להזין סכום');
       return;
     }
-    if (amt > mainBalance) {
-      setRefillError('אין מספיק בקופה הראשית לחיזוק הזה');
+    if (amt > refillSourceBalance) {
+      setRefillError(`אין מספיק ב${refillSourceLabel} לפעולה הזו`);
       return;
     }
     setRefillSaving(true);
+    const transferType =
+      refillModal === 'change' ? 'cash_refill'
+      : refillModal === 'expenses' ? 'expenses_refill'
+      : 'card_load';
+    const notes =
+      refillModal === 'card'
+        ? 'הטענת כרטיס טיים אאוט ממעטפת הוצאות'
+        : `חיזוק מהקופה הראשית ל${refillTargetLabel}`;
     const { error } = await supabase.from('transfers').insert({
       guide_id: guideId,
       transfer_date: todayISO(),
       amount: amt,
-      transfer_type: refillModal === 'change' ? 'cash_refill' : 'expenses_refill',
-      notes: `חיזוק מהקופה הראשית ל${refillTargetLabel}`,
+      transfer_type: transferType,
+      notes,
     });
     setRefillSaving(false);
     if (error) {
@@ -816,7 +938,7 @@ function CashBoxesContent() {
               )}
             </div>
 
-            {/* Expenses envelope */}
+            {/* Expenses envelope — כולל סקציית כרטיס טיים אאוט בפנים (למדריכי קולינרי) */}
             <div className="bg-white rounded-xl shadow p-5">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-bold">מעטפת הוצאות</h3>
@@ -826,9 +948,11 @@ function CashBoxesContent() {
               </div>
               <div className="space-y-1 text-sm">
                 {(() => {
+                  // יתרה שעברה = כל מה שהיה במעטפת לפני תחילת החודש,
+                  // בניכוי הטענות הכרטיס שיצאו ממנה.
                   const carriedOver =
                     expensesBalance -
-                    (totals.expensesRefill + totals.adminTopupExpenses - totals.expenses);
+                    (totals.expensesRefill + totals.adminTopupExpenses - totals.expenses - totals.cardLoad);
                   return carriedOver > 0.001 ? (
                     <div className="flex justify-between">
                       <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
@@ -852,6 +976,14 @@ function CashBoxesContent() {
                     -{totals.expenses.toFixed(2)}€
                   </span>
                 </div>
+                {totals.cardLoad > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">הטענת כרטיס טיים אאוט:</span>
+                    <span className="font-semibold text-red-700">
+                      -{totals.cardLoad.toFixed(2)}€
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Timeline toggle */}
@@ -889,6 +1021,81 @@ function CashBoxesContent() {
                   </button>
                 )}
               </div>
+
+              {/* ─── תת-קופה: כרטיס טיים אאוט ─── */}
+              {showCardBox && (
+                <div className="mt-4 pt-4 border-t-2 border-dashed border-amber-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <h4 className="text-base font-bold text-amber-900 flex items-center gap-1">
+                        🍴 כרטיס טיים אאוט
+                      </h4>
+                      <div className="text-[11px] text-gray-500">
+                        תת-קופה לסיור קולינרי. הכסף יוצא ממעטפת הוצאות.
+                      </div>
+                    </div>
+                    <span className="text-xl font-bold text-amber-900">
+                      {cardBalance.toFixed(2)}€
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 text-sm">
+                    {(() => {
+                      const cardCarried =
+                        cardBalance - (totals.cardLoad - totals.expensesFromCard);
+                      return cardCarried > 0.001 ? (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
+                          <span className="font-semibold">+{cardCarried.toFixed(2)}€</span>
+                        </div>
+                      ) : null;
+                    })()}
+                    {totals.cardLoad > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">הטענה ממעטפת הוצאות:</span>
+                        <span className="font-semibold">+{totals.cardLoad.toFixed(2)}€</span>
+                      </div>
+                    )}
+                    {totals.expensesFromCard > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">הוצאות מהכרטיס:</span>
+                        <span className="font-semibold text-red-700">
+                          -{totals.expensesFromCard.toFixed(2)}€
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card timeline toggle */}
+                  <button
+                    onClick={() => setShowCardTimeline(!showCardTimeline)}
+                    className="w-full mt-2 text-sm text-amber-800 hover:text-amber-900 font-medium flex items-center justify-center gap-1"
+                  >
+                    {showCardTimeline ? '▲ הסתר.י פירוט תנועות הכרטיס' : '▼ פירוט תנועות הכרטיס'}
+                  </button>
+                  {showCardTimeline && (
+                    <Timeline
+                      movements={cardMovements}
+                      canCancel={canEdit}
+                      onCancel={(transfer_id, description) => setCancelModal({ transfer_id, description })}
+                    />
+                  )}
+
+                  {isCurrent && (
+                    <button
+                      onClick={() => {
+                        setRefillModal('card');
+                        setRefillAmount('');
+                        setRefillError('');
+                      }}
+                      disabled={expensesBalance <= 0}
+                      className="w-full mt-3 bg-amber-700 hover:bg-amber-800 active:scale-98 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all text-white rounded-lg py-2 font-semibold text-sm"
+                    >
+                      הטענת כרטיס טיים אאוט
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-4 text-sm">
@@ -936,21 +1143,21 @@ function CashBoxesContent() {
         </div>
       )}
 
-      {/* Refill modal */}
+      {/* Refill modal — שימושי לחיזוק מעטפות + הטענת כרטיס טיים אאוט */}
       {refillModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out]">
             <h3 className="text-lg font-bold text-gray-900 mb-1">
-              חיזוק {refillTargetLabel}
+              {refillModal === 'card' ? 'הטענת כרטיס טיים אאוט' : `חיזוק ${refillTargetLabel}`}
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              כמה להעביר מהקופה הראשית ל{refillTargetLabel}?
+              כמה להעביר מ{refillSourceLabel} ל{refillTargetLabel}?
             </p>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 text-sm">
               <div className="flex justify-between mb-1">
-                <span className="text-gray-600">יש כרגע בראשית:</span>
-                <span className="font-semibold text-green-800">{mainBalance.toFixed(2)}€</span>
+                <span className="text-gray-600">יש כרגע ב{refillSourceLabel}:</span>
+                <span className="font-semibold text-green-800">{refillSourceBalance.toFixed(2)}€</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">יש כרגע ב{refillTargetLabel}:</span>
@@ -971,14 +1178,16 @@ function CashBoxesContent() {
               className="w-full border border-gray-300 rounded-lg px-3 py-3 text-xl mb-3"
             />
 
-            {refillAmt > 0 && refillAmt <= mainBalance && (
+            {refillAmt > 0 && refillAmt <= refillSourceBalance && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-sm space-y-1">
-                <div className="font-semibold text-blue-900 mb-1">אחרי החיזוק:</div>
+                <div className="font-semibold text-blue-900 mb-1">
+                  אחרי {refillModal === 'card' ? 'ההטענה' : 'החיזוק'}:
+                </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">ראשית:</span>
+                  <span className="text-gray-700">{refillSourceLabel}:</span>
                   <span className="font-semibold">
-                    {mainBalance.toFixed(2)}€ →{' '}
-                    <span className="text-green-800">{(mainBalance - refillAmt).toFixed(2)}€</span>
+                    {refillSourceBalance.toFixed(2)}€ →{' '}
+                    <span className="text-green-800">{(refillSourceBalance - refillAmt).toFixed(2)}€</span>
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -1003,7 +1212,9 @@ function CashBoxesContent() {
                 disabled={refillSaving}
                 className="w-full bg-green-700 hover:bg-green-800 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
               >
-                {refillSaving ? 'מעביר...' : 'בצע חיזוק'}
+                {refillSaving
+                  ? 'מעבירה...'
+                  : refillModal === 'card' ? 'בצעי הטענה' : 'בצעי חיזוק'}
               </button>
               <button
                 onClick={() => setRefillModal(null)}

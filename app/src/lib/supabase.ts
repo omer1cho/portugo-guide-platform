@@ -113,6 +113,13 @@ export type Expense = {
   expected_amount?: number | null;
   /** דגל: הסכום בפועל לא תאם את הצפוי — דורש בדיקה */
   price_mismatch?: boolean | null;
+  /**
+   * מקור התשלום של ההוצאה:
+   * - `expenses_box` (ברירת מחדל) — יוצא מקופת ההוצאות הרגילה
+   * - `food_market_card` — יוצא מתת-קופה "כרטיס טיים אאוט" (Time Out Market בליסבון)
+   * תת-הקופה זמינה רק למדריכים שהדריכו קולינרי בעבר.
+   */
+  payment_source?: 'expenses_box' | 'food_market_card';
 };
 
 /** סוג חישוב להוצאה בקטלוג */
