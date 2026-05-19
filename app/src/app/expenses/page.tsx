@@ -691,8 +691,9 @@ function ExpensesContent() {
               </div>
             )}
 
-            {/* מקור התשלום — רק למדריכי קולינרי (כרטיס טיים אאוט) */}
-            {showPaymentSourcePicker && selectedItemValue && (
+            {/* מקור התשלום — רק למדריכי קולינרי (כרטיס טיים אאוט).
+                מוצג תמיד בטופס פתוח, כדי שהמדריך יראה את האפשרות גם לפני בחירת פריט. */}
+            {showPaymentSourcePicker && (
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   מאיפה שולם?
