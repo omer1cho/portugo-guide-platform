@@ -236,7 +236,16 @@ function ExpensesContent() {
     setQuantity('');
     setAmount('');
     setOtherDescription('');
+    // איפוס מקור תשלום כשמחליפים סיור — חוץ מקולינרי לא רלוונטי הכרטיס
+    setPaymentSource('expenses_box');
   }, [tourType]);
+
+  // איפוס מקור תשלום כשמחליפים פריט — אם הפריט החדש לא קרוקט, הבחירה
+  // לא רלוונטית. מונע מצב שבו המדריך בחר קרוקט+כרטיס, החליף לפריט אחר,
+  // והשמירה תהיה עדיין 'food_market_card' בלי שתוצג בחירה.
+  useEffect(() => {
+    setPaymentSource('expenses_box');
+  }, [selectedItemValue]);
 
   // האם יש אי-התאמה (רק לפריטים מחושבים)
   const hasMismatch = useMemo(() => {
@@ -475,9 +484,15 @@ function ExpensesContent() {
     .reduce((s, e) => s + (e.amount || 0), 0);
   const total = totalFromCard + totalFromExpensesBox;
   const tourHasCatalog = TOURS_WITH_EXPENSE_CATALOG.has(tourType);
-  // האם להציג בחירת מקור תשלום בטופס: רק למדריכי קולינרי
-  // (גם אם הכרטיס כרגע ריק — שיוכלו לראות שזה קיים. ולידציה תיתפס בלחיצת שמירה.)
-  const showPaymentSourcePicker = hasCulinaryHistory;
+  // האם להציג בחירת מקור תשלום בטופס:
+  //   מדריך קולינרי + סיור 'קולינרי' + הפריט הנבחר הוא קרוקט (Croqueteria
+  //   Mercado Ribeira) — זה הפריט היחיד שמשלמים עליו עם כרטיס טיים אאוט.
+  // הזיהוי לפי שם הפריט (גמיש — תופס "קרוקט" / "קרוקטים" / "Croquettes").
+  const selectedItemName = (selectedCatalogItem?.item_name || '').toLowerCase();
+  const isCroquetteItem =
+    selectedItemName.includes('קרוק') || selectedItemName.includes('croq');
+  const showPaymentSourcePicker =
+    hasCulinaryHistory && tourType === 'קולינרי' && isCroquetteItem;
 
   return (
     <div className="min-h-screen pb-20 bg-gray-50">

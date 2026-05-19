@@ -66,7 +66,7 @@ function PostTourExpensesContent() {
   const [formError, setFormError] = useState('');
   const [showSavedToast, setShowSavedToast] = useState(false);
 
-  // ─── תת-קופת "כרטיס טיים אאוט" — רק בסיור קולינרי ───
+  // ─── תת-קופת "כרטיס טיים אאוט" — רק בסיור קולינרי + רק על פריט קרוקט ───
   const isCulinaryTour = tour?.tour_type === 'קולינרי';
   const [paymentSource, setPaymentSource] = useState<PaymentSource>('expenses_box');
   const [cardBalance, setCardBalance] = useState(0);
@@ -176,10 +176,20 @@ function PostTourExpensesContent() {
   // אנחנו לא ממלאים אוטומטית את הכמות לפי מספר משתתפי הסיור: לא כל המשתתפים
   // קונים כל פריט (למשל לא כולם טועמים יין). המדריך תמיד מקליד ידנית את
   // הכמות שבפועל קנה. שדה "💡 בסיור היו X אנשים" שמתחת מציג את המספר כתזכורת בלבד.
+  // גם מאפס payment_source — הבחירה מהכרטיס רלוונטית רק לקרוקט.
   useEffect(() => {
     setAmount('');
     setQuantity('');
+    setPaymentSource('expenses_box');
   }, [selectedItemValue]);
+
+  // זיהוי פריט קרוקט (Croqueteria Mercado Ribeira) — לפי שם הפריט בקטלוג,
+  // גמיש לתפיסת "קרוקט" / "קרוקטים" / "Croquettes".
+  const selectedItemNameLc = (selectedCatalogItem?.item_name || '').toLowerCase();
+  const isCroquetteItem =
+    selectedItemNameLc.includes('קרוק') || selectedItemNameLc.includes('croq');
+  // מציגים את בחירת המקור רק כשמדובר בקרוקט בסיור קולינרי.
+  const showPaymentSourcePicker = isCulinaryTour && isCroquetteItem;
 
   // מילוי אוטומטי של הסכום מתוך ה-unit_price × quantity (אחרי שהפריט נבחר)
   useEffect(() => {
@@ -567,9 +577,9 @@ function PostTourExpensesContent() {
             </div>
           )}
 
-          {/* מקור התשלום — רק בסיור קולינרי (כרטיס טיים אאוט).
-              מוצג מיד עם פתיחת הטופס כדי שיהיה בולט לפני בחירת פריט. */}
-          {isCulinaryTour && (
+          {/* מקור התשלום — רק כשבסיור קולינרי נבחר פריט קרוקט (Croqueteria
+              Mercado Ribeira). זה הפריט היחיד שמשלמים עליו עם כרטיס טיים אאוט. */}
+          {showPaymentSourcePicker && (
             <div>
               <label className="block text-sm font-semibold mb-2">
                 מאיפה שולם?
