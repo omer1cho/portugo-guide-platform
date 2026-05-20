@@ -20,7 +20,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const ADMIN_EMAIL = 'info.portugo@gmail.com';
-const FROM_EMAIL = 'info.portugo@gmail.com';
+// כתובת השולח חייבת להיות sender מאומת ב-Brevo. omer1cho@gmail.com מאומת
+// אוטומטית מאז שעומר נרשמה איתו. info.portugo@gmail.com עוד לא אומת,
+// ולכן Brevo דחה את השליחה ממנו ("sender not valid").
+const FROM_EMAIL = 'omer1cho@gmail.com';
 const FROM_NAME = 'פורטוגו — שאלון ייעוץ';
 
 // כל השדות שמותרים להגיע מבחוץ (whitelist) — מונע injection של עמודות אקראיות
