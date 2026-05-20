@@ -82,15 +82,20 @@ export async function POST(req: NextRequest) {
   }
 
   // --- שמירה ל-Supabase ---
+  // משתמשים ב-service role key (server-side only) כדי לעקוף RLS — בטוח כי הקוד
+  // הזה רץ רק על השרת ולא נחשף לדפדפן. ה-anon key לא מספיק כי ה-publishable
+  // key החדש של Supabase לא מקבל אוטומטית GRANT INSERT על טבלאות חדשות.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !serviceKey) {
     console.error('[consultations] Supabase env vars missing');
     return NextResponse.json({ ok: false, error: 'שגיאה זמנית, נסו שוב מעט מאוחר יותר' }, { status: 500 });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   const { data: inserted, error } = await supabase
     .from('consultations')
