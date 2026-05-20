@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/customers', label: 'ניתוח לקוחות', icon: '📊' },
   { href: '/admin/shifts', label: 'לוח שיבוצים', icon: '🗓️' },
   { href: '/admin/cashflow', label: 'קשפלו חודשי', icon: '💸' },
+  { href: '/admin/consultations', label: 'פניות ייעוץ', icon: '🌸' },
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
   { href: '/admin/pricing-validation', label: 'רווחיות סיורים', icon: '💰' },
 ];
