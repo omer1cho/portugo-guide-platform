@@ -405,7 +405,7 @@ export default function ConsultationForm() {
               onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = COLORS.redHover; }}
               onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = COLORS.red; }}
             >
-              {submitting ? 'שולחים...' : 'שולחים את השאלון 🌸'}
+              {submitting ? 'שולחים...' : 'כאן שולחים את השאלון 🌸'}
             </button>
             <p style={{ textAlign: 'center', fontSize: 13, color: COLORS.muted, marginTop: 16 }}>
               אנחנו נחזור אליכם בימים הקרובים לתיאום פגישת הייעוץ.
