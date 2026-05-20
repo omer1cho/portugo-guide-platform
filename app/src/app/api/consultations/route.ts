@@ -2,13 +2,15 @@
  * POST /api/consultations
  *
  * מקבל שאלון ייעוץ מסלול מ-/consultation, שומר ל-Supabase, ושולח מייל
- * התראה לעומר (info.portugo@gmail.com) דרך Brevo.
+ * התראה לעומר (info.portugo@gmail.com) דרך Gmail SMTP עם App Password.
  *
- * אם BREVO_API_KEY לא מוגדר ב-env — הדאטה עדיין נשמרת, רק המייל לא יישלח.
+ * אם GMAIL_USER/GMAIL_APP_PASSWORD לא מוגדרים ב-env — הדאטה עדיין נשמרת,
+ * רק המייל לא יישלח.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 import {
   ConsultationSubmission,
   FIELD_LABELS,
@@ -20,10 +22,6 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const ADMIN_EMAIL = 'info.portugo@gmail.com';
-// כתובת השולח חייבת להיות sender מאומת ב-Brevo. omer1cho@gmail.com מאומת
-// אוטומטית מאז שעומר נרשמה איתו. info.portugo@gmail.com עוד לא אומת,
-// ולכן Brevo דחה את השליחה ממנו ("sender not valid").
-const FROM_EMAIL = 'omer1cho@gmail.com';
 const FROM_NAME = 'פורטוגו — שאלון ייעוץ';
 
 // כל השדות שמותרים להגיע מבחוץ (whitelist) — מונע injection של עמודות אקראיות
@@ -111,34 +109,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'שגיאה בשמירה, נסו שוב' }, { status: 500 });
   }
 
-  // --- שליחת מייל התראה דרך Brevo (best-effort, לא מפיל את הבקשה) ---
-  const brevoKey = process.env.BREVO_API_KEY;
-  if (brevoKey) {
+  // --- שליחת מייל התראה דרך Gmail SMTP (best-effort, לא מפיל את הבקשה) ---
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (gmailUser && gmailPass) {
     try {
       const html = buildEmailHtml(row, inserted.id);
-      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'api-key': brevoKey,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          sender: { name: FROM_NAME, email: FROM_EMAIL },
-          to: [{ email: ADMIN_EMAIL, name: 'עומר' }],
-          replyTo: { email: email, name: fullName },
-          subject: `🌸 שאלון ייעוץ חדש — ${fullName}`,
-          htmlContent: html,
-        }),
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: gmailUser, pass: gmailPass },
       });
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('[consultations] Brevo failed:', res.status, text.slice(0, 500));
-      }
+      await transporter.sendMail({
+        from: { name: FROM_NAME, address: gmailUser },
+        to: ADMIN_EMAIL,
+        replyTo: { name: fullName, address: email },
+        subject: `🌸 שאלון ייעוץ חדש — ${fullName}`,
+        html,
+      });
     } catch (e) {
       console.error('[consultations] email send error:', e);
     }
   } else {
-    console.warn('[consultations] BREVO_API_KEY not set — skipping email notification');
+    console.warn('[consultations] GMAIL_USER/GMAIL_APP_PASSWORD not set — skipping email');
   }
 
   return NextResponse.json({ ok: true, id: inserted.id });
