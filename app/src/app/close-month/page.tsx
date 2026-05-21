@@ -134,6 +134,10 @@ function CloseMonthContent() {
       else if (t.transfer_type === 'salary_withdrawal') salaryWithdrawn += amt;
       else if (t.transfer_type === 'admin_topup_change') adminTopupChange += amt;
       else if (t.transfer_type === 'admin_topup_expenses') adminTopupExpenses += amt;
+      // העברות פנימיות לכרטיס טיים אאוט לא משפיעות על הקופה הראשית.
+      else if (t.transfer_type === 'card_load' || t.transfer_type === 'admin_topup_card') {
+        /* no-op for main box */
+      }
       else transfersTotal += amt;
     });
 

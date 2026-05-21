@@ -134,7 +134,7 @@ function ExpensesContent() {
       guideRow.qualified_tours.includes('קולינרי');
     setHasCulinaryHistory(isCulinary);
 
-    // ─ יתרה: סוכמים card_load ב-transfers ומורידים expenses מהכרטיס ─
+    // ─ יתרה: סוכמים כל ההטענות (פנימיות + אדמין) ומורידים expenses מהכרטיס ─
     const lastDay = new Date(year, month + 1, 0).getDate();
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
@@ -142,7 +142,7 @@ function ExpensesContent() {
       .from('transfers')
       .select('amount')
       .eq('guide_id', id)
-      .eq('transfer_type', 'card_load')
+      .in('transfer_type', ['card_load', 'admin_topup_card'])
       .gte('transfer_date', SYSTEM_START_DATE)
       .lte('transfer_date', end);
     const cardLoadSum = (cardLoadRes.data || []).reduce(

@@ -1,25 +1,29 @@
 'use client';
 
 /**
- * AdminEnvelopeTopupModal — מאפשר לאדמין להוסיף כסף למעטפת עודף או הוצאות
- * של מדריך, **מבלי שהסכום ייגרע מהקופה הראשית** (כי הכסף הגיע מפורטוגו).
+ * AdminEnvelopeTopupModal — מאפשר לאדמין להוסיף כסף ישירות למעטפה של מדריך,
+ * **מבלי שהסכום ייגרע מהקופה הראשית** (כי הכסף הגיע מפורטוגו).
  *
- * מתעד transfer חדש:
+ * מתעד transfer חדש לפי המעטפה:
  *   - admin_topup_change   → מתווסף ליתרת מעטפת עודף
  *   - admin_topup_expenses → מתווסף ליתרת מעטפת הוצאות
+ *   - admin_topup_card     → מתווסף ליתרת תת-קופת כרטיס טיים אאוט
  *
- * שני הסוגים לא משפיעים על חישוב הקופה הראשית.
+ * שלושת הסוגים לא משפיעים על חישוב הקופה הראשית.
+ * כפתור הכרטיס מוצג רק אם canTopupCard=true (מדריך מוסמך לקולינרי).
  */
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
 
-type Envelope = 'change' | 'expenses';
+type Envelope = 'change' | 'expenses' | 'card';
 
 type Props = {
   guideId: string;
   guideName: string;
+  /** האם להציג את האפשרות להטעין את כרטיס טיים אאוט (מדריך מוסמך לקולינרי). */
+  canTopupCard?: boolean;
   onClose: () => void;
   onSaved: () => void; // קריאה אחרי שמירה מוצלחת — כדי לרענן את הסיכום
 };
@@ -29,7 +33,7 @@ function todayISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function AdminEnvelopeTopupModal({ guideId, guideName, onClose, onSaved }: Props) {
+export default function AdminEnvelopeTopupModal({ guideId, guideName, canTopupCard = false, onClose, onSaved }: Props) {
   const [envelope, setEnvelope] = useState<Envelope>('expenses');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayISO());
@@ -37,7 +41,10 @@ export default function AdminEnvelopeTopupModal({ guideId, guideName, onClose, o
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const envelopeLabel = envelope === 'change' ? 'מעטפת עודף' : 'מעטפת הוצאות';
+  const envelopeLabel =
+    envelope === 'change' ? 'מעטפת עודף' :
+    envelope === 'card' ? 'כרטיס טיים אאוט' :
+    'מעטפת הוצאות';
 
   const handleSave = async () => {
     setError('');
@@ -47,7 +54,10 @@ export default function AdminEnvelopeTopupModal({ guideId, guideName, onClose, o
       return;
     }
     setSaving(true);
-    const transferType = envelope === 'change' ? 'admin_topup_change' : 'admin_topup_expenses';
+    const transferType =
+      envelope === 'change' ? 'admin_topup_change' :
+      envelope === 'card' ? 'admin_topup_card' :
+      'admin_topup_expenses';
     const { error: insErr } = await supabase.from('transfers').insert({
       guide_id: guideId,
       transfer_date: date,
@@ -100,11 +110,11 @@ export default function AdminEnvelopeTopupModal({ guideId, guideName, onClose, o
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
             לאיזו מעטפה?
           </label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               onClick={() => setEnvelope('expenses')}
               style={{
-                flex: 1,
+                flex: '1 1 140px',
                 padding: '12px',
                 borderRadius: 8,
                 border: `2px solid ${envelope === 'expenses' ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
@@ -120,7 +130,7 @@ export default function AdminEnvelopeTopupModal({ guideId, guideName, onClose, o
             <button
               onClick={() => setEnvelope('change')}
               style={{
-                flex: 1,
+                flex: '1 1 140px',
                 padding: '12px',
                 borderRadius: 8,
                 border: `2px solid ${envelope === 'change' ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
@@ -133,6 +143,24 @@ export default function AdminEnvelopeTopupModal({ guideId, guideName, onClose, o
             >
               💵 מעטפת עודף
             </button>
+            {canTopupCard && (
+              <button
+                onClick={() => setEnvelope('card')}
+                style={{
+                  flex: '1 1 140px',
+                  padding: '12px',
+                  borderRadius: 8,
+                  border: `2px solid ${envelope === 'card' ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
+                  background: envelope === 'card' ? ADMIN_COLORS.green25 : '#fff',
+                  color: envelope === 'card' ? ADMIN_COLORS.green800 : ADMIN_COLORS.gray700,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                🍴 כרטיס טיים אאוט
+              </button>
+            )}
           </div>
         </div>
 

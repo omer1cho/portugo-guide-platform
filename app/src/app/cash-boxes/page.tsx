@@ -21,6 +21,7 @@ type Totals = {
   salaryWithdrawn: number;  // salary withdrawn from main box at month-close
   adminTopupChange: number; // אדמין הוסיף למעטפת עודף (לא מהקופה הראשית)
   adminTopupExpenses: number; // אדמין הוסיף למעטפת הוצאות (לא מהקופה הראשית)
+  adminTopupCard: number; // אדמין הוסיף ישירות לכרטיס טיים אאוט (לא מהקופה הראשית)
 };
 
 // 'card' = הטענת כרטיס טיים אאוט (מקופת הוצאות → כרטיס)
@@ -138,6 +139,7 @@ function CashBoxesContent() {
     salaryWithdrawn: 0,
     adminTopupChange: 0,
     adminTopupExpenses: 0,
+    adminTopupCard: 0,
   });
 
   // האם המדריך הזה מוסמך לסיור קולינרי (לפי guides.qualified_tours, נערך
@@ -146,9 +148,10 @@ function CashBoxesContent() {
   const [hasCulinaryHistory, setHasCulinaryHistory] = useState(false);
 
   // יתרת תת-קופת כרטיס טיים אאוט — מצטברת על פני זמן (כסף פיזי על כרטיס).
-  // sum(card_load) − sum(expenses where payment_source='food_market_card'),
+  // sum(card_load + admin_topup_card) − sum(expenses where payment_source='food_market_card'),
   // מ-SYSTEM_START_DATE ועד סוף החודש הנבחר.
   const [cumCardLoad, setCumCardLoad] = useState(0);
+  const [cumAdminTopupCard, setCumAdminTopupCard] = useState(0);
   const [cumExpensesFromCard, setCumExpensesFromCard] = useState(0);
   // יתרות מצטברות על פני זמן — מעטפות עוברות מחודש לחודש לפי כסף פיזי
   // שיש בהן בפועל. הסכומים האלו צוברים את כל החיזוקים, ההורדות וה-topups
@@ -349,7 +352,8 @@ function CashBoxesContent() {
     let _cumExpensesRefill = 0;
     let _cumAdminTopupChange = 0;
     let _cumAdminTopupExpenses = 0;
-    let _cumCardLoad = 0;
+    let _cumCardLoad = 0;            // הטענות פנימיות (יוצאות ממעטפת הוצאות)
+    let _cumAdminTopupCard = 0;      // הטענות אדמין ישירות מפורטוגו לכרטיס
     (cumTrRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
       const a = t.amount || 0;
       if (t.transfer_type === 'cash_refill') _cumChangeRefill += a;
@@ -357,6 +361,7 @@ function CashBoxesContent() {
       else if (t.transfer_type === 'admin_topup_change') _cumAdminTopupChange += a;
       else if (t.transfer_type === 'admin_topup_expenses') _cumAdminTopupExpenses += a;
       else if (t.transfer_type === 'card_load') _cumCardLoad += a;
+      else if (t.transfer_type === 'admin_topup_card') _cumAdminTopupCard += a;
     });
     let _cumChangeGiven = 0;
     type RawTour = { bookings: { change_given: number }[] | null };
@@ -381,6 +386,7 @@ function CashBoxesContent() {
     setCumChangeGiven(_cumChangeGiven);
     setCumExpenses(_cumExpenses);
     setCumCardLoad(_cumCardLoad);
+    setCumAdminTopupCard(_cumAdminTopupCard);
     setCumExpensesFromCard(_cumExpensesFromCard);
 
     // זיהוי "מדריך קולינרי" כבר נקבע למעלה ע"פ guide.qualified_tours.
@@ -390,6 +396,7 @@ function CashBoxesContent() {
     let salaryWithdrawn = 0;
     let adminTopupChange = 0;
     let adminTopupExpenses = 0;
+    let adminTopupCardMonth = 0;
     let cardLoadMonth = 0;
     const expensesMov: Movement[] = [];
     const cardMov: Movement[] = [];
@@ -426,6 +433,14 @@ function CashBoxesContent() {
           expensesMov.push({
             date: t.transfer_date,
             description: t.notes || 'תוספת מפורטוגו',
+            amount: amt,
+          });
+        } else if (t.transfer_type === 'admin_topup_card') {
+          // הטענת אדמין ישירות לכרטיס — לא יוצאת ממעטפת הוצאות
+          adminTopupCardMonth += amt;
+          cardMov.push({
+            date: t.transfer_date,
+            description: t.notes || 'הטענה מפורטוגו',
             amount: amt,
           });
         } else {
@@ -554,6 +569,7 @@ function CashBoxesContent() {
       salaryWithdrawn,
       adminTopupChange,
       adminTopupExpenses,
+      adminTopupCard: adminTopupCardMonth,
     });
     setLoading(false);
   }
@@ -575,10 +591,11 @@ function CashBoxesContent() {
   const changeBalance = openingChange + cumChangeRefill + cumAdminTopupChange - cumChangeGiven;
   const expensesBalance =
     openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses - cumCardLoad;
-  // יתרת תת-קופת כרטיס טיים אאוט = הטענות − הוצאות מהכרטיס
-  const cardBalance = cumCardLoad - cumExpensesFromCard;
+  // יתרת תת-קופת כרטיס טיים אאוט = הטענות (פנימיות + אדמין) − הוצאות מהכרטיס
+  const cardBalance = cumCardLoad + cumAdminTopupCard - cumExpensesFromCard;
   // האם להציג את תת-הקופה: רק למדריך קולינרי, או אם יש כרגע יתרה / תנועות
-  const showCardBox = hasCulinaryHistory || cardBalance > 0.001 || cumCardLoad > 0;
+  const showCardBox =
+    hasCulinaryHistory || cardBalance > 0.001 || cumCardLoad > 0 || cumAdminTopupCard > 0;
   // קופה רביעית: סך הכל ממתין להפקדה (חוצה חודשים — לא תלוי בחודש הנבחר)
   const pendingTotal = pendingDeposits.reduce((s, p) => s + (p.amount || 0), 0);
   const needsChangeRefill = totals.changeGiven > 0 && changeBalance < 51;
@@ -1041,7 +1058,8 @@ function CashBoxesContent() {
                   <div className="space-y-1 text-sm">
                     {(() => {
                       const cardCarried =
-                        cardBalance - (totals.cardLoad - totals.expensesFromCard);
+                        cardBalance -
+                        (totals.cardLoad + totals.adminTopupCard - totals.expensesFromCard);
                       return cardCarried > 0.001 ? (
                         <div className="flex justify-between">
                           <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
@@ -1053,6 +1071,12 @@ function CashBoxesContent() {
                       <div className="flex justify-between">
                         <span className="text-gray-600">הטענה ממעטפת הוצאות:</span>
                         <span className="font-semibold">+{totals.cardLoad.toFixed(2)}€</span>
+                      </div>
+                    )}
+                    {totals.adminTopupCard > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">הטענה מפורטוגו:</span>
+                        <span className="font-semibold">+{totals.adminTopupCard.toFixed(2)}€</span>
                       </div>
                     )}
                     {totals.expensesFromCard > 0 && (

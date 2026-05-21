@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
 import { supabase, TOUR_TYPES } from '@/lib/supabase';
+import AdminEnvelopeTopupModal from '@/components/admin/AdminEnvelopeTopupModal';
 
 // אפריל 2026 הוא החודש הראשון עם נתונים אמיתיים. לפניו אין טעם להציג.
 const FIRST_ACTIVE_YEAR = 2026;
@@ -277,7 +278,12 @@ function GuideCard({
   const [form, setForm] = useState<GuideRow>(guide);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showTopupModal, setShowTopupModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // מדריך מוסמך לקולינרי = יש לו 'קולינרי' ב-qualified_tours.
+  // משפיע על הצגת אפשרות הטענת תת-קופת כרטיס טיים אאוט.
+  const canTopupCard = (guide.qualified_tours || []).includes('קולינרי');
 
   // אם guide משתנה (אחרי load מחדש), מסנכרנים את הטופס
   useEffect(() => {
@@ -343,24 +349,34 @@ function GuideCard({
         scrollMarginTop: 20,
       }}
     >
-      {/* כותרת — תמיד מוצגת */}
-      <button
-        onClick={onToggle}
+      {/* כותרת — תמיד מוצגת. הכותרת היא כפתור פתיחה/סגירה, וכפתור ההטענה ניצב בנפרד. */}
+      <div
         style={{
           width: '100%',
           padding: '14px 16px',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          textAlign: 'right',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 12,
+          flexWrap: 'wrap',
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button
+          onClick={onToggle}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'right',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flex: 1,
+            minWidth: 0,
+            padding: 0,
+          }}
+        >
           <span style={{ fontSize: 16, fontWeight: 600, color: ADMIN_COLORS.green800 }}>
             {guide.name}
           </span>
@@ -369,11 +385,47 @@ function GuideCard({
             {guide.is_admin && ' · אדמין'}
             {!guide.is_active && ' · מושבת'}
           </span>
-        </span>
-        <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
-          {isOpen ? '▲ סגור.י' : '▼ ערוך.י'}
-        </span>
-      </button>
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {!guide.is_admin && guide.is_active && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTopupModal(true);
+              }}
+              style={{
+                padding: '6px 12px',
+                background: ADMIN_COLORS.green25,
+                color: ADMIN_COLORS.green800,
+                border: `1px solid ${ADMIN_COLORS.green700}`,
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+              }}
+              title="הוסיפי כסף ישירות לאחת ממעטפות המדריך, ללא גריעה מהקופה הראשית"
+            >
+              💸 הטענה
+            </button>
+          )}
+          <button
+            onClick={onToggle}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              color: ADMIN_COLORS.gray500,
+              fontSize: 13,
+              padding: 0,
+            }}
+          >
+            {isOpen ? '▲ סגור.י' : '▼ ערוך.י'}
+          </button>
+        </div>
+      </div>
 
       {/* גוף — רק כשפתוח */}
       {isOpen && (
@@ -548,6 +600,19 @@ function GuideCard({
             </button>
           </div>
         </div>
+      )}
+
+      {showTopupModal && (
+        <AdminEnvelopeTopupModal
+          guideId={guide.id}
+          guideName={guide.name}
+          canTopupCard={canTopupCard}
+          onClose={() => setShowTopupModal(false)}
+          onSaved={() => {
+            setShowTopupModal(false);
+            onSaved();
+          }}
+        />
       )}
     </div>
   );

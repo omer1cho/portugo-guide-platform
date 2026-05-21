@@ -210,6 +210,7 @@ export default function GuideStatusCard({ summary, onChange }: Props) {
         <AdminEnvelopeTopupModal
           guideId={guide.id}
           guideName={guide.name}
+          canTopupCard={(guide.qualified_tours || []).includes('קולינרי')}
           onClose={() => setShowTopupModal(false)}
           onSaved={() => {
             if (onChange) onChange();

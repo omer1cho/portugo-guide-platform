@@ -353,7 +353,9 @@ export async function loadGuideMonthDetail(
       t.transfer_type !== 'expenses_refill' &&
       t.transfer_type !== 'salary_withdrawal' &&
       t.transfer_type !== 'admin_topup_change' &&
-      t.transfer_type !== 'admin_topup_expenses'
+      t.transfer_type !== 'admin_topup_expenses' &&
+      t.transfer_type !== 'card_load' &&
+      t.transfer_type !== 'admin_topup_card'
     ) {
       // to_portugo (כולל pending), from_portugo (אם קיים)
       // from_portugo בעצם **מוסיף** לקופה — אבל בנוסחה המקורית של /close-month הוא נכלל ב-transfersTotal עם סימן +
@@ -456,6 +458,8 @@ export const TRANSFER_TYPE_LABELS: Record<string, { label: string; icon: string;
   from_portugo:         { label: 'העברה מפורטוגו',    icon: '💚', group: 'deposit' },
   admin_topup_change:   { label: 'שיפוי ידני (עודף)',  icon: '🔧', group: 'admin' },
   admin_topup_expenses: { label: 'שיפוי ידני (הוצאות)', icon: '🔧', group: 'admin' },
+  admin_topup_card:     { label: 'שיפוי ידני (כרטיס טיים אאוט)', icon: '🍴', group: 'admin' },
+  card_load:            { label: 'הטענת כרטיס טיים אאוט', icon: '🍴', group: 'admin' },
 };
 
 export function transferTypeLabel(type: string): { label: string; icon: string } {
