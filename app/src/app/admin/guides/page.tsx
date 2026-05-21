@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
-import { supabase } from '@/lib/supabase';
+import { supabase, TOUR_TYPES } from '@/lib/supabase';
 
 // אפריל 2026 הוא החודש הראשון עם נתונים אמיתיים. לפניו אין טעם להציג.
 const FIRST_ACTIVE_YEAR = 2026;
@@ -60,6 +60,7 @@ type GuideRow = {
   birthday: string | null;
   availability_notes: string | null;
   vacation_notes: string | null;
+  qualified_tours: string[] | null;
   is_admin: boolean;
   is_active: boolean;
 };
@@ -80,6 +81,7 @@ const EMPTY_GUIDE: Omit<GuideRow, 'id'> = {
   birthday: '',
   availability_notes: '',
   vacation_notes: '',
+  qualified_tours: [],
   is_admin: false,
   is_active: true,
 };
@@ -97,7 +99,7 @@ export default function AdminGuidesPage() {
     const { data, error } = await supabase
       .from('guides')
       .select(
-        'id, name, email, city, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person, opening_change_balance, opening_expenses_balance, target_change_balance, target_expenses_balance, birthday, availability_notes, vacation_notes, is_admin, is_active',
+        'id, name, email, city, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person, opening_change_balance, opening_expenses_balance, target_change_balance, target_expenses_balance, birthday, availability_notes, vacation_notes, qualified_tours, is_admin, is_active',
       )
       .order('name');
     if (error) {
@@ -310,6 +312,7 @@ function GuideCard({
         birthday: form.birthday || null,
         availability_notes: form.availability_notes || null,
         vacation_notes: form.vacation_notes || null,
+        qualified_tours: form.qualified_tours || [],
         is_admin: form.is_admin,
         is_active: form.is_active,
       })
@@ -448,6 +451,42 @@ function GuideCard({
             <Field label="חופשות עתידיות" hint='למשל "10-20.7 בארץ, 25-26.12 חג"'>
               <textarea value={form.vacation_notes || ''} onChange={(e) => setForm({ ...form, vacation_notes: e.target.value })} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} />
             </Field>
+            <Field
+              label={`סיורים מוסמכים (${form.city === 'lisbon' ? 'ליסבון' : 'פורטו'})`}
+              hint="לחיצה על תווית מסמנת/מבטלת. ריק = לא הוגדר. סיורים שלא מסומנים לא יופיעו ב-dropdown של שיבוץ. גם משפיע על הצגת תת-קופת כרטיס טיים אאוט."
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 4 }}>
+                {TOUR_TYPES[form.city].map((t) => {
+                  const active = (form.qualified_tours || []).includes(t.value);
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => {
+                        const current = form.qualified_tours || [];
+                        const next = active
+                          ? current.filter((v) => v !== t.value)
+                          : [...current, t.value];
+                        setForm({ ...form, qualified_tours: next });
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: 12,
+                        borderRadius: 12,
+                        border: `1px solid ${active ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
+                        background: active ? ADMIN_COLORS.green700 : '#fff',
+                        color: active ? '#fff' : ADMIN_COLORS.gray700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
           </FormSection>
 
           {/* 5. הגדרות */}
@@ -544,6 +583,7 @@ function AddGuideModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
       target_change_balance: form.target_change_balance ?? 100,
       target_expenses_balance: form.target_expenses_balance ?? 150,
       birthday: form.birthday || null,
+      qualified_tours: form.qualified_tours || [],
       is_admin: form.is_admin,
       is_active: form.is_active,
     });

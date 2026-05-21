@@ -89,7 +89,8 @@ function ExpensesContent() {
   const [deleteError, setDeleteError] = useState('');
 
   // ─── תת-קופת "כרטיס טיים אאוט" — רק למדריכי קולינרי ───
-  // hasCulinaryHistory = יש לו ולו סיור קולינרי אחד בעבר (בדיקה דינמית)
+  // hasCulinaryHistory = מוסמך לסיור קולינרי לפי guides.qualified_tours
+  // (נערך ב-/admin/guides או במודאל המדריכים ב-/admin/shifts).
   // cardBalance = יתרה נוכחית בכרטיס (sum(card_load) − sum(expenses from card))
   const [hasCulinaryHistory, setHasCulinaryHistory] = useState(false);
   const [cardBalance, setCardBalance] = useState(0);
@@ -114,20 +115,23 @@ function ExpensesContent() {
 
   /**
    * טוען את מצב תת-קופת "כרטיס טיים אאוט":
-   * 1. בודק אם המדריך עשה אי פעם סיור קולינרי
+   * 1. בודק אם המדריך מוסמך לסיור קולינרי לפי guides.qualified_tours
+   *    (נערך ב-/admin/guides או במודאל המדריכים ב-/admin/shifts).
    * 2. מחשב יתרה נוכחית: sum(card_load) − sum(expenses where payment_source='food_market_card')
    *    מ-SYSTEM_START_DATE ועד סוף החודש הנבחר (היתרה ממשיכה לחודש הבא כמו כסף פיזי).
    *
    * נופל ל-fallback אם המיגרציה עדיין לא רצה — מציג 0 בלי לשבור את המסך.
    */
   async function loadCardState(id: string) {
-    // ─ זיהוי "מדריך קולינרי" ─
-    const culinaryCheck = await supabase
-      .from('tours')
-      .select('id', { count: 'exact', head: true })
-      .eq('guide_id', id)
-      .eq('tour_type', 'קולינרי');
-    const isCulinary = (culinaryCheck.count || 0) > 0;
+    // ─ זיהוי "מדריך קולינרי" — לפי qualified_tours של המדריך ─
+    const { data: guideRow } = await supabase
+      .from('guides')
+      .select('qualified_tours')
+      .eq('id', id)
+      .single();
+    const isCulinary =
+      Array.isArray(guideRow?.qualified_tours) &&
+      guideRow.qualified_tours.includes('קולינרי');
     setHasCulinaryHistory(isCulinary);
 
     // ─ יתרה: סוכמים card_load ב-transfers ומורידים expenses מהכרטיס ─

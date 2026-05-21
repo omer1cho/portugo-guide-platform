@@ -140,8 +140,9 @@ function CashBoxesContent() {
     adminTopupExpenses: 0,
   });
 
-  // האם המדריך הזה הוא מדריך קולינרי (קביעה דינמית: יש לו ולו סיור קולינרי
-  // אחד בעבר). רק אז הוא רואה את תת-קופת "כרטיס טיים אאוט".
+  // האם המדריך הזה מוסמך לסיור קולינרי (לפי guides.qualified_tours, נערך
+  // ב-/admin/guides או במודאל המדריכים ב-/admin/shifts). רק אז הוא רואה את
+  // תת-קופת "כרטיס טיים אאוט".
   const [hasCulinaryHistory, setHasCulinaryHistory] = useState(false);
 
   // יתרת תת-קופת כרטיס טיים אאוט — מצטברת על פני זמן (כסף פיזי על כרטיס).
@@ -225,14 +226,19 @@ function CashBoxesContent() {
     const lastDay = new Date(year, month + 1, 0).getDate();
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    // Guide opening balances (יתרות פתיחה — הכסף שהמדריך נכנס איתו למערכת)
+    // Guide opening balances + qualified_tours (לזיהוי "מדריך קולינרי" — מי שמוסמך
+    // לסיור קולינרי בעריכת אדמין ב-/admin/guides או ב-/admin/shifts).
     const { data: guideRow } = await supabase
       .from('guides')
-      .select('opening_change_balance, opening_expenses_balance')
+      .select('opening_change_balance, opening_expenses_balance, qualified_tours')
       .eq('id', id)
       .single();
     setOpeningChange(guideRow?.opening_change_balance || 0);
     setOpeningExpenses(guideRow?.opening_expenses_balance || 0);
+    setHasCulinaryHistory(
+      Array.isArray(guideRow?.qualified_tours) &&
+        guideRow.qualified_tours.includes('קולינרי'),
+    );
 
     // Tours + bookings (for classic collected + change_given) — כולל תאריך + סוג סיור לטיימליין
     const { data: tours } = await supabase
@@ -377,14 +383,7 @@ function CashBoxesContent() {
     setCumCardLoad(_cumCardLoad);
     setCumExpensesFromCard(_cumExpensesFromCard);
 
-    // ─── זיהוי "מדריך קולינרי" — האם יש לו ולו סיור קולינרי אחד בעבר? ───
-    // בדיקה זריזה ב-count מבלי לטעון את כל הסיורים.
-    const culinaryCheck = await supabase
-      .from('tours')
-      .select('id', { count: 'exact', head: true })
-      .eq('guide_id', id)
-      .eq('tour_type', 'קולינרי');
-    setHasCulinaryHistory((culinaryCheck.count || 0) > 0);
+    // זיהוי "מדריך קולינרי" כבר נקבע למעלה ע"פ guide.qualified_tours.
     let transferred = 0;
     let cashRefill = 0;
     let expensesRefill = 0;
