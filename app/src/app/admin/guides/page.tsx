@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
 import { supabase, TOUR_TYPES } from '@/lib/supabase';
 import AdminEnvelopeTopupModal from '@/components/admin/AdminEnvelopeTopupModal';
@@ -275,6 +276,7 @@ function GuideCard({
   onToggle: () => void;
   onSaved: () => void;
 }) {
+  const router = useRouter();
   const [form, setForm] = useState<GuideRow>(guide);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -284,6 +286,17 @@ function GuideCard({
   // מדריך מוסמך לקולינרי = יש לו 'קולינרי' ב-qualified_tours.
   // משפיע על הצגת אפשרות הטענת תת-קופת כרטיס טיים אאוט.
   const canTopupCard = (guide.qualified_tours || []).includes('קולינרי');
+
+  // "צפי כמדריך" — שומר את ה-id של המדריך ב-localStorage ומעביר ל-/home.
+  // עומר נשארת אדמין; רואה את המסכים של המדריך שלה מהזווית של המדריך.
+  function viewAsGuide() {
+    try {
+      localStorage.setItem('portugo_guide_id', guide.id);
+      localStorage.setItem('portugo_guide_name', guide.name);
+      localStorage.setItem('portugo_guide_city', guide.city);
+    } catch {}
+    router.push('/home');
+  }
 
   // אם guide משתנה (אחרי load מחדש), מסנכרנים את הטופס
   useEffect(() => {
@@ -387,11 +400,11 @@ function GuideCard({
           </span>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {!guide.is_admin && guide.is_active && (
+          {guide.is_active && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowTopupModal(true);
+                viewAsGuide();
               }}
               style={{
                 padding: '6px 12px',
@@ -405,9 +418,9 @@ function GuideCard({
                 fontFamily: 'inherit',
                 whiteSpace: 'nowrap',
               }}
-              title="הוסיפי כסף ישירות לאחת ממעטפות המדריך, ללא גריעה מהקופה הראשית"
+              title={`היכנסי לאפליקציה בתור ${guide.name} — לראות מה הוא רואה`}
             >
-              💸 הטענה
+              👁️ צפי כ{guide.name.split(' ')[0]}
             </button>
           )}
           <button
@@ -493,6 +506,45 @@ function GuideCard({
             <Field label="יעד חיזוק — מעטפת הוצאות (€)" hint="0 = לא לחזק">
               <input type="number" step="1" value={form.target_expenses_balance ?? 0} onChange={(e) => setForm({ ...form, target_expenses_balance: parseFloat(e.target.value) || 0 })} style={inputStyle} />
             </Field>
+            {!guide.is_admin && guide.is_active && (
+              <div
+                style={{
+                  marginTop: 4,
+                  padding: '12px 14px',
+                  background: ADMIN_COLORS.green25,
+                  border: `1px dashed ${ADMIN_COLORS.green700}`,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ fontSize: 12, color: ADMIN_COLORS.gray700, lineHeight: 1.5, flex: '1 1 200px' }}>
+                  <strong>הטענה חד-פעמית מפורטוגו</strong> — מוסיפה כסף לאחת המעטפות
+                  או לכרטיס טיים אאוט, מבלי לגרוע מהקופה הראשית.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTopupModal(true)}
+                  style={{
+                    padding: '8px 14px',
+                    background: ADMIN_COLORS.green700,
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  💸 הטעני
+                </button>
+              </div>
+            )}
           </FormSection>
 
           {/* 4. שיבוצים */}
