@@ -36,9 +36,11 @@ import {
   PRIVATE_TOURS,
   type PrivateTour,
   type PrivatePriceTable,
+  type PrivateTierRow,
   type CarAddonTable,
   type ComboTable,
   type ChildrenPriceTable,
+  type ChildrenRule,
 } from '@/lib/pricing-validation-private-data';
 
 function fmtEuro(n: number): string {
@@ -655,7 +657,7 @@ function PrivateSection({ tour }: { tour: PrivateTour }) {
       )}
 
       {/* 5. תמחור ילדים */}
-      <ChildrenBlock table={tour.children} />
+      <ChildrenBlock table={tour.children} regularPrice={tour.regularPrice} />
 
       {/* 6. אזהרה */}
       {tour.warning && (
@@ -869,7 +871,97 @@ function CombosBlock({ combos }: { combos: ComboTable[] }) {
 }
 
 // ─── Block: Children pricing ─────────────────────────────────────────────
-function ChildrenBlock({ table }: { table: ChildrenPriceTable }) {
+// Computes the child price for a given age rule + adult-price tier
+function computeChildPrice(rule: ChildrenRule, adultPrice: number): string {
+  if (rule.kind === 'free') return 'חינם';
+  if (rule.kind === 'fullPrice') return fmtEuro(adultPrice);
+  if (rule.kind === 'fixedPrice') return fmtEuro(rule.price);
+  // halfOfRegular
+  const raw = adultPrice / 2;
+  const rounded = rule.round === 'floor' ? Math.floor(raw) : Math.round(raw);
+  return fmtEuro(rounded);
+}
+
+function ChildrenBlock({
+  table,
+  regularPrice,
+}: {
+  table: ChildrenPriceTable;
+  regularPrice: PrivatePriceTable;
+}) {
+  // perTier mode: render a table where columns = size tiers, rows = ages
+  if (table.perTier) {
+    const tiers = regularPrice.rows;
+    return (
+      <div className="mt-6">
+        <h3 className="text-base font-bold text-pink-900 mb-2">
+          תמחור ילדים
+        </h3>
+
+        {/* Desktop table: ages × tiers */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="text-right text-slate-600">
+                <th className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל קבוצה</th>
+                <th className="bg-pink-100/70 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">מבוגר</th>
+                {table.perTier.map((row, i) => (
+                  <th key={i} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">
+                    ילד {row.ageLabel}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tiers.map((tier: PrivateTierRow, ti) => (
+                <tr key={ti} className="border-b border-gray-100">
+                  <td className="px-2.5 py-2.5 font-bold">{sizeLabel(tier.minSize, tier.maxSize)}</td>
+                  <td className="px-2.5 py-2.5 font-semibold text-slate-800 bg-pink-50/40">{fmtEuro(tier.pricePerPerson)}</td>
+                  {table.perTier!.map((ageRow, ai) => (
+                    <td key={ai} className="px-2.5 py-2.5 text-pink-900">
+                      {computeChildPrice(ageRow.rule, tier.pricePerPerson)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile cards: one card per tier */}
+        <div className="md:hidden space-y-2">
+          {tiers.map((tier: PrivateTierRow, ti) => (
+            <div key={ti} className="border border-pink-100 rounded-lg p-3 bg-pink-50/30">
+              <div className="flex justify-between items-baseline mb-2">
+                <div>
+                  <span className="text-xs text-gray-500">קבוצה </span>
+                  <span className="text-base font-bold text-slate-800">{sizeLabel(tier.minSize, tier.maxSize)}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500">מבוגר </span>
+                  <span className="font-bold text-slate-800">{fmtEuro(tier.pricePerPerson)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {table.perTier!.map((ageRow, ai) => (
+                  <div key={ai} className="bg-white rounded px-2 py-1 border border-pink-100 flex justify-between items-baseline">
+                    <span className="text-xs text-gray-600">ילד {ageRow.ageLabel}</span>
+                    <span className="text-sm font-semibold text-pink-900">{computeChildPrice(ageRow.rule, tier.pricePerPerson)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {table.note && (
+          <p className="text-xs text-gray-500 mt-2 leading-relaxed">{table.note}</p>
+        )}
+      </div>
+    );
+  }
+
+  // columns mode (legacy/flexible for non-classic tours)
   return (
     <div className="mt-6">
       <h3 className="text-base font-bold text-pink-900 mb-2">
@@ -881,16 +973,16 @@ function ChildrenBlock({ table }: { table: ChildrenPriceTable }) {
           <thead>
             <tr className="text-right text-slate-600">
               <th className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גיל</th>
-              {table.columns.map((c, i) => (
+              {(table.columns ?? []).map((c, i) => (
                 <th key={i} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">{c.header}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {table.ageLabels.map((age, i) => (
+            {(table.ageLabels ?? []).map((age, i) => (
               <tr key={i} className="border-b border-gray-100">
                 <td className="px-2.5 py-2.5 font-bold text-pink-900">{age}</td>
-                {table.columns.map((c, j) => {
+                {(table.columns ?? []).map((c, j) => {
                   const v = c.values[i];
                   const display = typeof v === 'number' ? fmtEuro(v) : v;
                   return (

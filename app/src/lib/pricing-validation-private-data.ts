@@ -56,16 +56,37 @@ export type ComboTable = {
 };
 
 // ─── תמחור ילדים ───
-// טבלת ילדים גמישה — לכל סיור יש עמודות שונות (רגיל/חבילה/פרטי)
+// שני מבנים אפשריים:
+//   A. לפי קטגוריות גודל (מתאים לקלאסי+בלם פרטי — מחיר ילד = % מהמחיר הרגיל)
+//   B. לפי עמודות גמישות (מתאים לסיורים אחרים — מחירים קבועים שונים לפי רגיל/חבילה/פרטי)
+
+// מבנה A — לפי קטגוריות (חדש)
+export type ChildrenRule =
+  | { kind: 'free'; note?: string }                        // חינם
+  | { kind: 'fullPrice'; note?: string }                   // מחיר מלא
+  | { kind: 'halfOfRegular'; round?: 'nearest' | 'floor' } // חצי מהמחיר הרגיל באותה קטגוריה
+  | { kind: 'fixedPrice'; price: number };                 // מחיר קבוע (כל הקטגוריות)
+
+export type ChildrenAgeRow = {
+  ageLabel: string;        // "עד 6"
+  rule: ChildrenRule;
+};
+
+// מבנה B — עמודות גמישות (קיים)
 export type ChildrenPriceColumn = {
   header: string;                // "רגיל" / "חבילה" / "פרטי"
   values: (string | number)[];   // עבור כל age range, או "חינם" או מחיר €
 };
 
 export type ChildrenPriceTable = {
-  ageLabels: string[];           // ["עד 2", "3-6", "7-12", "13+"]
-  columns: ChildrenPriceColumn[];
-  note?: string;                 // הסבר/אזהרה
+  // אופציה A: לפי קטגוריה של המחיר הרגיל
+  perTier?: ChildrenAgeRow[];
+
+  // אופציה B: עמודות גמישות
+  ageLabels?: string[];
+  columns?: ChildrenPriceColumn[];
+
+  note?: string;
 };
 
 // ─── הכרטיס המלא ───
@@ -278,11 +299,12 @@ const CLASSIC_PRIVATE: PrivateTour = {
     },
   ],
   children: {
-    ageLabels: ['עד 6', '7-12', '13+'],
-    columns: [
-      { header: 'מחיר', values: ['חינם — שקוף בקבוצה (לא משפיע על קטגוריית גודל)', 'חצי מחיר/אדם (נספר בקבוצה — משפיע על קטגוריה)', 'מחיר מלא'] },
+    perTier: [
+      { ageLabel: 'עד 6', rule: { kind: 'free', note: 'שקוף בקבוצה' } },
+      { ageLabel: '7-12', rule: { kind: 'halfOfRegular', round: 'nearest' } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
     ],
-    note: 'בקלאסי פרטי: ילד עד 6 שקוף בקבוצה (זוג + 2 ילדים עד 6 = משלמים כזוג). ילד 7-12 נספר ומשלם חצי. בקלאסי free tour הרגיל — אין מחיר ילד (טיפים בלבד).',
+    note: 'ילד עד 6 שקוף בקבוצה — לא משפיע על קטגוריית גודל (זוג + 2 ילדים עד 6 = משלמים כזוג). ילד 7-12 נספר ומשלם חצי מהמחיר/אדם של אותה קטגוריה. בקלאסי free tour הרגיל (לא פרטי) — אין מחיר ילד, רק טיפים.',
   },
 };
 
