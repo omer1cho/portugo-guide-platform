@@ -32,6 +32,14 @@ import {
   type ClassicScenarioRow,
   type ProfitCell,
 } from '@/lib/pricing-validation-data';
+import {
+  PRIVATE_TOURS,
+  type PrivateTour,
+  type PrivatePriceTable,
+  type CarAddonTable,
+  type ComboTable,
+  type ChildrenPriceTable,
+} from '@/lib/pricing-validation-private-data';
 
 function fmtEuro(n: number): string {
   return `${n.toLocaleString('he-IL')}€`;
@@ -59,14 +67,26 @@ export default function PricingValidationPage() {
   return (
     <div className="max-w-[1200px] mx-auto" dir="rtl">
       {/* Header */}
-      <header className="mb-6">
+      <header className="mb-4">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-1">
           רווחיות סיורים — אימות תמחור
         </h1>
         <p className="text-sm text-gray-500">
-          סינטרה · אראבידה · אובידוש · דורו · בלם · קולינרי בוקר · קולינרי צהריים · טעימות פורטו · ליסבון/פורטו הקלאסיות · עודכן: {PRICING_VALIDATION_UPDATED}
+          סינטרה · אראבידה · אובידוש · דורו · בלם · קולינרי בוקר · קולינרי צהריים · טעימות פורטו · ליסבון/פורטו הקלאסיות · סיורים פרטיים · עודכן: {PRICING_VALIDATION_UPDATED}
         </p>
       </header>
+
+      {/* Sticky table of contents — קופצים לסקציה הרצויה */}
+      <nav className="sticky top-0 z-30 -mx-2 px-2 py-2 mb-5 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
+        <div className="flex flex-wrap gap-1.5 text-xs md:text-sm">
+          <span className="text-gray-400 self-center pl-1">קפיצה ל-</span>
+          <a href="#sec-daily" className="px-3 py-1 rounded-full bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100 transition">סיורים יומיים</a>
+          <a href="#sec-city" className="px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition">סיורים בעיר</a>
+          <a href="#sec-classic" className="px-3 py-1 rounded-full bg-rose-50 text-rose-900 border border-rose-200 hover:bg-rose-100 transition">קלאסיים</a>
+          <a href="#sec-private" className="px-3 py-1 rounded-full bg-purple-50 text-purple-900 border border-purple-300 hover:bg-purple-100 transition font-semibold">סיורים פרטיים ⭐</a>
+          <a href="#sec-insights" className="px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition">תובנות</a>
+        </div>
+      </nav>
 
       {/* Assumptions */}
       <div className="bg-emerald-50 border-r-4 border-emerald-500 rounded-md p-4 mb-7 text-sm">
@@ -82,6 +102,9 @@ export default function PricingValidationPage() {
         <p className="text-emerald-900 mt-1">
           <strong>סיורים קלאסיים</strong> (ליסבון, פורטו): מודל סיור חינמי — אין מחיר ללקוח, רק transfer של המדריך לחברה. שתי עמודות רווח: מדריך רגיל (10€/ראש) ומדריך חדש (11€/ראש).
         </p>
+        <p className="text-emerald-900 mt-1">
+          <strong>סיורים פרטיים</strong>: כל כרטיס = סיור פרטי אחד עם הכל בפנים — מחיר רגיל, אופציה מקוצרת, תוספת רכב, שילובים, ותמחור ילדים. רכב מתומחר תמיד לפי פרדאוטו (worst case).
+        </p>
         <p className="mt-2 text-emerald-900 flex flex-wrap items-center gap-2">
           צביעת תאים:{' '}
           <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 font-semibold text-xs">הפסד (אדום)</span>
@@ -91,7 +114,7 @@ export default function PricingValidationPage() {
       </div>
 
       {/* ─── Daily tours section ─── */}
-      <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-2 mb-1">
+      <h2 id="sec-daily" className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-2 mb-1 scroll-mt-20">
         סיורים יומיים — תלויי רכב
       </h2>
       <p className="text-xs text-gray-600 mb-5">
@@ -121,7 +144,7 @@ export default function PricingValidationPage() {
       ))}
 
       {/* ─── City tours section ─── */}
-      <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1">
+      <h2 id="sec-city" className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1 scroll-mt-20">
         סיורים בעיר
       </h2>
       <p className="text-xs text-gray-600 mb-5">
@@ -151,7 +174,7 @@ export default function PricingValidationPage() {
       ))}
 
       {/* ─── Classic tours section ─── */}
-      <h2 className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1">
+      <h2 id="sec-classic" className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1 scroll-mt-20">
         סיורים קלאסיים — מודל סיור חינמי
       </h2>
       <p className="text-xs text-gray-600 mb-5">
@@ -180,8 +203,21 @@ export default function PricingValidationPage() {
         <ClassicSection key={tour.slug} tour={tour} />
       ))}
 
+      {/* ─── Private tours section ─── */}
+      <h2 id="sec-private" className="text-lg md:text-xl font-bold text-slate-800 border-b-2 border-gray-200 pb-2 mt-12 mb-1 scroll-mt-20">
+        סיורים פרטיים
+      </h2>
+      <p className="text-xs text-gray-600 mb-5">
+        תמחור פרטי לפי קטגוריות גודל קבוצה. כל כרטיס מכיל את הכל על אותו סיור: מחיר רגיל, אופציה מקוצרת (אם יש), תוספת רכב (אם רלוונטי), שילובים שכוללים אותו, ותמחור ילדים. בכל מקרה שיש רכב — מתומחר לפי פרדאוטו (worst case) כדי להישאר מכוסים.
+      </p>
+
+      {/* Private tour sections */}
+      {PRIVATE_TOURS.map((tour) => (
+        <PrivateSection key={tour.slug} tour={tour} />
+      ))}
+
       {/* Insights */}
-      <div className="bg-sky-50 border-r-4 border-sky-600 rounded-md p-4 md:p-5 mt-7 text-sm">
+      <div id="sec-insights" className="bg-sky-50 border-r-4 border-sky-600 rounded-md p-4 md:p-5 mt-7 text-sm scroll-mt-20">
         <h3 className="text-base font-bold text-sky-900 mt-0 mb-2">תובנות מרכזיות</h3>
         <ul className="space-y-2 pr-5 list-disc text-gray-800">
           {INSIGHTS.map((ins, i) => (
@@ -565,5 +601,311 @@ function ClassicSection({ tour }: { tour: ClassicTour }) {
         ))}
       </div>
     </section>
+  );
+}
+
+// ─── Helpers for private tour size labels ────────────────────────────────
+function sizeLabel(minSize: number, maxSize: number): string {
+  return minSize === maxSize ? `${minSize}` : `${minSize}-${maxSize}`;
+}
+
+function totalRange(minSize: number, maxSize: number, pricePerPerson: number): string {
+  const min = minSize * pricePerPerson;
+  const max = maxSize * pricePerPerson;
+  return min === max ? `${fmtEuro(min)}` : `${fmtEuro(min)}–${fmtEuro(max)}`;
+}
+
+// ─── Private section ─────────────────────────────────────────────────────
+function PrivateSection({ tour }: { tour: PrivateTour }) {
+  return (
+    <section className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 mb-6 shadow-sm">
+      <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-1">{tour.name}</h2>
+      <p className="text-sm text-gray-600 mb-1">{tour.priceInfo}</p>
+      {tour.priceInfoExtra && (
+        <p className="text-xs text-gray-500 mb-1">{tour.priceInfoExtra}</p>
+      )}
+      <p className="text-xs text-gray-500 mb-4">
+        מקסימום משתתפים: <strong className="text-slate-700">{tour.maxParticipants}</strong>
+      </p>
+
+      {/* 1. מחיר רגיל */}
+      <PricedTableBlock
+        title="מחיר רגיל"
+        table={tour.regularPrice}
+        accent="slate"
+      />
+
+      {/* 2. מחיר מקוצר */}
+      {tour.shortPrice && (
+        <PricedTableBlock
+          title="מחיר מקוצר"
+          table={tour.shortPrice}
+          accent="indigo"
+        />
+      )}
+
+      {/* 3. תוספת רכב */}
+      {tour.carAddons && tour.carAddons.length > 0 && (
+        <CarAddonsBlock addons={tour.carAddons} note={tour.carNote} />
+      )}
+
+      {/* 4. שילובים */}
+      {tour.combos && tour.combos.length > 0 && (
+        <CombosBlock combos={tour.combos} />
+      )}
+
+      {/* 5. תמחור ילדים */}
+      <ChildrenBlock table={tour.children} />
+
+      {/* 6. אזהרה */}
+      {tour.warning && (
+        <div className="bg-amber-50 border-r-4 border-amber-500 rounded-md p-3 mt-5 text-xs text-amber-900">
+          <strong>⚠️ חשוב:</strong> {tour.warning}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ─── Block: Price table (regular / short) ─────────────────────────────────
+function PricedTableBlock({
+  title,
+  table,
+  accent,
+}: {
+  title: string;
+  table: PrivatePriceTable;
+  accent: 'slate' | 'indigo';
+}) {
+  const headerBg = accent === 'indigo' ? 'bg-indigo-50' : 'bg-slate-50';
+  const headerText = accent === 'indigo' ? 'text-indigo-900' : 'text-slate-700';
+  const cellBg = accent === 'indigo' ? 'bg-indigo-50/40' : '';
+
+  return (
+    <div className="mt-5">
+      <h3 className={`text-base font-bold ${headerText} mb-2`}>
+        {title} <span className="text-xs text-gray-500 font-normal">· {table.label}</span>
+      </h3>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-right text-slate-600">
+              <th className={`${headerBg} px-2.5 py-2 text-xs font-semibold border-b border-gray-200`}>גודל קבוצה</th>
+              <th className={`${headerBg} px-2.5 py-2 text-xs font-semibold border-b border-gray-200`}>מחיר/אדם</th>
+              <th className={`${headerBg} px-2.5 py-2 text-xs font-semibold border-b border-gray-200`}>סה&quot;כ קבוצה</th>
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, i) => (
+              <tr key={i} className={`border-b border-gray-100 ${cellBg}`}>
+                <td className="px-2.5 py-2.5 font-bold">{sizeLabel(row.minSize, row.maxSize)}</td>
+                <td className="px-2.5 py-2.5 font-semibold text-slate-800">{fmtEuro(row.pricePerPerson)}</td>
+                <td className="px-2.5 py-2.5 text-gray-600">{totalRange(row.minSize, row.maxSize, row.pricePerPerson)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-1.5">
+        {table.rows.map((row, i) => (
+          <div key={i} className={`flex justify-between items-baseline border border-gray-200 rounded-lg px-3 py-2 ${cellBg}`}>
+            <div className="flex items-baseline gap-2">
+              <span className="text-base font-bold text-slate-800">{sizeLabel(row.minSize, row.maxSize)}</span>
+              <span className="text-xs text-gray-500">אנשים</span>
+            </div>
+            <div className="text-left">
+              <div className="text-base font-semibold text-slate-800">{fmtEuro(row.pricePerPerson)}</div>
+              <div className="text-[10px] text-gray-500">סה&quot;כ {totalRange(row.minSize, row.maxSize, row.pricePerPerson)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Block: Car addons ───────────────────────────────────────────────────
+function CarAddonsBlock({ addons, note }: { addons: CarAddonTable[]; note?: string }) {
+  return (
+    <div className="mt-6">
+      <h3 className="text-base font-bold text-emerald-900 mb-2">
+        תוספת רכב <span className="text-xs text-gray-500 font-normal">· פרדאוטו (worst case)</span>
+      </h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {addons.map((addon, i) => (
+          <div key={i} className="bg-emerald-50/40 rounded-lg border border-emerald-100 p-3">
+            <h4 className="text-sm font-semibold text-emerald-900 mb-2">{addon.label}</h4>
+            <table className="w-full text-xs md:text-sm border-collapse">
+              <thead>
+                <tr className="text-right text-slate-600">
+                  <th className="bg-emerald-100/60 px-2 py-1.5 font-semibold rounded-tr">גודל</th>
+                  <th className="bg-emerald-100/60 px-2 py-1.5 font-semibold">רכב</th>
+                  <th className="bg-emerald-100/60 px-2 py-1.5 font-semibold rounded-tl">עלות רכב</th>
+                </tr>
+              </thead>
+              <tbody>
+                {addon.rows.map((r, j) => (
+                  <tr key={j} className="border-b border-emerald-100/60 last:border-0">
+                    <td className="px-2 py-1.5 font-bold">{r.groupSizeLabel}</td>
+                    <td className="px-2 py-1.5 text-slate-700">{r.vehicleLabel}</td>
+                    <td className="px-2 py-1.5 font-semibold text-emerald-900">
+                      {r.cost === null ? <span className="text-gray-400 italic text-[11px]">הצעה נפרדת</span> : fmtEuro(r.cost)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+        <strong className="text-slate-700">חישוב לאדם:</strong> עלות רכב ÷ מספר אנשים בפועל (דינמי, לא לפי קטגוריה).
+      </p>
+
+      {note && (
+        <p className="text-xs text-gray-500 mt-2 leading-relaxed">{note}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Block: Combos ───────────────────────────────────────────────────────
+function CombosBlock({ combos }: { combos: ComboTable[] }) {
+  const [activeId, setActiveId] = useState(combos[0].slug);
+  const active = combos.find((c) => c.slug === activeId) ?? combos[0];
+
+  return (
+    <div className="mt-6">
+      <h3 className="text-base font-bold text-purple-900 mb-2">
+        שילובים <span className="text-xs text-gray-500 font-normal">· סכום פשוט של שני הסיורים</span>
+      </h3>
+
+      {/* Combo tabs */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {combos.map((c) => {
+          const isActive = c.slug === activeId;
+          return (
+            <button
+              key={c.slug}
+              onClick={() => setActiveId(c.slug)}
+              className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                isActive
+                  ? 'bg-purple-700 text-white border-purple-700'
+                  : 'bg-purple-50 text-purple-900 border-purple-200 hover:bg-purple-100'
+              }`}
+            >
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-gray-500 mb-2">
+        {active.city} · מקסימום <strong className="text-slate-700">{active.maxParticipants}</strong> משתתפים
+        {active.isShort && <span className="text-indigo-700"> · גרסה מקוצרת</span>}
+      </p>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-right text-slate-600">
+              <th className="bg-purple-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל</th>
+              {active.rows[0].parts.map((p, i) => (
+                <th key={i} className="bg-purple-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">
+                  {p.name}
+                </th>
+              ))}
+              <th className="bg-purple-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">סה&quot;כ/אדם</th>
+              <th className="bg-purple-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">סה&quot;כ קבוצה</th>
+            </tr>
+          </thead>
+          <tbody>
+            {active.rows.map((row, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="px-2.5 py-2.5 font-bold">{sizeLabel(row.minSize, row.maxSize)}</td>
+                {row.parts.map((p, j) => (
+                  <td key={j} className="px-2.5 py-2.5 text-gray-600">{fmtEuro(p.price)}</td>
+                ))}
+                <td className="px-2.5 py-2.5 font-bold text-purple-900">{fmtEuro(row.totalPerPerson)}</td>
+                <td className="px-2.5 py-2.5 text-gray-600">{totalRange(row.minSize, row.maxSize, row.totalPerPerson)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-1.5">
+        {active.rows.map((row, i) => (
+          <div key={i} className="bg-purple-50/40 border border-purple-100 rounded-lg px-3 py-2">
+            <div className="flex justify-between items-baseline">
+              <div className="flex items-baseline gap-2">
+                <span className="text-base font-bold text-slate-800">{sizeLabel(row.minSize, row.maxSize)}</span>
+                <span className="text-xs text-gray-500">אנשים</span>
+              </div>
+              <div className="text-base font-bold text-purple-900">{fmtEuro(row.totalPerPerson)}<span className="text-[10px] text-gray-500 font-normal">/אדם</span></div>
+            </div>
+            <div className="text-[11px] text-gray-500 mt-0.5">
+              {row.parts.map((p, j) => (
+                <span key={j}>
+                  {j > 0 && <span className="mx-1">+</span>}
+                  {p.name} {fmtEuro(p.price)}
+                </span>
+              ))}
+              <span className="mx-1">·</span> סה&quot;כ {totalRange(row.minSize, row.maxSize, row.totalPerPerson)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Block: Children pricing ─────────────────────────────────────────────
+function ChildrenBlock({ table }: { table: ChildrenPriceTable }) {
+  return (
+    <div className="mt-6">
+      <h3 className="text-base font-bold text-pink-900 mb-2">
+        תמחור ילדים
+      </h3>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-right text-slate-600">
+              <th className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גיל</th>
+              {table.columns.map((c, i) => (
+                <th key={i} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">{c.header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.ageLabels.map((age, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="px-2.5 py-2.5 font-bold text-pink-900">{age}</td>
+                {table.columns.map((c, j) => {
+                  const v = c.values[i];
+                  const display = typeof v === 'number' ? fmtEuro(v) : v;
+                  return (
+                    <td key={j} className="px-2.5 py-2.5 text-gray-700">{display}</td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {table.note && (
+        <p className="text-xs text-gray-500 mt-2 leading-relaxed">{table.note}</p>
+      )}
+    </div>
   );
 }
