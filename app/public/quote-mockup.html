@@ -70,7 +70,7 @@
   .hero-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
   .hero h1 {
     font-size: 52px; font-weight: 800; line-height: 1.1;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
     text-shadow: 0 2px 12px rgba(0,0,0,0.3);
   }
   .hero-subtitle {
@@ -78,7 +78,9 @@
     max-width: 720px;
     text-shadow: 0 1px 8px rgba(0,0,0,0.3);
     line-height: 1.55;
+    margin-bottom: 6px;
   }
+  .hero-subtitle:last-of-type { margin-bottom: 0; }
   .hero-meta {
     display: flex; gap: 12px; flex-wrap: wrap;
     margin-top: 28px; font-size: 14px;
@@ -199,7 +201,6 @@
     font-style: italic;
   }
 
-  /* Long description paragraph */
   .card-description {
     font-size: 15px; color: var(--ink-soft);
     line-height: 1.75;
@@ -212,7 +213,7 @@
     font-weight: 700;
   }
 
-  /* Compact meta strip with icons */
+  /* Meta strip */
   .card-meta-strip {
     background: #fafafa;
     border-radius: 10px;
@@ -235,7 +236,27 @@
     flex-shrink: 0;
   }
 
-  /* Price box — NEW format with "per person in private group of N" */
+  /* Map link */
+  .map-link {
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px dashed var(--green-dark);
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .map-link:hover {
+    color: var(--green-dark);
+    border-bottom-color: var(--green);
+  }
+  .map-link::after {
+    content: '↗';
+    font-size: 0.9em;
+    color: var(--green-dark);
+    font-weight: 700;
+  }
+
+  /* Price box */
   .price-box {
     margin-bottom: 14px;
     background: linear-gradient(135deg, var(--green-soft) 0%, var(--green-soft-2) 100%);
@@ -278,7 +299,7 @@
     margin-top: 2px;
   }
 
-  /* Simple includes line (for tours with no real exclusions) */
+  /* Simple includes */
   .price-includes-simple {
     background: var(--green-soft);
     border-radius: 10px;
@@ -292,7 +313,7 @@
     color: var(--green-dark); font-weight: 700;
   }
 
-  /* Full coverage (includes/excludes 2-column) */
+  /* Full coverage */
   .price-coverage {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     margin-bottom: 22px;
@@ -319,9 +340,7 @@
   }
   .coverage-block.included .coverage-label { color: var(--green-dark); }
   .coverage-block.excluded .coverage-label { color: var(--red); }
-  .coverage-list {
-    list-style: none; padding: 0; margin: 0;
-  }
+  .coverage-list { list-style: none; padding: 0; margin: 0; }
   .coverage-list li {
     padding: 3px 0;
     color: var(--ink);
@@ -385,9 +404,7 @@
     color: var(--green-dark);
     margin-bottom: 10px;
   }
-  .date-input-row {
-    position: relative;
-  }
+  .date-input-row { position: relative; }
   .date-input {
     width: 100%;
     border: 1.5px solid var(--green);
@@ -412,14 +429,14 @@
   }
   .date-input-check {
     position: absolute; left: 14px; top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) scale(0.5);
     width: 22px; height: 22px;
     border-radius: 50%;
     background: var(--green-dark);
     color: white;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 900;
-    opacity: 0; transform: translateY(-50%) scale(0.5);
+    opacity: 0;
     transition: all 0.25s;
   }
   .date-input.filled + .date-input-check {
@@ -460,7 +477,7 @@
     flex-shrink: 0;
   }
 
-  /* ===== Combos block — simplified ===== */
+  /* ===== Combos block ===== */
   .combos-block {
     margin-top: 36px;
     background: var(--yellow-soft);
@@ -487,16 +504,52 @@
   .combo-card.selected {
     box-shadow: 0 0 0 2px var(--green);
   }
-  .combo-header {
-    margin-bottom: 14px;
-  }
+  .combo-header { margin-bottom: 16px; }
   .combo-title {
     font-size: 20px; font-weight: 700; color: var(--ink);
     margin-bottom: 6px;
   }
-  .combo-meta {
+  .combo-duration {
     font-size: 13px; color: var(--ink-soft);
   }
+
+  /* Combo day plan — meeting points + break */
+  .combo-plan {
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .combo-plan-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 6px 0;
+  }
+  .combo-plan-step .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    font-weight: 800;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .combo-plan-step.break .step-num {
+    background: var(--yellow);
+    color: var(--ink);
+  }
+  .combo-plan-step .step-content {
+    flex: 1; line-height: 1.5;
+  }
+  .combo-plan-step .step-label {
+    font-weight: 600; color: var(--ink);
+    display: block; margin-bottom: 2px;
+  }
+  .combo-plan-step .step-detail {
+    color: var(--ink-soft); font-size: 13px;
+  }
+
   .combo-bottom {
     display: flex; align-items: center; gap: 16px;
     border-top: 1px solid var(--border);
@@ -518,9 +571,7 @@
   .combo-price-detail strong {
     color: var(--ink); font-weight: 700;
   }
-  .combo-btn-wrap {
-    flex: 1; min-width: 180px;
-  }
+  .combo-btn-wrap { flex: 1; min-width: 180px; }
   .combo-card .interest-btn {
     padding: 11px 18px;
     font-size: 14px;
@@ -596,61 +647,89 @@
     margin-bottom: 14px; opacity: 0.95;
   }
 
-  .form-tour-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  }
-  .form-tour-item {
+  /* ===== Selected summary (dynamic) ===== */
+  .selected-summary {
     background: rgba(255,255,255,0.10);
-    border-radius: 10px;
-    padding: 14px 16px;
-    cursor: pointer;
-    transition: all 0.2s;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 28px;
   }
-  .form-tour-item:hover { background: rgba(255,255,255,0.18); }
-  .form-tour-item.checked { background: rgba(255,255,255,0.24); }
-  .form-tour-row {
-    display: flex; align-items: center; gap: 12px;
+  .summary-header {
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.18);
+    display: flex; align-items: center; gap: 8px;
   }
-  .form-tour-item input { display: none; }
-  .form-tour-item .box {
-    width: 22px; height: 22px;
-    border: 2px solid rgba(255,255,255,0.6);
-    border-radius: 5px;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-  }
-  .form-tour-item.checked .box {
+  .summary-count {
     background: white;
-    border-color: white;
-  }
-  .form-tour-item.checked .box::after {
-    content: '✓'; color: var(--green-dark);
-    font-weight: 900; font-size: 14px;
-  }
-  .form-tour-label {
-    flex: 1; font-size: 15px; font-weight: 500;
-  }
-  .form-tour-date {
-    max-height: 0; overflow: hidden;
-    transition: max-height 0.35s ease, margin-top 0.35s ease;
-  }
-  .form-tour-item.checked .form-tour-date {
-    max-height: 90px;
-    margin-top: 12px;
-  }
-  .form-tour-date input {
-    display: block !important;
-    width: 100%;
-    background: rgba(255,255,255,0.95);
-    border: 1px solid rgba(255,255,255,0.6);
-    border-radius: 8px;
-    padding: 9px 12px;
+    color: var(--green-dark);
+    border-radius: 100px;
+    padding: 3px 12px;
     font-size: 13px;
-    color: var(--ink);
-    font-family: inherit;
+    font-weight: 800;
   }
-  .form-tour-date input::placeholder { color: var(--ink-mute); }
+  .summary-empty {
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+    opacity: 0.85;
+    line-height: 1.6;
+  }
+  .summary-empty a {
+    color: white;
+    font-weight: 700;
+    text-decoration: underline;
+    display: inline-block;
+    margin-top: 8px;
+  }
+  .summary-list {
+    display: grid; gap: 10px;
+  }
+  .summary-item {
+    background: white;
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap;
+  }
+  .summary-item-name {
+    flex: 1; min-width: 150px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .summary-item-date {
+    font-size: 13px;
+    color: var(--green-dark);
+    font-weight: 600;
+    background: var(--green-soft);
+    padding: 4px 12px;
+    border-radius: 100px;
+  }
+  .summary-item-date.empty {
+    color: var(--ink-mute);
+    background: #f0f0f0;
+    font-weight: 500;
+    font-style: italic;
+  }
+  .summary-item-remove {
+    background: none;
+    border: 1px solid #ddd;
+    color: var(--ink-mute);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .summary-item-remove:hover {
+    background: var(--red-soft);
+    border-color: var(--red);
+    color: var(--red);
+  }
 
   .form-input, .form-textarea {
     width: 100%;
@@ -704,6 +783,9 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   }
+  .submit-btn:disabled {
+    opacity: 0.5; cursor: not-allowed; transform: none;
+  }
 
   footer {
     text-align: center;
@@ -726,9 +808,9 @@
     header { padding: 12px 20px; }
     .logo-wrap img { height: 36px; }
     .logo-tag { display: none; }
-    .hero { height: 440px; padding: 32px 20px; }
-    .hero h1 { font-size: 34px; }
-    .hero-subtitle { font-size: 16px; }
+    .hero { height: 460px; padding: 32px 20px; }
+    .hero h1 { font-size: 32px; }
+    .hero-subtitle { font-size: 15px; }
     .hero-meta { gap: 8px; }
     .hero-meta-item { padding: 7px 14px; font-size: 12px; }
     main { padding: 0 20px; }
@@ -747,8 +829,8 @@
     .form-wrap { padding: 28px 22px; }
     .form-wrap h2 { font-size: 24px; }
     .form-grid-2 { grid-template-columns: 1fr; }
-    .form-tour-grid { grid-template-columns: 1fr; }
     .terms { padding: 28px 24px; }
+    .summary-item { padding: 12px 14px; }
   }
 </style>
 </head>
@@ -768,7 +850,8 @@
 <section class="hero">
   <div class="hero-inner">
     <h1>שלום משפחת סימאי 👋</h1>
-    <p class="hero-subtitle">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום פרטי. המחירים מותאמים לקבוצה שלכם.</p>
+    <p class="hero-subtitle">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום באופן פרטי.</p>
+    <p class="hero-subtitle">המחירים מותאמים לקבוצה שלכם.</p>
     <div class="hero-meta">
       <div class="hero-meta-item"><span class="label">מועד מבוקש:</span><span class="value">יוני 2026</span></div>
       <div class="hero-meta-item"><span class="label">מספר משתתפים:</span><span class="value">6</span></div>
@@ -776,9 +859,7 @@
   </div>
 </section>
 
-<!-- ============================================== -->
-<!-- ===== Reusable SVG icons (used in cards) ====== -->
-<!-- ============================================== -->
+<!-- ===== Reusable SVG icons ===== -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <symbol id="icon-clock" viewBox="0 0 24 24">
@@ -831,8 +912,8 @@
 
       <div class="cards">
 
-        <!-- ====== CLASSIC LISBON ====== -->
-        <div class="card" data-tour="classic-lisbon">
+        <!-- CLASSIC LISBON -->
+        <div class="card" data-tour="classic-lisbon" data-tour-name="ליסבון הקלאסית">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=900&q=80" alt="ליסבון הקלאסית">
           </div>
@@ -848,7 +929,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>כיכר לואיש דה קמואיש</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -869,8 +950,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'classic-lisbon')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -887,8 +967,8 @@
           </div>
         </div>
 
-        <!-- ====== BELEM ====== -->
-        <div class="card" data-tour="belem">
+        <!-- BELEM -->
+        <div class="card" data-tour="belem" data-tour-name="בלם">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1576005250-9f7c8ae2b2c7?w=900&q=80" alt="בלם">
           </div>
@@ -903,7 +983,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כשעה וחצי</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>מחוץ למגדל בלם</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -924,8 +1004,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'belem')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -942,8 +1021,8 @@
           </div>
         </div>
 
-        <!-- ====== CULINARY ====== -->
-        <div class="card" data-tour="culinary">
+        <!-- CULINARY -->
+        <div class="card" data-tour="culinary" data-tour-name="קולינרי בליסבון">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1597595272402-c517d6c8a294?w=900&q=80" alt="סיור קולינרי">
           </div>
@@ -961,7 +1040,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>A Brasileira (Chiado)</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -996,8 +1075,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'culinary')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1022,10 +1100,33 @@
         <p class="combos-sub">ניתן לשלב שני סיורים ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
-          <div class="combo-card" data-tour="combo-classic-belem">
+          <div class="combo-card" data-tour="combo-classic-belem" data-tour-name="שילוב: קלאסית + בלם">
             <div class="combo-header">
               <div class="combo-title">ליסבון הקלאסית + בלם</div>
-              <div class="combo-meta">כ-6 שעות · מתחיל בכיכר לואיש דה קמואיש</div>
+              <div class="combo-duration">⏱ סה"כ כ-6 שעות</div>
+            </div>
+            <div class="combo-plan">
+              <div class="combo-plan-step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                  <span class="step-label">בוקר — ליסבון הקלאסית</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span>
+                </div>
+              </div>
+              <div class="combo-plan-step break">
+                <div class="step-num">⏸</div>
+                <div class="step-content">
+                  <span class="step-label">הפסקה</span>
+                  <span class="step-detail">כשעה וחצי לארוחת צהריים ומנוחה</span>
+                </div>
+              </div>
+              <div class="combo-plan-step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                  <span class="step-label">צהריים — בלם</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span>
+                </div>
+              </div>
             </div>
             <div class="combo-bottom">
               <div class="combo-price-inline">
@@ -1051,10 +1152,33 @@
             </div>
           </div>
 
-          <div class="combo-card" data-tour="combo-culinary-classic">
+          <div class="combo-card" data-tour="combo-culinary-classic" data-tour-name="שילוב: קולינרי + קלאסית">
             <div class="combo-header">
               <div class="combo-title">הסיור הקולינרי + ליסבון הקלאסית</div>
-              <div class="combo-meta">כ-7 שעות · יש להתחיל בקולינרי בבוקר</div>
+              <div class="combo-duration">⏱ סה"כ כ-7 שעות · יש להתחיל בקולינרי בבוקר</div>
+            </div>
+            <div class="combo-plan">
+              <div class="combo-plan-step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                  <span class="step-label">בוקר — הסיור הקולינרי</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span>
+                </div>
+              </div>
+              <div class="combo-plan-step break">
+                <div class="step-num">⏸</div>
+                <div class="step-content">
+                  <span class="step-label">הפסקה</span>
+                  <span class="step-detail">כשעה וחצי למנוחה לאחר ארוחת הצהריים</span>
+                </div>
+              </div>
+              <div class="combo-plan-step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                  <span class="step-label">צהריים — ליסבון הקלאסית</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span>
+                </div>
+              </div>
             </div>
             <div class="combo-bottom">
               <div class="combo-price-inline">
@@ -1080,10 +1204,33 @@
             </div>
           </div>
 
-          <div class="combo-card" data-tour="combo-culinary-belem">
+          <div class="combo-card" data-tour="combo-culinary-belem" data-tour-name="שילוב: קולינרי + בלם">
             <div class="combo-header">
               <div class="combo-title">הסיור הקולינרי + בלם</div>
-              <div class="combo-meta">כ-6 שעות · יש להתחיל בקולינרי בבוקר</div>
+              <div class="combo-duration">⏱ סה"כ כ-6 שעות · יש להתחיל בקולינרי בבוקר</div>
+            </div>
+            <div class="combo-plan">
+              <div class="combo-plan-step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                  <span class="step-label">בוקר — הסיור הקולינרי</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span>
+                </div>
+              </div>
+              <div class="combo-plan-step break">
+                <div class="step-num">⏸</div>
+                <div class="step-content">
+                  <span class="step-label">הפסקה</span>
+                  <span class="step-detail">כשעה וחצי למנוחה לאחר ארוחת הצהריים</span>
+                </div>
+              </div>
+              <div class="combo-plan-step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                  <span class="step-label">צהריים — בלם</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span>
+                </div>
+              </div>
             </div>
             <div class="combo-bottom">
               <div class="combo-price-inline">
@@ -1126,8 +1273,8 @@
 
       <div class="cards">
 
-        <!-- ====== SINTRA ====== -->
-        <div class="card" data-tour="sintra">
+        <!-- SINTRA -->
+        <div class="card" data-tour="sintra" data-tour-name="סינטרה">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1620562129931-1a5e7115d23b?w=900&q=80" alt="סינטרה">
           </div>
@@ -1142,7 +1289,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 8:30</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:30</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
@@ -1178,8 +1325,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'sintra')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1196,8 +1342,8 @@
           </div>
         </div>
 
-        <!-- ====== ARRABIDA ====== -->
-        <div class="card" data-tour="arrabida">
+        <!-- ARRABIDA -->
+        <div class="card" data-tour="arrabida" data-tour-name="אראבידה">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1593510987185-1ec2256148a3?w=900&q=80" alt="אראבידה">
           </div>
@@ -1213,7 +1359,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 8:45</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:45</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
@@ -1249,8 +1395,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'arrabida')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1267,8 +1412,8 @@
           </div>
         </div>
 
-        <!-- ====== OBIDOS ====== -->
-        <div class="card" data-tour="obidos">
+        <!-- OBIDOS -->
+        <div class="card" data-tour="obidos" data-tour-name="אובידוש">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1572995266929-3dba2c75c64f?w=900&q=80" alt="אובידוש">
           </div>
@@ -1284,7 +1429,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 9:00</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 9:00</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
@@ -1319,8 +1464,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'obidos')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1361,8 +1505,8 @@
 
       <div class="cards">
 
-        <!-- ====== PORTO CLASSIC ====== -->
-        <div class="card" data-tour="porto-classic">
+        <!-- PORTO CLASSIC -->
+        <div class="card" data-tour="porto-classic" data-tour-name="פורטו הקלאסית">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1555990538-32d5d4c5dfaa?w=900&q=80" alt="פורטו הקלאסית">
           </div>
@@ -1378,7 +1522,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>Praça dos Leões</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener">Praça dos Leões</a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1399,8 +1543,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'porto-classic')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1417,8 +1560,8 @@
           </div>
         </div>
 
-        <!-- ====== PORTO TASTINGS ====== -->
-        <div class="card" data-tour="porto-tastings">
+        <!-- PORTO TASTINGS -->
+        <div class="card" data-tour="porto-tastings" data-tour-name="טעימות פורטו">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1568213816046-0ee1c42bd559?w=900&q=80" alt="טעימות פורטו">
           </div>
@@ -1434,7 +1577,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>רחבת כנסיית ה-SE</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener">רחבת כנסיית ה-SE</a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1469,8 +1612,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'porto-tastings')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1495,10 +1637,33 @@
         <p class="combos-sub">ניתן לשלב את שני הסיורים בפורטו ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
-          <div class="combo-card" data-tour="combo-porto-classic-tastings">
+          <div class="combo-card" data-tour="combo-porto-classic-tastings" data-tour-name="שילוב: פורטו קלאסית + טעימות">
             <div class="combo-header">
               <div class="combo-title">פורטו הקלאסית + סיור הטעימות</div>
-              <div class="combo-meta">כ-7 שעות · מתחיל ב-Praça dos Leões</div>
+              <div class="combo-duration">⏱ סה"כ כ-7 שעות</div>
+            </div>
+            <div class="combo-plan">
+              <div class="combo-plan-step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                  <span class="step-label">בוקר — פורטו הקלאסית</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener">Praça dos Leões</a></span>
+                </div>
+              </div>
+              <div class="combo-plan-step break">
+                <div class="step-num">⏸</div>
+                <div class="step-content">
+                  <span class="step-label">הפסקה</span>
+                  <span class="step-detail">כשעה וחצי לארוחת צהריים ומנוחה</span>
+                </div>
+              </div>
+              <div class="combo-plan-step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                  <span class="step-label">צהריים — סיור הטעימות</span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener">רחבת כנסיית ה-SE</a></span>
+                </div>
+              </div>
             </div>
             <div class="combo-bottom">
               <div class="combo-price-inline">
@@ -1539,8 +1704,8 @@
 
       <div class="cards">
 
-        <!-- ====== DOURO ====== -->
-        <div class="card" data-tour="douro">
+        <!-- DOURO -->
+        <div class="card" data-tour="douro" data-tour-name="עמק הדורו">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1574183538528-19a3a4097a3f?w=900&q=80" alt="עמק הדורו">
           </div>
@@ -1556,7 +1721,7 @@
 
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 8:30</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:30</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
@@ -1593,8 +1758,7 @@
 
             <div class="card-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'douro')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
               </button>
               <div class="date-wrap">
                 <div class="date-input-wrap">
@@ -1664,68 +1828,23 @@
   <!-- ===== FORM ===== -->
   <section class="form-wrap" id="form">
     <h2>מעולה! איך נמשיך?</h2>
-    <p class="lead">סמנו את הסיורים שמעניינים אתכם וציינו תאריך מועדף לכל אחד. נחזור אליכם תוך 24 שעות לבדיקת זמינות ולתיאום סופי.</p>
+    <p class="lead">להלן הסיורים שסימנת. אנא השלימו את פרטי הקשר ונחזור אליכם תוך 24 שעות לבדיקת זמינות ולתיאום סופי.</p>
 
     <div class="form-availability-note">
-      התאריכים שתבחרו הם בקשה — נבדוק אותם מול לוח הזמנים של המדריכים שלנו ונחזור אליכם לאישור.
+      התאריכים שבחרת הם בקשה — נבדוק אותם מול לוח הזמנים של המדריכים שלנו ונחזור אליך לאישור.
     </div>
 
-    <div class="form-section">
-      <div class="form-section-label">בחירת הסיורים והתאריכים</div>
-      <div class="form-tour-grid">
-        <label class="form-tour-item" data-form-tour="classic-lisbon">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">ליסבון הקלאסית</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="belem">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">בלם</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="culinary">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">קולינרי בליסבון</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="combo-classic-belem">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: קלאסית + בלם</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="combo-culinary-classic">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: קולינרי + קלאסית</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="combo-culinary-belem">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: קולינרי + בלם</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="sintra">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">סינטרה</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="arrabida">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">אראבידה</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="obidos">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">אובידוש</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="porto-classic">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">פורטו הקלאסית</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="porto-tastings">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">טעימות פורטו</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="combo-porto-classic-tastings">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: פורטו קלאסית + טעימות</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
-        <label class="form-tour-item" data-form-tour="douro">
-          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">עמק הדורו</div></div>
-          <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
-        </label>
+    <!-- Dynamic summary -->
+    <div class="selected-summary" id="selected-summary">
+      <div class="summary-header">
+        <span>הסיורים שסימנת</span>
+        <span class="summary-count" id="summary-count" style="display:none">0</span>
       </div>
+      <div class="summary-empty" id="summary-empty">
+        עדיין לא סימנת סיורים.<br>
+        <a href="#lisbon">חזרה לרשימת הסיורים →</a>
+      </div>
+      <div class="summary-list" id="summary-list"></div>
     </div>
 
     <div class="form-section">
@@ -1746,7 +1865,7 @@
       <textarea class="form-textarea" placeholder="קושי הליכה, צמחונות, ילדים, אלרגיות, בקשות מיוחדות..."></textarea>
     </div>
 
-    <button class="submit-btn" onclick="alert('זה רק mockup — בגרסה האמיתית זה ישלח מייל לעומר ורונה ויישמר במערכת')">שלחו לנו את הבחירה</button>
+    <button class="submit-btn" id="submit-btn" onclick="alert('זה רק mockup — בגרסה האמיתית זה ישלח מייל לעומר ורונה ויישמר במערכת')">שלחו לנו את הבחירה</button>
   </section>
 
 </main>
@@ -1761,7 +1880,7 @@
     if (!card) return;
     const nowSelected = !card.classList.contains('selected');
     setCardState(tourId, nowSelected);
-    setFormState(tourId, nowSelected);
+    updateSummary();
   }
 
   function setCardState(tourId, selected) {
@@ -1776,32 +1895,54 @@
     }
   }
 
-  function setFormState(tourId, selected) {
-    const formItem = document.querySelector(`[data-form-tour="${tourId}"]`);
-    if (!formItem) return;
-    formItem.classList.toggle('checked', selected);
-    const input = formItem.querySelector('input[type="checkbox"]');
-    if (input) input.checked = selected;
+  function removeTour(tourId) {
+    setCardState(tourId, false);
+    updateSummary();
   }
 
-  document.querySelectorAll('.form-tour-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.matches('input[type="text"]')) return;
-      e.preventDefault();
-      const tourId = item.dataset.formTour;
-      const nowSelected = !item.classList.contains('checked');
-      setFormState(tourId, nowSelected);
-      setCardState(tourId, nowSelected);
-    });
-  });
+  function updateSummary() {
+    const selectedCards = document.querySelectorAll('.card.selected, .combo-card.selected');
+    const list = document.getElementById('summary-list');
+    const empty = document.getElementById('summary-empty');
+    const count = document.getElementById('summary-count');
 
-  // Date input feedback
+    if (selectedCards.length === 0) {
+      empty.style.display = 'block';
+      list.innerHTML = '';
+      count.style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    count.style.display = 'inline-block';
+    count.textContent = selectedCards.length;
+
+    list.innerHTML = '';
+    selectedCards.forEach(card => {
+      const tourId = card.dataset.tour;
+      const name = card.dataset.tourName || tourId;
+      const dateInput = card.querySelector('.date-input');
+      const dateVal = dateInput ? dateInput.value.trim() : '';
+
+      const item = document.createElement('div');
+      item.className = 'summary-item';
+      item.innerHTML = `
+        <div class="summary-item-name">${name}</div>
+        <div class="summary-item-date ${dateVal ? '' : 'empty'}">${dateVal ? '📅 ' + dateVal : 'תאריך לא צוין'}</div>
+        <button class="summary-item-remove" onclick="removeTour('${tourId}')" title="הסר מהבחירה">✕</button>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  // Date input feedback + summary sync
   document.querySelectorAll('.date-input').forEach(input => {
     input.addEventListener('input', () => {
       const filled = input.value.trim().length > 0;
       input.classList.toggle('filled', filled);
       const msg = input.closest('.date-input-wrap').querySelector('.date-saved-msg');
       if (msg) msg.classList.toggle('show', filled);
+      updateSummary();
     });
   });
 </script>
