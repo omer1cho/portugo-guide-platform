@@ -630,21 +630,26 @@ function PrivateSection({ tour }: { tour: PrivateTour }) {
         מקסימום משתתפים: <strong className="text-slate-700">{tour.maxParticipants}</strong>
       </p>
 
-      {/* 1. מחיר רגיל */}
-      <PricedTableBlock
-        title="מחיר רגיל"
-        table={tour.regularPrice}
-        accent="slate"
-      />
-
-      {/* 2. מחיר מקוצר */}
-      {tour.shortPrice && (
+      {/* 1+2+5. שורה אחת: רגיל | מקוצר | ילדים — צפיפות גבוהה, פחות גלילה */}
+      <div className={`grid grid-cols-1 lg:grid-cols-2 ${tour.shortPrice ? '2xl:grid-cols-3' : '2xl:grid-cols-2'} gap-4 mt-5`}>
         <PricedTableBlock
-          title="מחיר מקוצר"
-          table={tour.shortPrice}
-          accent="indigo"
+          title="מחיר רגיל"
+          table={tour.regularPrice}
+          accent="slate"
         />
-      )}
+
+        {tour.shortPrice && (
+          <PricedTableBlock
+            title="מחיר מקוצר"
+            table={tour.shortPrice}
+            accent="indigo"
+          />
+        )}
+
+        <div className={tour.shortPrice ? 'lg:col-span-2 2xl:col-span-1' : ''}>
+          <ChildrenBlock table={tour.children} regularPrice={tour.regularPrice} />
+        </div>
+      </div>
 
       {/* 3. תוספת רכב */}
       {tour.carAddons && tour.carAddons.length > 0 && (
@@ -655,9 +660,6 @@ function PrivateSection({ tour }: { tour: PrivateTour }) {
       {tour.combos && tour.combos.length > 0 && (
         <CombosBlock combos={tour.combos} />
       )}
-
-      {/* 5. תמחור ילדים */}
-      <ChildrenBlock table={tour.children} regularPrice={tour.regularPrice} />
 
       {/* 6. אזהרה */}
       {tour.warning && (
