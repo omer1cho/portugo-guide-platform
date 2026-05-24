@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>פורטוגו · הצעה אישית למשפחת סימאי</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== Brand tokens (מהלוגו) ===== */
+  :root {
+    --green: #0d8c3e;
+    --green-dark: #096a2e;
+    --green-soft: #e8f5ec;
+    --red: #dc2626;
+    --red-soft: #fef1f1;
+    --yellow: #fbbf24;
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --ink-mute: #888;
+    --border: #ececec;
+    --shadow: 0 2px 12px rgba(0,0,0,0.04);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Heebo', 'Assistant', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Sticky header ===== */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+  .header-inner {
+    max-width: 920px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .logo-wrap img { height: 38px; width: auto; }
+  .logo-tag {
+    font-size: 12px; color: var(--ink-mute); font-weight: 500;
+  }
+  .header-meta {
+    font-size: 13px; color: var(--ink-soft); font-weight: 500;
+  }
+  .header-meta strong { color: var(--green-dark); font-weight: 700; }
+
+  /* ===== Hero ===== */
+  .hero {
+    position: relative;
+    height: 480px;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%),
+      url('https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=1600&q=80') center/cover no-repeat;
+    color: white;
+    display: flex; align-items: flex-end;
+    padding: 48px 24px;
+  }
+  .hero-inner { max-width: 920px; margin: 0 auto; width: 100%; }
+  .hero-eyebrow {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(8px);
+    padding: 6px 14px; border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 44px; font-weight: 800; line-height: 1.15;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .hero h1 .wave { display: inline-block; }
+  .hero-subtitle {
+    font-size: 19px; font-weight: 400; opacity: 0.95;
+    max-width: 600px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+  }
+  .hero-meta {
+    display: flex; gap: 28px; flex-wrap: wrap;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .hero-meta-item {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    padding: 8px 16px; border-radius: 100px;
+  }
+  .hero-meta-item .label { opacity: 0.8; }
+  .hero-meta-item .value { font-weight: 700; }
+
+  /* ===== Section ===== */
+  main { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+
+  .toc {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc a {
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    padding: 8px 16px; border-radius: 100px;
+    font-size: 13px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .toc a:hover {
+    border-color: var(--green);
+    color: var(--green-dark);
+    transform: translateY(-1px);
+  }
+
+  .section {
+    padding: 48px 0 24px;
+    scroll-margin-top: 80px;
+  }
+  .section-head {
+    margin-bottom: 24px;
+  }
+  .section-head h2 {
+    font-size: 30px; font-weight: 800; color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .section-head p {
+    font-size: 15px; color: var(--ink-soft);
+  }
+
+  /* ===== Tour card ===== */
+  .cards { display: grid; gap: 24px; }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+    position: relative;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+
+  .card-img-wrap {
+    position: relative;
+    height: 240px;
+    overflow: hidden;
+    background: #ddd;
+  }
+  .card-img-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.5s;
+  }
+  .card:hover .card-img-wrap img { transform: scale(1.04); }
+
+  .card-badge {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    padding: 6px 12px; border-radius: 100px;
+    font-size: 12px; font-weight: 700;
+    color: var(--ink);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .card-badge.outdoor { background: var(--green); color: white; }
+  .card-badge.foodie { background: var(--red); color: white; }
+  .card-badge.classic { background: var(--ink); color: white; }
+
+  .heart-btn {
+    position: absolute; top: 16px; left: 16px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .heart-btn:hover { transform: scale(1.1); }
+  .heart-btn.active { background: var(--red); }
+  .heart-btn .heart {
+    transition: all 0.2s;
+    filter: grayscale(1);
+    opacity: 0.5;
+  }
+  .heart-btn.active .heart {
+    filter: none;
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  .card-body { padding: 24px; }
+  .card-title {
+    font-size: 22px; font-weight: 800; color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .card-description {
+    font-size: 15px; color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+
+  .card-areas {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .area-tag {
+    font-size: 12px; font-weight: 500;
+    background: var(--green-soft);
+    color: var(--green-dark);
+    padding: 4px 10px; border-radius: 6px;
+  }
+
+  .card-facts {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .fact {
+    font-size: 13px;
+  }
+  .fact-label {
+    color: var(--ink-mute); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .fact-value { font-weight: 600; color: var(--ink); }
+
+  .card-price {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .price-amount {
+    font-size: 32px; font-weight: 800; color: var(--green-dark);
+  }
+  .price-unit {
+    font-size: 14px; color: var(--ink-mute);
+  }
+  .price-total {
+    margin-right: auto;
+    font-size: 13px; color: var(--ink-soft);
+    background: var(--green-soft);
+    padding: 6px 12px; border-radius: 8px;
+  }
+
+  .card-includes {
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .card-includes-line {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .card-includes-line:last-child { margin-bottom: 0; }
+  .card-includes-line .icon { font-size: 14px; line-height: 1.4; }
+
+  /* ===== Combo card (compact) ===== */
+  .combo-card {
+    background: linear-gradient(135deg, #fff 0%, #fffdf5 100%);
+    border: 1.5px solid var(--yellow);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex; align-items: center; gap: 20px;
+    box-shadow: var(--shadow);
+  }
+  .combo-icon {
+    font-size: 32px; flex-shrink: 0;
+  }
+  .combo-body { flex: 1; }
+  .combo-title {
+    font-size: 17px; font-weight: 700; color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .combo-meta {
+    font-size: 13px; color: var(--ink-soft);
+  }
+  .combo-price {
+    font-size: 22px; font-weight: 800; color: var(--green-dark);
+    flex-shrink: 0;
+  }
+  .combo-price .small { font-size: 12px; color: var(--ink-mute); font-weight: 500; }
+
+  /* ===== Terms section ===== */
+  .terms {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-top: 24px;
+    box-shadow: var(--shadow);
+  }
+  .terms h3 {
+    font-size: 18px; font-weight: 700; color: var(--ink);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .terms p {
+    font-size: 14px; color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+
+  /* ===== Form section ===== */
+  .form-wrap {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 40px;
+    margin-top: 32px;
+    box-shadow: 0 8px 32px rgba(13,140,62,0.2);
+  }
+  .form-wrap h2 {
+    font-size: 30px; font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .form-wrap .lead {
+    font-size: 16px; opacity: 0.92;
+    margin-bottom: 28px;
+  }
+
+  .form-section { margin-bottom: 28px; }
+  .form-section-label {
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 12px;
+    opacity: 0.95;
+  }
+
+  .checkbox-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .checkbox-item {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.12);
+    padding: 12px 14px; border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+  .checkbox-item:hover { background: rgba(255,255,255,0.2); }
+  .checkbox-item.checked { background: rgba(255,255,255,0.25); }
+  .checkbox-item input { display: none; }
+  .checkbox-item .box {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .checkbox-item.checked .box {
+    background: white;
+    border-color: white;
+  }
+  .checkbox-item.checked .box::after {
+    content: '✓'; color: var(--green-dark);
+    font-weight: 900; font-size: 14px;
+  }
+
+  .form-input, .form-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: white;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .form-input::placeholder, .form-textarea::placeholder {
+    color: rgba(255,255,255,0.6);
+  }
+  .form-input:focus, .form-textarea:focus {
+    outline: none;
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .form-textarea { min-height: 90px; resize: vertical; }
+
+  .form-grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: white;
+    color: var(--green-dark);
+    border: none;
+    padding: 18px 24px;
+    border-radius: 12px;
+    font-size: 17px; font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    text-align: center;
+    padding: 48px 24px 32px;
+    font-size: 13px;
+    color: var(--ink-mute);
+    border-top: 1px solid var(--border);
+    margin-top: 64px;
+  }
+  footer a { color: var(--green-dark); text-decoration: none; font-weight: 600; }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 768px) {
+    .hero { height: 420px; padding: 32px 20px; }
+    .hero h1 { font-size: 32px; }
+    .hero-subtitle { font-size: 16px; }
+    .hero-meta { gap: 8px; }
+    .hero-meta-item { padding: 6px 12px; font-size: 12px; }
+    .section-head h2 { font-size: 24px; }
+    .card-img-wrap { height: 200px; }
+    .checkbox-grid { grid-template-columns: 1fr; }
+    .form-wrap { padding: 28px 20px; }
+    .form-wrap h2 { font-size: 24px; }
+    .form-grid-2 { grid-template-columns: 1fr; }
+    .combo-card { flex-direction: column; align-items: flex-start; padding: 20px; }
+    .combo-price { font-size: 20px; }
+    .header-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <img src="/logo.png" alt="פורטוגו">
+      <span class="logo-tag">סיורים בעברית בפורטוגל</span>
+    </div>
+    <div class="header-meta">
+      תקפה עד <strong>15 ביולי 2026</strong>
+    </div>
+  </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">הצעה אישית · עומר ורונה</div>
+    <h1>שלום משפחת סימאי <span class="wave">👋</span></h1>
+    <p class="hero-subtitle">אספנו עבורכם את כל אפשרויות הסיור שלנו לטיולכם בפורטוגל. כל המחירים מותאמים אישית לקבוצה שלכם.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><span class="label">מועד הסיורים:</span><span class="value">יוני 2026</span></div>
+      <div class="hero-meta-item"><span class="label">מספר משתתפים:</span><span class="value">6</span></div>
+      <div class="hero-meta-item"><span class="label">המחירים בתוקף עד:</span><span class="value">15.7.2026</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TOC ===== -->
+<main>
+  <nav class="toc">
+    <a href="#lisbon">🏛️ בליסבון</a>
+    <a href="#lisbon-day">🌄 סביב ליסבון</a>
+    <a href="#combos-lisbon">⭐ שילובי יום מלא — ליסבון</a>
+    <a href="#porto">🌉 בפורטו</a>
+    <a href="#douro">🍷 עמק הדורו</a>
+    <a href="#combos-porto">⭐ שילוב יום מלא — פורטו</a>
+    <a href="#terms">📋 תנאים</a>
+    <a href="#form">💌 מעניין אותנו</a>
+  </nav>
+
+  <!-- ===== LISBON CITY ===== -->
+  <section class="section" id="lisbon">
+    <div class="section-head">
+      <h2>בליסבון</h2>
+      <p>שלושה סיורים רגליים בלב העיר. בחרו אחד, או שלבו לטיולי יום מלא.</p>
+    </div>
+
+    <div class="cards">
+      <!-- Classic Lisbon -->
+      <div class="card" data-tour="classic-lisbon">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=900&q=80" alt="ליסבון הקלאסית">
+          <button class="heart-btn" onclick="toggleHeart(this, 'classic-lisbon')"><span class="heart">❤️</span></button>
+          <span class="card-badge classic">קלאסי</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">הסיור של ליסבון הקלאסית</h3>
+          <p class="card-description">סיור מקיף וקולע באזורי המרכז של העיר. נעבור בנקודות תצפית סודיות, נבקר במונומנטים המרכזיים ונטייל ברחובות הצרים והמיוחדים שהתייר הממוצע אינו מכיר.</p>
+          <div class="card-areas">
+            <span class="area-tag">Chiado</span>
+            <span class="area-tag">Bairro Alto</span>
+            <span class="area-tag">Baixa</span>
+            <span class="area-tag">Alfama</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-3 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">כיכר לואיש דה קמואיש</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">45€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 270€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>הדרכה בעברית · טעימה של ליקר Ginjinha</span></div>
+            <div class="card-includes-line"><span class="icon">○</span><span>סיור רגלי — מומלץ ללא רכב צמוד כדי להיכנס לאלפמה</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Belem -->
+      <div class="card" data-tour="belem">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1588535565425-cd7c0c632c4d?w=900&q=80" alt="בלם">
+          <button class="heart-btn" onclick="toggleHeart(this, 'belem')"><span class="heart">❤️</span></button>
+          <span class="card-badge classic">היסטוריה</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">הסיור באזור בלם</h3>
+          <p class="card-description">סיור רגלי באזור עידן התגליות של פורטוגל. נבקר במגדל בלם המפורסם, אנדרטת מגלי הארצות ומנזר ז׳רונימוש. נטעם את הפשטל דה בלם בתצורתו המקורית במאפיה המסורתית.</p>
+          <div class="card-areas">
+            <span class="area-tag">Torre de Belém</span>
+            <span class="area-tag">Mosteiro dos Jerónimos</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כשעה וחצי</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">מחוץ למגדל בלם</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">30€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 180€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>הדרכה בעברית · טעימה של פשטל דה בלם מסורתי</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Culinary -->
+      <div class="card" data-tour="culinary">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=900&q=80" alt="סיור קולינרי">
+          <button class="heart-btn" onclick="toggleHeart(this, 'culinary')"><span class="heart">❤️</span></button>
+          <span class="card-badge foodie">קולינרי</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">סיור קולינרי בליסבון</h3>
+          <p class="card-description">מסע בעקבות הקולינריה והתרבות הפורטוגזיות. נטעם מאכלים ומשקאות ייחודיים, נבקר באתרים מעניינים — תצפית, חנות ספרים עתיקה ושוק האוכל המפורסם של ליסבון.</p>
+          <div class="card-areas">
+            <span class="area-tag">בוקר או צהריים</span>
+            <span class="area-tag">ביס אחד מושלם 😊</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-3 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">A Brasileira, Chiado</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">80€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 480€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>טעימות מגוונות של מאכלים ומשקאות</span></div>
+            <div class="card-includes-line"><span class="icon">★</span><span>אפשרויות צמחוניות זמינות — אנא ציינו מראש</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LISBON DAY TRIPS ===== -->
+  <section class="section" id="lisbon-day">
+    <div class="section-head">
+      <h2>סביב ליסבון — טיולי יום מלא עם רכב</h2>
+      <p>שלוש אפשרויות ליום מלא מחוץ לעיר. כולל רכב צמוד עם איסוף מהמלון.</p>
+    </div>
+
+    <div class="cards">
+      <!-- Sintra -->
+      <div class="card" data-tour="sintra">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1601278395263-69c87cbb1ad7?w=900&q=80" alt="סינטרה">
+          <button class="heart-btn" onclick="toggleHeart(this, 'sintra')"><span class="heart">❤️</span></button>
+          <span class="card-badge outdoor">יום מלא</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">הסיור של סינטרה והסביבה</h3>
+          <p class="card-description">סינטרה הקסומה, ארמון הפנה המפורסם, קאבו דה רוקה — הנקודה המערבית ביותר באירופה — וקשקאיש, עיירת הנופש המפוארת. יום שלם של אגדה מול האוקיינוס.</p>
+          <div class="card-areas">
+            <span class="area-tag">Sintra</span>
+            <span class="area-tag">Cabo da Roca</span>
+            <span class="area-tag">Cascais</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-8 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">איסוף מהמלון, 8:30</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">115€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 690€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>רכב צמוד · כרטיס כניסה לארמון הפנה · הדרכה בעברית</span></div>
+            <div class="card-includes-line"><span class="icon">○</span><span>לא כולל ארוחת צהריים ושאטל פנימי בארמון (5€/אדם, אופציונלי)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrabida -->
+      <div class="card" data-tour="arrabida">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1593510987046-1f8fcfc512a1?w=900&q=80" alt="אראבידה">
+          <button class="heart-btn" onclick="toggleHeart(this, 'arrabida')"><span class="heart">❤️</span></button>
+          <span class="card-badge outdoor">יום מלא</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">אראבידה והסביבה</h3>
+          <p class="card-description">טירת פלמלה העתיקה, שמורת אראבידה המרהיבה ביופייה, מפעל אריחים בעבודת יד, יקב מקומי וארוחת דגים בעיירת החוף סזימברה. נחצה את שני הגשרים המפורסמים של ליסבון.</p>
+          <div class="card-areas">
+            <span class="area-tag">Palmela</span>
+            <span class="area-tag">Serra da Arrábida</span>
+            <span class="area-tag">Azeitão</span>
+            <span class="area-tag">Sesimbra</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-8 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">איסוף מהמלון, 8:45</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">115€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 690€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>רכב צמוד · ביקור ביקב ובמפעל אריחים · הדרכה בעברית</span></div>
+            <div class="card-includes-line"><span class="icon">○</span><span>לא כולל ארוחת צהריים</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Obidos -->
+      <div class="card" data-tour="obidos">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1572995266929-3dba2c75c64f?w=900&q=80" alt="אובידוש">
+          <button class="heart-btn" onclick="toggleHeart(this, 'obidos')"><span class="heart">❤️</span></button>
+          <span class="card-badge outdoor">יום מלא</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">אובידוש והסביבה</h3>
+          <p class="card-description">שלושה יעדים ברצועה המערבית: מנזר בטאליה (מהמאה ה-14), נזארה — בה נרשמו הגלים הגבוהים ביותר בעולם, ואובידוש — עיירת ימי הביניים הציורית עם משקה ה״ז׳ינז׳ינייה״ בכוס שוקולד.</p>
+          <div class="card-areas">
+            <span class="area-tag">Batalha</span>
+            <span class="area-tag">Nazaré</span>
+            <span class="area-tag">Óbidos</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-8 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">איסוף מהמלון, 9:00</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">115€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 690€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>רכב צמוד · כניסה למנזר בטאליה · הדרכה בעברית</span></div>
+            <div class="card-includes-line"><span class="icon">○</span><span>לא כולל ארוחת צהריים</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LISBON COMBOS ===== -->
+  <section class="section" id="combos-lisbon">
+    <div class="section-head">
+      <h2>שילובי יום מלא בליסבון ⭐</h2>
+      <p>שילוב של שני סיורים בעיר ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
+    </div>
+
+    <div class="cards">
+      <div class="combo-card">
+        <div class="combo-icon">🏛️ + 🥐</div>
+        <div class="combo-body">
+          <div class="combo-title">ליסבון הקלאסית + בלם</div>
+          <div class="combo-meta">כ-6 שעות · נקודת מפגש: כיכר לואיש דה קמואיש</div>
+        </div>
+        <div class="combo-price">75€<div class="small">לאדם · סה״כ 450€</div></div>
+      </div>
+
+      <div class="combo-card">
+        <div class="combo-icon">🍷 + 🏛️</div>
+        <div class="combo-body">
+          <div class="combo-title">הסיור הקולינרי + ליסבון הקלאסית</div>
+          <div class="combo-meta">כ-7 שעות · יש להתחיל בקולינרי בבוקר</div>
+        </div>
+        <div class="combo-price">125€<div class="small">לאדם · סה״כ 750€</div></div>
+      </div>
+
+      <div class="combo-card">
+        <div class="combo-icon">🍷 + 🥐</div>
+        <div class="combo-body">
+          <div class="combo-title">הסיור הקולינרי + בלם</div>
+          <div class="combo-meta">כ-6 שעות · יש להתחיל בקולינרי בבוקר</div>
+        </div>
+        <div class="combo-price">110€<div class="small">לאדם · סה״כ 660€</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PORTO ===== -->
+  <section class="section" id="porto">
+    <div class="section-head">
+      <h2>בפורטו</h2>
+      <p>שני סיורים רגליים בעיר השנייה החשובה בפורטוגל.</p>
+    </div>
+
+    <div class="cards">
+      <!-- Porto Classic -->
+      <div class="card" data-tour="porto-classic">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1555990538-32d54c5d8b3a?w=900&q=80" alt="פורטו הקלאסית">
+          <button class="heart-btn" onclick="toggleHeart(this, 'porto-classic')"><span class="heart">❤️</span></button>
+          <span class="card-badge classic">קלאסי</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">הסיור של פורטו הקלאסית</h3>
+          <p class="card-description">סיור רגלי מקיף וקולע באזורי המרכז: הבאישה, שכונת הגטו היהודי, וריביירה השוקק למרגלות נהר הדורו. נקודות תצפית חבויות, היסטוריה מרתקת וקסמיה של העיר.</p>
+          <div class="card-areas">
+            <span class="area-tag">Baixa</span>
+            <span class="area-tag">Vitória</span>
+            <span class="area-tag">Ribeira</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-3 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">Praça dos Leões</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">45€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 270€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>הדרכה בעברית · נקודות תצפית סודיות</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Porto Tastings -->
+      <div class="card" data-tour="porto-tastings">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=900&q=80" alt="טעימות פורטו">
+          <button class="heart-btn" onclick="toggleHeart(this, 'porto-tastings')"><span class="heart">❤️</span></button>
+          <span class="card-badge foodie">טעימות</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">סיור הטעימות בפורטו</h3>
+          <p class="card-description">מסע טעימות בסביבת פורטו ובוילה נובה דה גאיה — גבינות מקומיות, בקאלה, נקניקים, יין ירוק, יין אדום, בירה מקומית ויינות הפורט המפורסמים. בתי עסק ותיקים, חנות בוטיק, שוק מקומי ומרכז טעימות.</p>
+          <div class="card-areas">
+            <span class="area-tag">Vila Nova de Gaia</span>
+            <span class="area-tag">יינות פורט</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-3 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">כנסיית ה-SE</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">80€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 480€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>טעימות מגוונות של מאכלים ומשקאות</span></div>
+            <div class="card-includes-line"><span class="icon">★</span><span>אפשרויות צמחוניות זמינות — אנא ציינו מראש</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DOURO ===== -->
+  <section class="section" id="douro">
+    <div class="section-head">
+      <h2>עמק הדורו</h2>
+      <p>אחד האזורים היפים בפורטוגל — המקום שבו מייצרים את יינות הפורט.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card" data-tour="douro">
+        <div class="card-img-wrap">
+          <img src="https://images.unsplash.com/photo-1568138708920-1c0a2c1c4f8a?w=900&q=80" alt="עמק הדורו">
+          <button class="heart-btn" onclick="toggleHeart(this, 'douro')"><span class="heart">❤️</span></button>
+          <span class="card-badge outdoor">יום מלא</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">עמק הדורו והסביבה</h3>
+          <p class="card-description">העיירה אמרנטה, ״דרך היין״ עם הטרסות, ההרים והגפנים. ביקור ביקב משפחתי, תצפית סודית, ארוחת צהריים בפינייאו, שייט בנהר הדורו ועצירה בפסו דה רגואה.</p>
+          <div class="card-areas">
+            <span class="area-tag">Amarante</span>
+            <span class="area-tag">Pinhão</span>
+            <span class="area-tag">Peso da Régua</span>
+          </div>
+          <div class="card-facts">
+            <div class="fact"><div class="fact-label">משך הסיור</div><div class="fact-value">כ-8 שעות</div></div>
+            <div class="fact"><div class="fact-label">נקודת מפגש</div><div class="fact-value">איסוף מהמלון, 8:30</div></div>
+          </div>
+          <div class="card-price">
+            <span class="price-amount">125€</span>
+            <span class="price-unit">לאדם</span>
+            <span class="price-total">6 משתתפים · 750€</span>
+          </div>
+          <div class="card-includes">
+            <div class="card-includes-line"><span class="icon">✓</span><span>רכב צמוד · ביקור ביקב · שייט בנהר · הדרכה בעברית</span></div>
+            <div class="card-includes-line"><span class="icon">○</span><span>לא כולל כניסות לאתרים וארוחות · השייט מותנה במזג האוויר</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PORTO COMBO ===== -->
+  <section class="section" id="combos-porto">
+    <div class="section-head">
+      <h2>שילוב יום מלא בפורטו ⭐</h2>
+      <p>שילוב של שני הסיורים בעיר ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
+    </div>
+
+    <div class="cards">
+      <div class="combo-card">
+        <div class="combo-icon">🌉 + 🍷</div>
+        <div class="combo-body">
+          <div class="combo-title">פורטו הקלאסית + סיור הטעימות</div>
+          <div class="combo-meta">כ-7 שעות · נקודת מפגש: Praça dos Leões</div>
+        </div>
+        <div class="combo-price">125€<div class="small">לאדם · סה״כ 750€</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TERMS ===== -->
+  <section class="section" id="terms">
+    <div class="terms">
+      <h3>📋 תנאים והערות</h3>
+      <p><strong>תשלום:</strong> בסיורים עם רכב — 20% מהעלות הכוללת מועברים עד 60 יום לפני המועד (פייפאל או העברה בנקאית). ה-80% הנותרים — במועד הסיור.</p>
+      <p><strong>ביטולים:</strong> ביטול עד 30 ימים לפני המועד — ללא עלות. ביטול 15-29 ימים לפני — 20% מהעלות. ביטול מ-14 ימים ומטה — דמי ביטול מלאים.</p>
+      <p><strong>תכנית הסיור:</strong> נצמדים לתכנית המפורטת. שינויים יש לתאם מראש; ברגע האחרון ייתכן ולא ניתן יהיה לבצע החלפות.</p>
+      <p><strong>תקפות:</strong> ההצעה ניתנת לסיורים שיתקיימו ביוני 2026, במחירים שצוינו. בכל מקרה של שינוי במספר המשתתפים — המחירים יעודכנו בהתאם לטבלת התמחור.</p>
+    </div>
+  </section>
+
+  <!-- ===== FORM ===== -->
+  <section class="form-wrap" id="form">
+    <h2>מעניין אותנו! איך נמשיך? 💌</h2>
+    <p class="lead">סמנו את הסיורים שמעניינים אתכם, ציינו תאריכים מועדפים — ונחזור אליכם תוך 24 שעות לתיאום סופי.</p>
+
+    <div class="form-section">
+      <div class="form-section-label">אילו סיורים מעניינים אתכם?</div>
+      <div class="checkbox-grid">
+        <label class="checkbox-item" data-form-tour="classic-lisbon"><input type="checkbox"><div class="box"></div><span>ליסבון הקלאסית</span></label>
+        <label class="checkbox-item" data-form-tour="belem"><input type="checkbox"><div class="box"></div><span>בלם</span></label>
+        <label class="checkbox-item" data-form-tour="culinary"><input type="checkbox"><div class="box"></div><span>קולינרי בליסבון</span></label>
+        <label class="checkbox-item" data-form-tour="sintra"><input type="checkbox"><div class="box"></div><span>סינטרה</span></label>
+        <label class="checkbox-item" data-form-tour="arrabida"><input type="checkbox"><div class="box"></div><span>אראבידה</span></label>
+        <label class="checkbox-item" data-form-tour="obidos"><input type="checkbox"><div class="box"></div><span>אובידוש</span></label>
+        <label class="checkbox-item" data-form-tour="porto-classic"><input type="checkbox"><div class="box"></div><span>פורטו הקלאסית</span></label>
+        <label class="checkbox-item" data-form-tour="porto-tastings"><input type="checkbox"><div class="box"></div><span>טעימות פורטו</span></label>
+        <label class="checkbox-item" data-form-tour="douro"><input type="checkbox"><div class="box"></div><span>עמק הדורו</span></label>
+        <label class="checkbox-item" data-form-tour="other"><input type="checkbox"><div class="box"></div><span>אחר / לא בטוחים</span></label>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-label">תאריכים ולוגיסטיקה</div>
+      <div class="form-grid-2">
+        <input class="form-input" type="text" placeholder="תאריך מועדף (לדוגמה: 12-14 ביוני)">
+        <input class="form-input" type="text" placeholder="טלפון ליצירת קשר">
+      </div>
+      <div style="margin-top: 12px;">
+        <input class="form-input" type="text" placeholder="פרטי טיסה / מועדי הגעה ויציאה (אופציונלי)">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-label">משהו חשוב לדעת עליכם?</div>
+      <textarea class="form-textarea" placeholder="קושי הליכה, צמחונות, ילדים, אלרגיות, בקשות מיוחדות..."></textarea>
+    </div>
+
+    <button class="submit-btn" onclick="alert('זה רק mockup — בגרסה האמיתית זה ישלח מייל לעומר ורונה ויישמר במערכת')">שלחו לנו את הבחירה 💌</button>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  פורטוגו · סיורים בעברית בפורטוגל · <a href="https://www.portugo.co.il">portugo.co.il</a>
+</footer>
+
+<script>
+  // Heart toggle in cards — syncs to form checkboxes
+  function toggleHeart(btn, tourId) {
+    btn.classList.toggle('active');
+    const formCheck = document.querySelector(`[data-form-tour="${tourId}"]`);
+    if (formCheck) {
+      const input = formCheck.querySelector('input');
+      input.checked = btn.classList.contains('active');
+      formCheck.classList.toggle('checked', input.checked);
+    }
+  }
+
+  // Form checkboxes — visual feedback
+  document.querySelectorAll('.checkbox-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      const input = item.querySelector('input');
+      input.checked = !input.checked;
+      item.classList.toggle('checked', input.checked);
+
+      // Sync back to card heart
+      const tourId = item.dataset.formTour;
+      const card = document.querySelector(`[data-tour="${tourId}"] .heart-btn`);
+      if (card) card.classList.toggle('active', input.checked);
+    });
+  });
+</script>
+
+</body>
+</html>
