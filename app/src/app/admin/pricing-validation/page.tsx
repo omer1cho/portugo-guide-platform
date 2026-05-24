@@ -766,9 +766,9 @@ function PrivatePricesOverview({ tours }: { tours: PrivateTour[] }) {
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
-          <thead className="sticky top-[52px] z-10">
+          <thead>
             <tr className="text-center">
-              <th className="bg-gray-100 px-2 py-2 text-xs font-bold text-slate-700 border-b border-gray-200 sticky right-0 z-20">
+              <th className="bg-gray-100 px-2 py-2 text-xs font-bold text-slate-700 border-b border-gray-200">
                 גודל
               </th>
               {columns.map((c) => (
@@ -784,7 +784,7 @@ function PrivatePricesOverview({ tours }: { tours: PrivateTour[] }) {
           <tbody>
             {sizes.map((size) => (
               <tr key={size} className="border-b border-gray-100 hover:bg-gray-50/50">
-                <td className="bg-gray-50 px-2 py-1.5 text-center font-bold text-slate-700 sticky right-0">
+                <td className="bg-gray-50 px-2 py-1.5 text-center font-bold text-slate-700">
                   {size}
                 </td>
                 {columns.map((c) => {
