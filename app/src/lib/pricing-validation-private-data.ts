@@ -309,13 +309,198 @@ const CLASSIC_PRIVATE: PrivateTour = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// כל הסיורים הפרטיים (נמלא בהמשך)
+// כרטיס 2: בלם פרטי (ליסבון)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const BELEM_REGULAR_ROWS: PrivateTierRow[] = [
+  { minSize: 2, maxSize: 2, pricePerPerson: 35 },
+  { minSize: 3, maxSize: 4, pricePerPerson: 32 },
+  { minSize: 5, maxSize: 7, pricePerPerson: 28 },
+  { minSize: 8, maxSize: 11, pricePerPerson: 25 },
+  { minSize: 12, maxSize: 15, pricePerPerson: 22 },
+  { minSize: 16, maxSize: 22, pricePerPerson: 20 },
+  { minSize: 23, maxSize: 30, pricePerPerson: 18 },
+  { minSize: 31, maxSize: 35, pricePerPerson: 16 },
+];
+
+const BELEM_PRIVATE: PrivateTour = {
+  slug: 'belem-private',
+  name: 'בלם פרטי (ליסבון)',
+  priceInfo: 'מחיר רגיל בלבד (אין גרסה מקוצרת) · טווח 2-35 משתתפים',
+  priceInfoExtra: 'מחיר רגיל 20€/אדם, חבילה 15€/אדם. הפרטי מתחיל ב-35€ בקבוצה קטנה ויורד עד 16€ בקבוצה הגדולה (~חבילה).',
+  maxParticipants: 35,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: BELEM_REGULAR_ROWS,
+  },
+  carAddons: [
+    { label: 'חצי יום — סיור בודד (בלם בלבד)', rows: CAR_HALF_DAY_ROWS },
+  ],
+  carNote: 'אותו לוגיקה כמו הקלאסי הפרטי: פרדאוטו worst case, חלוקה לאדם דינמית (עלות רכב ÷ אנשים בפועל). שילוב קלאסי+בלם (יום מלא) מופיע בכרטיס הקלאסי.',
+  children: {
+    perTier: [
+      { ageLabel: 'עד 6', rule: { kind: 'free', note: 'שקוף בקבוצה' } },
+      { ageLabel: '7-12', rule: { kind: 'halfOfRegular', round: 'nearest' } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'ילד עד 6 שקוף בקבוצה — לא משפיע על קטגוריית גודל. ילד 7-12 נספר ומשלם חצי מהמחיר/אדם של אותה קטגוריה.',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// כרטיס 3: קולינרי פרטי (ליסבון) + טעימות פרטי (פורטו) — אותה טבלה
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CULINARY_TASTINGS_REGULAR_ROWS: PrivateTierRow[] = [
+  { minSize: 2, maxSize: 2, pricePerPerson: 85 },
+  { minSize: 3, maxSize: 4, pricePerPerson: 80 },
+  { minSize: 5, maxSize: 7, pricePerPerson: 75 },
+  { minSize: 8, maxSize: 11, pricePerPerson: 72 },
+  { minSize: 12, maxSize: 15, pricePerPerson: 70 },
+  { minSize: 16, maxSize: 18, pricePerPerson: 67 },
+];
+
+const CULINARY_TASTINGS_PRIVATE: PrivateTour = {
+  slug: 'culinary-tastings-private',
+  name: 'קולינרי פרטי (ליסבון) = טעימות פרטי (פורטו)',
+  priceInfo: 'אותה טבלה לשני הסיורים · טווח 2-18 משתתפים',
+  priceInfoExtra: 'מחיר רגיל 65€/אדם זהה לשניהם. הפרטי תמיד רווחי יותר מהרגיל (כל קטגוריה +19€ עד +68€ תוספת רווח). אין גליטשים — כל מעבר חיובי.',
+  maxParticipants: 18,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: CULINARY_TASTINGS_REGULAR_ROWS,
+  },
+  children: {
+    perTier: [
+      { ageLabel: 'עד 2', rule: { kind: 'free' } },
+      { ageLabel: '3-6', rule: { kind: 'fixedPrice', price: 20 } },
+      { ageLabel: '7-12', rule: { kind: 'fixedPrice', price: 40 } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'מחיר ילד קבוע — לא תלוי בקטגוריית גודל (כי עלות המזון פר-ילד דומה תמיד). בחבילה: 3-6 = 15€, 7-12 = 35€.',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// כרטיס 4: סינטרה + אראבידה פרטי — אותה טבלה ללקוח
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SINTRA_ARRABIDA_REGULAR_ROWS: PrivateTierRow[] = [
+  { minSize: 2, maxSize: 2, pricePerPerson: 275 },
+  { minSize: 3, maxSize: 3, pricePerPerson: 200 },
+  { minSize: 4, maxSize: 4, pricePerPerson: 160 },
+  { minSize: 5, maxSize: 6, pricePerPerson: 130 },
+  { minSize: 7, maxSize: 9, pricePerPerson: 115 },
+  { minSize: 10, maxSize: 15, pricePerPerson: 105 },
+  { minSize: 16, maxSize: 25, pricePerPerson: 100 },
+  { minSize: 26, maxSize: 35, pricePerPerson: 95 },
+  { minSize: 36, maxSize: 50, pricePerPerson: 92 },
+];
+
+const SINTRA_ARRABIDA_PRIVATE: PrivateTour = {
+  slug: 'sintra-arrabida-private',
+  name: 'סינטרה פרטי = אראבידה פרטי',
+  priceInfo: 'אותה טבלה ללקוח · טווח 2-50 משתתפים · המחיר כולל רכב וכניסות',
+  priceInfoExtra: 'אראבידה רווחית יותר (כניסות יקב 10.2€ מול ארמון פנה 20€), אבל מחיר זהה ללקוח. אפקט הפוך מסיורי העיר: בקבוצה קטנה הרכב הוא 80% מהעלות → מחיר/אדם דרסטי (275€ לזוג). בקבוצה גדולה הרכב מתפזר → מתקרב למחיר רגיל. יולי+ מחיר רגיל עולה ל-95€/אדם.',
+  maxParticipants: 50,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: SINTRA_ARRABIDA_REGULAR_ROWS,
+  },
+  children: {
+    perTier: [
+      { ageLabel: 'עד 6', rule: { kind: 'free' } },
+      { ageLabel: '7-12', rule: { kind: 'halfOfRegular', round: 'nearest' } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'בפרטי הרכב כבר משולם ע"י הקבוצה — אז ילדים עד 6 חינם לגמרי. ילד 7-12 משלם חצי מהמחיר/אדם. ארמון פנה — חינם עד גיל 16. שאר הכניסות (יקב אראבידה) — בינתיים מחיר מבוגר מלא עד שנברר עם הספקים.',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// כרטיס 5: אובידוש פרטי
+// ═══════════════════════════════════════════════════════════════════════════
+
+const OBIDOS_REGULAR_ROWS: PrivateTierRow[] = [
+  { minSize: 2, maxSize: 2, pricePerPerson: 320 },
+  { minSize: 3, maxSize: 3, pricePerPerson: 230 },
+  { minSize: 4, maxSize: 4, pricePerPerson: 180 },
+  { minSize: 5, maxSize: 6, pricePerPerson: 145 },
+  { minSize: 7, maxSize: 9, pricePerPerson: 130 },
+  { minSize: 10, maxSize: 15, pricePerPerson: 120 },
+  { minSize: 16, maxSize: 25, pricePerPerson: 115 },
+  { minSize: 26, maxSize: 35, pricePerPerson: 110 },
+  { minSize: 36, maxSize: 50, pricePerPerson: 107 },
+];
+
+const OBIDOS_PRIVATE: PrivateTour = {
+  slug: 'obidos-private',
+  name: 'אובידוש פרטי',
+  priceInfo: 'מחיר רגיל 105€/אדם, חבילה 100€/אדם · טווח 2-50 משתתפים · המחיר כולל רכב וכניסות',
+  priceInfoExtra: 'רכב יקר יותר מסינטרה (449-581€ במקום 326-483€) — לכן מחיר/אדם גבוה יותר בכל קטגוריה. כניסות פר-אדם: 15€ אתרים + 2€ תצפית גלישה = 17€.',
+  maxParticipants: 50,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: OBIDOS_REGULAR_ROWS,
+  },
+  children: {
+    perTier: [
+      { ageLabel: 'עד 6', rule: { kind: 'free' } },
+      { ageLabel: '7-12', rule: { kind: 'halfOfRegular', round: 'nearest' } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'בפרטי הרכב כבר משולם ע"י הקבוצה — אז ילדים עד 6 חינם לגמרי. ילד 7-12 משלם חצי מהמחיר/אדם. כניסות (מנזר 15€ + תצפית גלישה 2€) — בינתיים מחיר מבוגר מלא עד שנברר עם הספקים.',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// כרטיס 6: דורו פרטי
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DOURO_REGULAR_ROWS: PrivateTierRow[] = [
+  { minSize: 2, maxSize: 2, pricePerPerson: 280 },
+  { minSize: 3, maxSize: 3, pricePerPerson: 210 },
+  { minSize: 4, maxSize: 4, pricePerPerson: 170 },
+  { minSize: 5, maxSize: 7, pricePerPerson: 140 },
+  { minSize: 8, maxSize: 10, pricePerPerson: 130 },
+  { minSize: 11, maxSize: 13, pricePerPerson: 120 },
+  { minSize: 14, maxSize: 16, pricePerPerson: 115 },
+  { minSize: 17, maxSize: 19, pricePerPerson: 105 },
+];
+
+const DOURO_PRIVATE: PrivateTour = {
+  slug: 'douro-private',
+  name: 'דורו פרטי (פורטו)',
+  priceInfo: 'מחיר רגיל 105€/אדם, חבילה 100€/אדם · טווח 2-19 משתתפים · המחיר כולל רכב וכניסות',
+  priceInfoExtra: 'מקסימום 19 משתתפים — אין ספק רכב לקבוצות גדולות יותר בפורטו. בקבוצה הגדולה (17-19) מחיר/אדם = מחיר רגיל (0% פרמיה). רכב: ז\'ורז\' וואן 280€ (2-7), קלבר/איבורבס/אנטורס 475-700€ (8-19). כניסות פר-אדם: 15€ יקב + 11€ שייט = 26€.',
+  maxParticipants: 19,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: DOURO_REGULAR_ROWS,
+  },
+  children: {
+    perTier: [
+      { ageLabel: 'עד 6', rule: { kind: 'free' } },
+      { ageLabel: '7-12', rule: { kind: 'halfOfRegular', round: 'nearest' } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'בפרטי הרכב כבר משולם ע"י הקבוצה — אז ילדים עד 6 חינם לגמרי. ילד 7-12 משלם חצי מהמחיר/אדם. כניסות (יקב 15€ + שייט 11€) — בינתיים מחיר מבוגר מלא עד שנברר עם הספקים.',
+  },
+  warning: 'קבוצה של 8-10 אנשים: התמחור (130€/אדם) מבוסס על קלבר (635€). אם הספק הזמין הוא אנטורס (700€) — הרווח בקבוצה של 8 יורד ל-7€ בלבד (גבולי). לוודא לפני סגירה שהספק הוא איבורבס (475€) או קלבר.',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// כל הסיורים הפרטיים
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const PRIVATE_TOURS: PrivateTour[] = [
   CLASSIC_PRIVATE,
-  // TODO: בלם, קולינרי+טעימות, סינטרה+אראבידה, אובידוש, דורו — להוסיף אחרי שעומר תאשר את הקלאסי
+  BELEM_PRIVATE,
+  CULINARY_TASTINGS_PRIVATE,
+  SINTRA_ARRABIDA_PRIVATE,
+  OBIDOS_PRIVATE,
+  DOURO_PRIVATE,
 ];
 
-export const PRIVATE_VERSION = 1;
-export const PRIVATE_UPDATED = '23 במאי 2026';
+export const PRIVATE_VERSION = 2;
+export const PRIVATE_UPDATED = '24 במאי 2026';
