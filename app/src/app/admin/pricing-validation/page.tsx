@@ -85,6 +85,7 @@ export default function PricingValidationPage() {
           <a href="#sec-city" className="px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition">סיורים בעיר</a>
           <a href="#sec-classic" className="px-3 py-1 rounded-full bg-rose-50 text-rose-900 border border-rose-200 hover:bg-rose-100 transition">קלאסיים</a>
           <a href="#sec-private" className="px-3 py-1 rounded-full bg-purple-50 text-purple-900 border border-purple-300 hover:bg-purple-100 transition font-semibold">סיורים פרטיים ⭐</a>
+          <a href="#sec-overview" className="px-3 py-1 rounded-full bg-teal-50 text-teal-900 border border-teal-300 hover:bg-teal-100 transition">טבלה רוחבית</a>
           <a href="#sec-insights" className="px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition">תובנות</a>
         </div>
       </nav>
@@ -216,6 +217,9 @@ export default function PricingValidationPage() {
       {PRIVATE_TOURS.map((tour) => (
         <PrivateSection key={tour.slug} tour={tour} />
       ))}
+
+      {/* Cross-tour overview — מחיר/מבוגר לפי גודל קבוצה, סיור-מול-סיור */}
+      <PrivatePricesOverview tours={PRIVATE_TOURS} />
 
       {/* Insights */}
       <div id="sec-insights" className="bg-sky-50 border-r-4 border-sky-600 rounded-md p-4 md:p-5 mt-7 text-sm scroll-mt-20">
@@ -674,6 +678,135 @@ function PrivateSection({ tour }: { tour: PrivateTour }) {
           <strong>⚠️ חשוב:</strong> {tour.warning}
         </div>
       )}
+    </section>
+  );
+}
+
+// ─── Cross-tour overview: adult price by group size, side-by-side ──────
+function priceForSize(table: PrivatePriceTable, size: number): number | null {
+  const tier = table.rows.find((r) => size >= r.minSize && size <= r.maxSize);
+  return tier ? tier.pricePerPerson : null;
+}
+
+type OverviewColumn = {
+  key: string;
+  label: string;
+  shortLabel: string;
+  table: PrivatePriceTable;
+  tone: 'slate' | 'indigo' | 'amber' | 'teal' | 'orange' | 'rose';
+};
+
+const TONE_HEADER: Record<OverviewColumn['tone'], string> = {
+  slate: 'bg-slate-50 text-slate-800',
+  indigo: 'bg-indigo-50 text-indigo-900',
+  amber: 'bg-amber-50 text-amber-900',
+  teal: 'bg-teal-50 text-teal-900',
+  orange: 'bg-orange-50 text-orange-900',
+  rose: 'bg-rose-50 text-rose-900',
+};
+
+const TONE_CELL: Record<OverviewColumn['tone'], string> = {
+  slate: '',
+  indigo: 'bg-indigo-50/30',
+  amber: 'bg-amber-50/30',
+  teal: 'bg-teal-50/30',
+  orange: 'bg-orange-50/30',
+  rose: 'bg-rose-50/30',
+};
+
+function buildOverviewColumns(tours: PrivateTour[]): OverviewColumn[] {
+  const cols: OverviewColumn[] = [];
+  for (const tour of tours) {
+    if (tour.slug === 'classic-private') {
+      cols.push({
+        key: 'classic-regular',
+        label: 'קלאסי',
+        shortLabel: 'קלאסי',
+        table: tour.regularPrice,
+        tone: 'slate',
+      });
+      if (tour.shortPrice) {
+        cols.push({
+          key: 'classic-short',
+          label: 'קלאסי מקוצר',
+          shortLabel: 'קלאסי מקוצר',
+          table: tour.shortPrice,
+          tone: 'indigo',
+        });
+      }
+    } else if (tour.slug === 'belem-private') {
+      cols.push({ key: 'belem', label: 'בלם', shortLabel: 'בלם', table: tour.regularPrice, tone: 'slate' });
+    } else if (tour.slug === 'culinary-tastings-private') {
+      cols.push({ key: 'culinary', label: 'קולינרי / טעימות', shortLabel: 'קולינרי/טעימות', table: tour.regularPrice, tone: 'amber' });
+    } else if (tour.slug === 'sintra-arrabida-private') {
+      cols.push({ key: 'sintra', label: 'סינטרה / אראבידה', shortLabel: 'סינטרה/אראבידה', table: tour.regularPrice, tone: 'teal' });
+    } else if (tour.slug === 'obidos-private') {
+      cols.push({ key: 'obidos', label: 'אובידוש', shortLabel: 'אובידוש', table: tour.regularPrice, tone: 'orange' });
+    } else if (tour.slug === 'douro-private') {
+      cols.push({ key: 'douro', label: 'דורו', shortLabel: 'דורו', table: tour.regularPrice, tone: 'rose' });
+    }
+  }
+  return cols;
+}
+
+function PrivatePricesOverview({ tours }: { tours: PrivateTour[] }) {
+  const columns = buildOverviewColumns(tours);
+  const maxSize = Math.max(...tours.map((t) => t.maxParticipants));
+  const sizes = Array.from({ length: maxSize - 1 }, (_, i) => i + 2);
+
+  return (
+    <section id="sec-overview" className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 mb-6 shadow-sm scroll-mt-20">
+      <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-1">טבלה רוחבית — מחיר למבוגר</h2>
+      <p className="text-sm text-gray-600 mb-1">
+        מחיר/אדם (€) לפי גודל קבוצה — כל הסיורים הפרטיים זה לצד זה.
+      </p>
+      <p className="text-xs text-gray-500 mb-4">
+        כל שורה היא גודל קבוצה אחד (2-{maxSize}). &quot;—&quot; = הסיור לא תומך בגודל הזה. ילדים ותוספת רכב לא מופיעים פה — בכרטיסים למעלה.
+      </p>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead className="sticky top-[52px] z-10">
+            <tr className="text-center">
+              <th className="bg-gray-100 px-2 py-2 text-xs font-bold text-slate-700 border-b border-gray-200 sticky right-0 z-20">
+                גודל
+              </th>
+              {columns.map((c) => (
+                <th
+                  key={c.key}
+                  className={`${TONE_HEADER[c.tone]} px-2 py-2 text-xs font-bold border-b border-gray-200 whitespace-nowrap`}
+                >
+                  {c.shortLabel}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sizes.map((size) => (
+              <tr key={size} className="border-b border-gray-100 hover:bg-gray-50/50">
+                <td className="bg-gray-50 px-2 py-1.5 text-center font-bold text-slate-700 sticky right-0">
+                  {size}
+                </td>
+                {columns.map((c) => {
+                  const price = priceForSize(c.table, size);
+                  return (
+                    <td
+                      key={c.key}
+                      className={`${TONE_CELL[c.tone]} px-2 py-1.5 text-center ${price === null ? 'text-gray-300' : 'font-semibold text-slate-800'}`}
+                    >
+                      {price === null ? '—' : fmtEuro(price)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-xs text-gray-500 mt-3 leading-relaxed">
+        <strong className="text-slate-700">קריאה:</strong> בכל סיור המחיר נשאר זהה בתוך קטגוריה (למשל בקלאסי גודל 8-11 = 40€) — אז כשתראי 4 שורות עם אותו מחיר, זאת אותה קטגוריה. המעבר בין קטגוריות הוא הקפיצה.
+      </p>
     </section>
   );
 }
