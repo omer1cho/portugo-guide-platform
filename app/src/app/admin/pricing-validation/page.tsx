@@ -36,7 +36,6 @@ import {
   PRIVATE_TOURS,
   type PrivateTour,
   type PrivatePriceTable,
-  type PrivateTierRow,
   type CarAddonTable,
   type ComboTable,
   type ChildrenPriceTable,
@@ -611,6 +610,28 @@ function sizeLabel(minSize: number, maxSize: number): string {
   return minSize === maxSize ? `${minSize}` : `${minSize}-${maxSize}`;
 }
 
+// ─── Children: split rules into "shown in table" vs "shown in label" ─────
+type AgeColumn = { ageLabel: string; rule: ChildrenRule };
+
+function splitChildrenRules(table: ChildrenPriceTable): {
+  inTable: AgeColumn[];
+  inLabel: { ageLabel: string; text: string }[];
+} {
+  const perTier = table.perTier ?? [];
+  const inTable: AgeColumn[] = [];
+  const inLabel: { ageLabel: string; text: string }[] = [];
+  for (const row of perTier) {
+    if (row.rule.kind === 'halfOfRegular' || row.rule.kind === 'fixedPrice') {
+      inTable.push({ ageLabel: row.ageLabel, rule: row.rule });
+    } else if (row.rule.kind === 'free') {
+      inLabel.push({ ageLabel: row.ageLabel, text: 'חינם' });
+    } else if (row.rule.kind === 'fullPrice') {
+      inLabel.push({ ageLabel: row.ageLabel, text: 'מחיר מבוגר' });
+    }
+  }
+  return { inTable, inLabel };
+}
+
 function totalRange(minSize: number, maxSize: number, pricePerPerson: number): string {
   const min = minSize * pricePerPerson;
   const max = maxSize * pricePerPerson;
@@ -630,26 +651,12 @@ function PrivateSection({ tour }: { tour: PrivateTour }) {
         מקסימום משתתפים: <strong className="text-slate-700">{tour.maxParticipants}</strong>
       </p>
 
-      {/* 1+2+5. שורה אחת: רגיל | מקוצר | ילדים — צפיפות גבוהה, פחות גלילה */}
-      <div className={`grid grid-cols-1 lg:grid-cols-2 ${tour.shortPrice ? '2xl:grid-cols-3' : '2xl:grid-cols-2'} gap-4 mt-5`}>
-        <PricedTableBlock
-          title="מחיר רגיל"
-          table={tour.regularPrice}
-          accent="slate"
-        />
-
-        {tour.shortPrice && (
-          <PricedTableBlock
-            title="מחיר מקוצר"
-            table={tour.shortPrice}
-            accent="indigo"
-          />
-        )}
-
-        <div className={tour.shortPrice ? 'lg:col-span-2 2xl:col-span-1' : ''}>
-          <ChildrenBlock table={tour.children} regularPrice={tour.regularPrice} />
-        </div>
-      </div>
+      {/* 1+2+5 מאוחד: טבלה אחת — מבוגר + ילד משלם + סה"כ × (רגיל | מקוצר) */}
+      <UnifiedPriceTable
+        regularPrice={tour.regularPrice}
+        shortPrice={tour.shortPrice}
+        children={tour.children}
+      />
 
       {/* 3. תוספת רכב */}
       {tour.carAddons && tour.carAddons.length > 0 && (
@@ -671,62 +678,175 @@ function PrivateSection({ tour }: { tour: PrivateTour }) {
   );
 }
 
-// ─── Block: Price table (regular / short) ─────────────────────────────────
-function PricedTableBlock({
-  title,
-  table,
-  accent,
+// ─── Unified price table: regular | short | children in ONE table ───────
+function UnifiedPriceTable({
+  regularPrice,
+  shortPrice,
+  children,
 }: {
-  title: string;
-  table: PrivatePriceTable;
-  accent: 'slate' | 'indigo';
+  regularPrice: PrivatePriceTable;
+  shortPrice?: PrivatePriceTable;
+  children: ChildrenPriceTable;
 }) {
-  const headerBg = accent === 'indigo' ? 'bg-indigo-50' : 'bg-slate-50';
-  const headerText = accent === 'indigo' ? 'text-indigo-900' : 'text-slate-700';
-  const cellBg = accent === 'indigo' ? 'bg-indigo-50/40' : '';
+  const tiers = regularPrice.rows;
+  const hasShort = !!shortPrice;
+  const { inTable: childCols, inLabel: childLabels } = splitChildrenRules(children);
+
+  // Number of inner columns per pricing block (adult + child columns + total)
+  const innerCols = 1 + childCols.length + 1;
 
   return (
     <div className="mt-5">
-      <h3 className={`text-base font-bold ${headerText} mb-2`}>
-        {title} <span className="text-xs text-gray-500 font-normal">· {table.label}</span>
+      <h3 className="text-base font-bold text-slate-800 mb-2">
+        טבלת מחירים <span className="text-xs text-gray-500 font-normal">· מבוגר וילדים, מחיר/אדם וסה&quot;כ קבוצה</span>
       </h3>
+
+      {/* Children rules label (free + full-price ages) */}
+      {(childLabels.length > 0 || children.note) && (
+        <div className="text-xs text-gray-600 mb-2 leading-relaxed bg-pink-50/40 border border-pink-100 rounded-md px-3 py-2">
+          {childLabels.length > 0 && (
+            <div>
+              {childLabels.map((l, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="mx-1.5 text-gray-300">·</span>}
+                  <span className="font-semibold text-pink-900">ילד {l.ageLabel}</span>
+                  <span className="text-gray-600"> — {l.text}</span>
+                </span>
+              ))}
+            </div>
+          )}
+          {children.note && (
+            <div className="mt-1 text-[11px] text-gray-500">{children.note}</div>
+          )}
+        </div>
+      )}
 
       {/* Desktop table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
+            {/* Top header: grouped blocks (only if short exists) */}
+            {hasShort && (
+              <tr className="text-center">
+                <th className="bg-gray-50 border-b border-gray-200" rowSpan={2}>
+                  <div className="px-2.5 py-2 text-xs font-semibold text-slate-600">גודל קבוצה</div>
+                </th>
+                <th colSpan={innerCols} className="bg-slate-100 border-b border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-800">
+                  רגיל
+                </th>
+                <th colSpan={innerCols} className="bg-indigo-100 border-b border-indigo-200 px-2.5 py-1.5 text-xs font-bold text-indigo-900">
+                  מקוצר
+                </th>
+              </tr>
+            )}
             <tr className="text-right text-slate-600">
-              <th className={`${headerBg} px-2.5 py-2 text-xs font-semibold border-b border-gray-200`}>גודל קבוצה</th>
-              <th className={`${headerBg} px-2.5 py-2 text-xs font-semibold border-b border-gray-200`}>מחיר/אדם</th>
-              <th className={`${headerBg} px-2.5 py-2 text-xs font-semibold border-b border-gray-200`}>סה&quot;כ קבוצה</th>
+              {!hasShort && (
+                <th className="bg-gray-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל קבוצה</th>
+              )}
+              {/* Regular block */}
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">מבוגר</th>
+              {childCols.map((c, i) => (
+                <th key={`r-${i}`} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">
+                  ילד {c.ageLabel}
+                </th>
+              ))}
+              <th className="bg-slate-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200 text-gray-500">סה&quot;כ קבוצה</th>
+              {/* Short block */}
+              {hasShort && (
+                <>
+                  <th className="bg-indigo-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">מבוגר</th>
+                  {childCols.map((c, i) => (
+                    <th key={`s-${i}`} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">
+                      ילד {c.ageLabel}
+                    </th>
+                  ))}
+                  <th className="bg-indigo-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200 text-gray-500">סה&quot;כ קבוצה</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
-            {table.rows.map((row, i) => (
-              <tr key={i} className={`border-b border-gray-100 ${cellBg}`}>
-                <td className="px-2.5 py-2.5 font-bold">{sizeLabel(row.minSize, row.maxSize)}</td>
-                <td className="px-2.5 py-2.5 font-semibold text-slate-800">{fmtEuro(row.pricePerPerson)}</td>
-                <td className="px-2.5 py-2.5 text-gray-600">{totalRange(row.minSize, row.maxSize, row.pricePerPerson)}</td>
-              </tr>
-            ))}
+            {tiers.map((tier, i) => {
+              const shortTier = shortPrice?.rows[i];
+              return (
+                <tr key={i} className="border-b border-gray-100">
+                  <td className="px-2.5 py-2.5 font-bold whitespace-nowrap">{sizeLabel(tier.minSize, tier.maxSize)}</td>
+                  {/* Regular */}
+                  <td className="px-2.5 py-2.5 font-semibold text-slate-800">{fmtEuro(tier.pricePerPerson)}</td>
+                  {childCols.map((c, j) => (
+                    <td key={`r-${j}`} className="px-2.5 py-2.5 text-pink-900">
+                      {computeChildPrice(c.rule, tier.pricePerPerson)}
+                    </td>
+                  ))}
+                  <td className="px-2.5 py-2.5 text-gray-500 text-xs">{totalRange(tier.minSize, tier.maxSize, tier.pricePerPerson)}</td>
+                  {/* Short */}
+                  {hasShort && shortTier && (
+                    <>
+                      <td className="px-2.5 py-2.5 font-semibold text-indigo-900 bg-indigo-50/30">{fmtEuro(shortTier.pricePerPerson)}</td>
+                      {childCols.map((c, j) => (
+                        <td key={`s-${j}`} className="px-2.5 py-2.5 text-pink-900 bg-indigo-50/30">
+                          {computeChildPrice(c.rule, shortTier.pricePerPerson)}
+                        </td>
+                      ))}
+                      <td className="px-2.5 py-2.5 text-gray-500 text-xs bg-indigo-50/30">{totalRange(shortTier.minSize, shortTier.maxSize, shortTier.pricePerPerson)}</td>
+                    </>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-1.5">
-        {table.rows.map((row, i) => (
-          <div key={i} className={`flex justify-between items-baseline border border-gray-200 rounded-lg px-3 py-2 ${cellBg}`}>
-            <div className="flex items-baseline gap-2">
-              <span className="text-base font-bold text-slate-800">{sizeLabel(row.minSize, row.maxSize)}</span>
-              <span className="text-xs text-gray-500">אנשים</span>
+      {/* Mobile cards — one per tier with regular + short sub-sections */}
+      <div className="md:hidden space-y-2">
+        {tiers.map((tier, i) => {
+          const shortTier = shortPrice?.rows[i];
+          return (
+            <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200 flex justify-between items-baseline">
+                <span className="text-xs text-gray-500">קבוצה</span>
+                <span className="text-base font-bold text-slate-800">{sizeLabel(tier.minSize, tier.maxSize)} אנשים</span>
+              </div>
+              {/* Regular block */}
+              <div className="px-3 py-2">
+                <div className="text-[11px] font-bold text-slate-700 mb-1">רגיל</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <div className="bg-slate-50 border border-slate-100 rounded px-2 py-1 flex-1 min-w-[80px]">
+                    <div className="text-[10px] text-gray-500">מבוגר</div>
+                    <div className="text-sm font-bold text-slate-800">{fmtEuro(tier.pricePerPerson)}</div>
+                  </div>
+                  {childCols.map((c, j) => (
+                    <div key={j} className="bg-pink-50 border border-pink-100 rounded px-2 py-1 flex-1 min-w-[80px]">
+                      <div className="text-[10px] text-gray-500">ילד {c.ageLabel}</div>
+                      <div className="text-sm font-bold text-pink-900">{computeChildPrice(c.rule, tier.pricePerPerson)}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">סה&quot;כ קבוצה: {totalRange(tier.minSize, tier.maxSize, tier.pricePerPerson)}</div>
+              </div>
+              {/* Short block */}
+              {hasShort && shortTier && (
+                <div className="px-3 py-2 border-t border-gray-200 bg-indigo-50/30">
+                  <div className="text-[11px] font-bold text-indigo-900 mb-1">מקוצר</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <div className="bg-white border border-indigo-100 rounded px-2 py-1 flex-1 min-w-[80px]">
+                      <div className="text-[10px] text-gray-500">מבוגר</div>
+                      <div className="text-sm font-bold text-indigo-900">{fmtEuro(shortTier.pricePerPerson)}</div>
+                    </div>
+                    {childCols.map((c, j) => (
+                      <div key={j} className="bg-white border border-pink-100 rounded px-2 py-1 flex-1 min-w-[80px]">
+                        <div className="text-[10px] text-gray-500">ילד {c.ageLabel}</div>
+                        <div className="text-sm font-bold text-pink-900">{computeChildPrice(c.rule, shortTier.pricePerPerson)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">סה&quot;כ קבוצה: {totalRange(shortTier.minSize, shortTier.maxSize, shortTier.pricePerPerson)}</div>
+                </div>
+              )}
             </div>
-            <div className="text-left">
-              <div className="text-base font-semibold text-slate-800">{fmtEuro(row.pricePerPerson)}</div>
-              <div className="text-[10px] text-gray-500">סה&quot;כ {totalRange(row.minSize, row.maxSize, row.pricePerPerson)}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -884,122 +1004,3 @@ function computeChildPrice(rule: ChildrenRule, adultPrice: number): string {
   return fmtEuro(rounded);
 }
 
-function ChildrenBlock({
-  table,
-  regularPrice,
-}: {
-  table: ChildrenPriceTable;
-  regularPrice: PrivatePriceTable;
-}) {
-  // perTier mode: render a table where columns = size tiers, rows = ages
-  if (table.perTier) {
-    const tiers = regularPrice.rows;
-    return (
-      <div className="mt-6">
-        <h3 className="text-base font-bold text-pink-900 mb-2">
-          תמחור ילדים
-        </h3>
-
-        {/* Desktop table: ages × tiers */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="text-right text-slate-600">
-                <th className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גודל קבוצה</th>
-                <th className="bg-pink-100/70 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">מבוגר</th>
-                {table.perTier.map((row, i) => (
-                  <th key={i} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">
-                    ילד {row.ageLabel}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tiers.map((tier: PrivateTierRow, ti) => (
-                <tr key={ti} className="border-b border-gray-100">
-                  <td className="px-2.5 py-2.5 font-bold">{sizeLabel(tier.minSize, tier.maxSize)}</td>
-                  <td className="px-2.5 py-2.5 font-semibold text-slate-800 bg-pink-50/40">{fmtEuro(tier.pricePerPerson)}</td>
-                  {table.perTier!.map((ageRow, ai) => (
-                    <td key={ai} className="px-2.5 py-2.5 text-pink-900">
-                      {computeChildPrice(ageRow.rule, tier.pricePerPerson)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile cards: one card per tier */}
-        <div className="md:hidden space-y-2">
-          {tiers.map((tier: PrivateTierRow, ti) => (
-            <div key={ti} className="border border-pink-100 rounded-lg p-3 bg-pink-50/30">
-              <div className="flex justify-between items-baseline mb-2">
-                <div>
-                  <span className="text-xs text-gray-500">קבוצה </span>
-                  <span className="text-base font-bold text-slate-800">{sizeLabel(tier.minSize, tier.maxSize)}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-500">מבוגר </span>
-                  <span className="font-bold text-slate-800">{fmtEuro(tier.pricePerPerson)}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {table.perTier!.map((ageRow, ai) => (
-                  <div key={ai} className="bg-white rounded px-2 py-1 border border-pink-100 flex justify-between items-baseline">
-                    <span className="text-xs text-gray-600">ילד {ageRow.ageLabel}</span>
-                    <span className="text-sm font-semibold text-pink-900">{computeChildPrice(ageRow.rule, tier.pricePerPerson)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {table.note && (
-          <p className="text-xs text-gray-500 mt-2 leading-relaxed">{table.note}</p>
-        )}
-      </div>
-    );
-  }
-
-  // columns mode (legacy/flexible for non-classic tours)
-  return (
-    <div className="mt-6">
-      <h3 className="text-base font-bold text-pink-900 mb-2">
-        תמחור ילדים
-      </h3>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="text-right text-slate-600">
-              <th className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">גיל</th>
-              {(table.columns ?? []).map((c, i) => (
-                <th key={i} className="bg-pink-50 px-2.5 py-2 text-xs font-semibold border-b border-gray-200">{c.header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {(table.ageLabels ?? []).map((age, i) => (
-              <tr key={i} className="border-b border-gray-100">
-                <td className="px-2.5 py-2.5 font-bold text-pink-900">{age}</td>
-                {(table.columns ?? []).map((c, j) => {
-                  const v = c.values[i];
-                  const display = typeof v === 'number' ? fmtEuro(v) : v;
-                  return (
-                    <td key={j} className="px-2.5 py-2.5 text-gray-700">{display}</td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {table.note && (
-        <p className="text-xs text-gray-500 mt-2 leading-relaxed">{table.note}</p>
-      )}
-    </div>
-  );
-}
