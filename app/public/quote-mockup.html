@@ -68,12 +68,6 @@
     display: flex; align-items: flex-end; padding: 56px 32px;
   }
   .hero-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
-  .hero-eyebrow {
-    display: inline-block;
-    background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
-    padding: 7px 16px; border-radius: 100px;
-    font-size: 13px; font-weight: 600; margin-bottom: 18px;
-  }
   .hero h1 {
     font-size: 52px; font-weight: 800; line-height: 1.1;
     margin-bottom: 14px;
@@ -81,8 +75,9 @@
   }
   .hero-subtitle {
     font-size: 20px; font-weight: 400; opacity: 0.95;
-    max-width: 680px;
+    max-width: 720px;
     text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+    line-height: 1.55;
   }
   .hero-meta {
     display: flex; gap: 12px; flex-wrap: wrap;
@@ -217,55 +212,87 @@
     font-weight: 700;
   }
 
-  /* Compact meta strip — replaces "הפרטים" bullets, different visual layer */
+  /* Compact meta strip with icons */
   .card-meta-strip {
     background: #fafafa;
     border-radius: 10px;
     padding: 14px 18px;
     margin-bottom: 22px;
-    display: flex; gap: 24px;
+    display: flex; gap: 22px;
     font-size: 14px;
     color: var(--ink-soft);
     flex-wrap: wrap;
   }
   .meta-item {
-    display: flex; align-items: center; gap: 6px;
+    display: flex; align-items: center; gap: 8px;
   }
   .meta-item strong {
     color: var(--ink); font-weight: 600;
   }
-  .meta-item .meta-icon {
+  .meta-icon {
+    width: 18px; height: 18px;
     color: var(--green-dark);
-    font-weight: 700;
+    flex-shrink: 0;
   }
 
-  /* Price box */
+  /* Price box — NEW format with "per person in private group of N" */
   .price-box {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     background: linear-gradient(135deg, var(--green-soft) 0%, var(--green-soft-2) 100%);
     border: 1.5px solid var(--green);
     border-radius: 12px;
-    padding: 18px 22px;
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap;
+    padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .price-main { flex: 1; min-width: 200px; }
+  .price-amount-wrap {
+    display: flex; align-items: baseline; gap: 6px;
   }
   .price-amount {
-    font-size: 36px; font-weight: 900; color: var(--green-dark);
+    font-size: 38px; font-weight: 900; color: var(--green-dark);
     line-height: 1;
   }
   .price-unit {
-    font-size: 14px; color: var(--ink-soft);
-    font-weight: 500; margin-right: 6px;
+    font-size: 15px; color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .price-detail {
+    font-size: 13px; color: var(--ink-soft);
+    margin-top: 6px;
   }
   .price-total {
-    font-size: 14px; color: var(--green-dark);
-    font-weight: 600;
+    text-align: left; flex-shrink: 0;
     background: white;
-    padding: 6px 14px; border-radius: 8px;
     border: 1px solid var(--green);
+    border-radius: 10px;
+    padding: 10px 16px;
+  }
+  .price-total-label {
+    font-size: 11px; color: var(--ink-mute);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .price-total-amount {
+    font-size: 22px; font-weight: 800; color: var(--green-dark);
+    margin-top: 2px;
   }
 
-  /* Includes / excludes block — directly under price */
+  /* Simple includes line (for tours with no real exclusions) */
+  .price-includes-simple {
+    background: var(--green-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 22px;
+    line-height: 1.6;
+  }
+  .price-includes-simple .included-label {
+    color: var(--green-dark); font-weight: 700;
+  }
+
+  /* Full coverage (includes/excludes 2-column) */
   .price-coverage {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     margin-bottom: 22px;
@@ -346,7 +373,7 @@
     transition: max-height 0.4s ease, margin-top 0.4s ease;
   }
   .card.selected .date-wrap, .combo-card.selected .date-wrap {
-    max-height: 240px;
+    max-height: 320px;
   }
   .date-input-wrap {
     background: var(--green-soft);
@@ -358,44 +385,92 @@
     color: var(--green-dark);
     margin-bottom: 10px;
   }
+  .date-input-row {
+    position: relative;
+  }
   .date-input {
     width: 100%;
-    border: 1px solid var(--green);
+    border: 1.5px solid var(--green);
     background: white;
     border-radius: 8px;
     padding: 11px 14px;
+    padding-left: 42px;
     font-size: 14px;
     font-family: inherit;
     color: var(--ink);
-    margin-bottom: 10px;
+    transition: all 0.2s;
   }
   .date-input::placeholder { color: var(--ink-mute); }
   .date-input:focus {
-    outline: 2px solid var(--green);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--green-dark);
+    box-shadow: 0 0 0 3px rgba(13,140,62,0.15);
+  }
+  .date-input.filled {
+    border-color: var(--green-dark);
+    background: #f6fdf8;
+  }
+  .date-input-check {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--green-dark);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900;
+    opacity: 0; transform: translateY(-50%) scale(0.5);
+    transition: all 0.25s;
+  }
+  .date-input.filled + .date-input-check {
+    opacity: 1; transform: translateY(-50%) scale(1);
   }
   .date-note {
     font-size: 12px; color: var(--ink-soft);
     display: flex; align-items: flex-start; gap: 6px;
     line-height: 1.5;
+    margin-top: 10px;
   }
   .date-note::before {
     content: 'ⓘ';
     color: var(--green-dark); font-weight: 700;
     flex-shrink: 0;
   }
+  .date-saved-msg {
+    display: none;
+    background: white;
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--green-dark);
+    font-weight: 600;
+    align-items: center; gap: 8px;
+  }
+  .date-saved-msg.show { display: flex; }
+  .date-saved-msg::before {
+    content: '✓';
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900;
+    flex-shrink: 0;
+  }
 
-  /* ===== Combos block ===== */
+  /* ===== Combos block — simplified ===== */
   .combos-block {
-    margin-top: 32px;
-    background: linear-gradient(135deg, #fffdf5 0%, #fffaf0 100%);
+    margin-top: 36px;
+    background: var(--yellow-soft);
     border-radius: var(--radius);
     padding: 32px;
-    border: 1.5px dashed var(--yellow);
+    border: 1.5px solid #f5d68e;
   }
   .combos-head {
-    font-size: 22px; font-weight: 800; color: var(--ink);
-    margin-bottom: 8px;
+    font-size: 24px; font-weight: 800; color: var(--ink);
+    margin-bottom: 6px;
   }
   .combos-sub {
     font-size: 14px; color: var(--ink-soft);
@@ -405,35 +480,50 @@
   .combo-card {
     background: white;
     border-radius: 12px;
-    padding: 22px 26px;
+    padding: 24px 28px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     transition: all 0.2s;
-    position: relative;
   }
   .combo-card.selected {
     box-shadow: 0 0 0 2px var(--green);
   }
-  .combo-top {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 18px; flex-wrap: wrap;
-    margin-bottom: 12px;
+  .combo-header {
+    margin-bottom: 14px;
   }
-  .combo-info { flex: 1; min-width: 240px; }
   .combo-title {
-    font-size: 19px; font-weight: 700; color: var(--ink);
+    font-size: 20px; font-weight: 700; color: var(--ink);
     margin-bottom: 6px;
   }
   .combo-meta {
     font-size: 13px; color: var(--ink-soft);
   }
-  .combo-price-block {
-    text-align: left; flex-shrink: 0;
+  .combo-bottom {
+    display: flex; align-items: center; gap: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    flex-wrap: wrap;
   }
-  .combo-price {
-    font-size: 26px; font-weight: 900; color: var(--green-dark);
+  .combo-price-inline {
+    display: flex; flex-direction: column;
+    flex: 1; min-width: 160px;
   }
-  .combo-total {
-    font-size: 12px; color: var(--ink-mute); font-weight: 500;
+  .combo-price-main {
+    font-size: 22px; font-weight: 800; color: var(--green-dark);
+    line-height: 1.1;
+  }
+  .combo-price-detail {
+    font-size: 12px; color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .combo-price-detail strong {
+    color: var(--ink); font-weight: 700;
+  }
+  .combo-btn-wrap {
+    flex: 1; min-width: 180px;
+  }
+  .combo-card .interest-btn {
+    padding: 11px 18px;
+    font-size: 14px;
   }
 
   /* ===== Terms section ===== */
@@ -462,9 +552,7 @@
     margin-bottom: 8px;
     line-height: 1.7;
   }
-  .terms-section ul {
-    list-style: none; padding: 0; margin: 0;
-  }
+  .terms-section ul { list-style: none; padding: 0; margin: 0; }
   .terms-section li {
     font-size: 14px; color: var(--ink-soft);
     padding: 6px 0 6px 22px;
@@ -629,9 +717,7 @@
 
   /* ===== Tablet ===== */
   @media (max-width: 980px) {
-    .card {
-      grid-template-columns: 1fr;
-    }
+    .card { grid-template-columns: 1fr; }
     .card-img-wrap { height: 280px; }
   }
 
@@ -640,7 +726,7 @@
     header { padding: 12px 20px; }
     .logo-wrap img { height: 36px; }
     .logo-tag { display: none; }
-    .hero { height: 420px; padding: 32px 20px; }
+    .hero { height: 440px; padding: 32px 20px; }
     .hero h1 { font-size: 34px; }
     .hero-subtitle { font-size: 16px; }
     .hero-meta { gap: 8px; }
@@ -651,14 +737,17 @@
     .card-img-wrap { height: 220px; }
     .card-body { padding: 24px; }
     .card-title { font-size: 22px; }
-    .price-amount { font-size: 28px; }
+    .price-amount { font-size: 30px; }
+    .price-total { width: 100%; text-align: center; }
     .price-coverage { grid-template-columns: 1fr; }
-    .card-meta-strip { gap: 12px; }
+    .card-meta-strip { gap: 14px; }
+    .combos-block { padding: 24px 20px; }
+    .combo-card { padding: 20px; }
+    .combo-bottom { flex-direction: column; align-items: stretch; }
     .form-wrap { padding: 28px 22px; }
     .form-wrap h2 { font-size: 24px; }
     .form-grid-2 { grid-template-columns: 1fr; }
     .form-tour-grid { grid-template-columns: 1fr; }
-    .combos-block { padding: 24px 20px; }
     .terms { padding: 28px 24px; }
   }
 </style>
@@ -678,15 +767,40 @@
 <!-- ===== HERO ===== -->
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-eyebrow">הצעה אישית · עומר ורונה</div>
     <h1>שלום משפחת סימאי 👋</h1>
-    <p class="hero-subtitle">אספנו עבורכם את כל אפשרויות הסיור שלנו בליסבון ופורטו. כל המחירים מותאמים אישית לקבוצה שלכם.</p>
+    <p class="hero-subtitle">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום פרטי. המחירים מותאמים לקבוצה שלכם.</p>
     <div class="hero-meta">
-      <div class="hero-meta-item"><span class="label">מועד הסיורים:</span><span class="value">יוני 2026</span></div>
+      <div class="hero-meta-item"><span class="label">מועד מבוקש:</span><span class="value">יוני 2026</span></div>
       <div class="hero-meta-item"><span class="label">מספר משתתפים:</span><span class="value">6</span></div>
     </div>
   </div>
 </section>
+
+<!-- ============================================== -->
+<!-- ===== Reusable SVG icons (used in cards) ====== -->
+<!-- ============================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="icon-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <polyline points="12 7 12 12 15 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-pin" viewBox="0 0 24 24">
+      <path d="M12 22s8-7.5 8-13a8 8 0 0 0-16 0c0 5.5 8 13 8 13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="12" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="icon-walking" viewBox="0 0 24 24">
+      <circle cx="13" cy="4" r="2" fill="currentColor"/>
+      <path d="M9 21l2-6 3 2v4M14 12l-3-3-2 3-3 0M15 11l3 1 2 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-van" viewBox="0 0 24 24">
+      <path d="M3 17V8a2 2 0 0 1 2-2h9v11H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M14 10h4l3 4v3h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+  </defs>
+</svg>
 
 <main>
   <nav class="toc">
@@ -733,32 +847,24 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-3 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>כיכר לואיש דה קמואיש</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>סיור רגלי</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>כיכר לואיש דה קמואיש</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 270€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">270€</div>
+              </div>
             </div>
 
-            <div class="price-coverage">
-              <div class="coverage-block included">
-                <div class="coverage-label">✓ כלול במחיר</div>
-                <ul class="coverage-list">
-                  <li>הדרכה בעברית לכל אורך הסיור</li>
-                  <li>טעימת ליקר Ginjinha</li>
-                </ul>
-              </div>
-              <div class="coverage-block excluded">
-                <div class="coverage-label">✗ לא כלול</div>
-                <ul class="coverage-list">
-                  <li>תחבורה ציבורית / טראם</li>
-                  <li>כניסות לאתרים פנימיים</li>
-                  <li>ארוחות ומשקאות נוספים</li>
-                </ul>
-              </div>
+            <div class="price-includes-simple">
+              <span class="included-label">המחיר כולל:</span> הדרכה בעברית לכל אורך הסיור וטעימת ליקר Ginjinha.
             </div>
 
             <div class="card-action">
@@ -769,8 +875,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -792,31 +902,24 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כשעה וחצי</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>מחוץ למגדל בלם</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>סיור רגלי</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כשעה וחצי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>מחוץ למגדל בלם</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">30€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 180€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">30€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">180€</div>
+              </div>
             </div>
 
-            <div class="price-coverage">
-              <div class="coverage-block included">
-                <div class="coverage-label">✓ כלול במחיר</div>
-                <ul class="coverage-list">
-                  <li>הדרכה בעברית</li>
-                  <li>טעימת פשטל דה בלם מסורתי</li>
-                </ul>
-              </div>
-              <div class="coverage-block excluded">
-                <div class="coverage-label">✗ לא כלול</div>
-                <ul class="coverage-list">
-                  <li>תחבורה לאזור בלם וחזרה ממנו</li>
-                  <li>כניסות למנזר ולמגדל בלם</li>
-                </ul>
-              </div>
+            <div class="price-includes-simple">
+              <span class="included-label">המחיר כולל:</span> הדרכה בעברית וטעימה של פשטל דה בלם המסורתי. אינו כולל תחבורה לאזור בלם וחזרה ממנו.
             </div>
 
             <div class="card-action">
@@ -827,8 +930,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -853,14 +960,20 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-3 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>A Brasileira (Chiado)</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>סיור רגלי</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>A Brasileira (Chiado)</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 480€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">480€</div>
+              </div>
             </div>
 
             <div class="price-coverage">
@@ -868,15 +981,15 @@
                 <div class="coverage-label">✓ כלול במחיר</div>
                 <ul class="coverage-list">
                   <li>הדרכה בעברית</li>
-                  <li>טעימות מגוונות של מאכלים ומשקאות</li>
-                  <li>אפשרות לבחירה: בוקר או צהריים</li>
+                  <li>כל הטעימות במהלך המסלול (מאפים, מנות, יין, משקאות מקומיים)</li>
+                  <li>בחירה בין סיור בוקר לבין סיור צהריים</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
                 <div class="coverage-label">✗ לא כלול</div>
                 <ul class="coverage-list">
-                  <li>תוספות מעבר לתפריט הקבוע</li>
-                  <li>ארוחות נוספות בעלות לאחר הסיור</li>
+                  <li>הזמנות מעבר לתפריט הקבוע של המסלול</li>
+                  <li>ארוחות נוספות לאחר הסיור</li>
                 </ul>
               </div>
             </div>
@@ -889,8 +1002,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות — אנא ציינו זאת מראש.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות — אנא ציינו מראש.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -901,84 +1018,93 @@
 
       <!-- ====== LISBON COMBOS ====== -->
       <div class="combos-block">
-        <h4 class="combos-head">אפשר גם לשלב — טיולי יום מלא בעיר</h4>
-        <p class="combos-sub">שילוב של שני סיורים ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
+        <h4 class="combos-head">טיולי יום מלא בעיר — שילוב של שני סיורים</h4>
+        <p class="combos-sub">ניתן לשלב שני סיורים ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
           <div class="combo-card" data-tour="combo-classic-belem">
-            <div class="combo-top">
-              <div class="combo-info">
-                <div class="combo-title">ליסבון הקלאסית + בלם</div>
-                <div class="combo-meta">כ-6 שעות · מתחיל בכיכר לואיש דה קמואיש · הפסקה של כשעה וחצי באמצע</div>
+            <div class="combo-header">
+              <div class="combo-title">ליסבון הקלאסית + בלם</div>
+              <div class="combo-meta">כ-6 שעות · מתחיל בכיכר לואיש דה קמואיש</div>
+            </div>
+            <div class="combo-bottom">
+              <div class="combo-price-inline">
+                <div class="combo-price-main">75€ לאדם</div>
+                <div class="combo-price-detail">בקבוצה פרטית של 6 · סה"כ <strong>450€</strong></div>
               </div>
-              <div class="combo-price-block">
-                <div class="combo-price">75€<span style="font-size:14px;color:var(--ink-mute);font-weight:500;"> לאדם</span></div>
-                <div class="combo-total">סה"כ ל-6: 450€</div>
+              <div class="combo-btn-wrap">
+                <button class="interest-btn" onclick="toggleInterest(this, 'combo-classic-belem')">
+                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+                </button>
               </div>
             </div>
-            <div class="card-action">
-              <button class="interest-btn" onclick="toggleInterest(this, 'combo-classic-belem')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
-              </button>
-              <div class="date-wrap">
-                <div class="date-input-wrap">
-                  <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+            <div class="date-wrap">
+              <div class="date-input-wrap">
+                <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+                <div class="date-input-row">
                   <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-check">✓</div>
                 </div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
           </div>
 
           <div class="combo-card" data-tour="combo-culinary-classic">
-            <div class="combo-top">
-              <div class="combo-info">
-                <div class="combo-title">הסיור הקולינרי + ליסבון הקלאסית</div>
-                <div class="combo-meta">כ-7 שעות · יש להתחיל בקולינרי בבוקר · הפסקה של כשעה וחצי באמצע</div>
+            <div class="combo-header">
+              <div class="combo-title">הסיור הקולינרי + ליסבון הקלאסית</div>
+              <div class="combo-meta">כ-7 שעות · יש להתחיל בקולינרי בבוקר</div>
+            </div>
+            <div class="combo-bottom">
+              <div class="combo-price-inline">
+                <div class="combo-price-main">125€ לאדם</div>
+                <div class="combo-price-detail">בקבוצה פרטית של 6 · סה"כ <strong>750€</strong></div>
               </div>
-              <div class="combo-price-block">
-                <div class="combo-price">125€<span style="font-size:14px;color:var(--ink-mute);font-weight:500;"> לאדם</span></div>
-                <div class="combo-total">סה"כ ל-6: 750€</div>
+              <div class="combo-btn-wrap">
+                <button class="interest-btn" onclick="toggleInterest(this, 'combo-culinary-classic')">
+                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+                </button>
               </div>
             </div>
-            <div class="card-action">
-              <button class="interest-btn" onclick="toggleInterest(this, 'combo-culinary-classic')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
-              </button>
-              <div class="date-wrap">
-                <div class="date-input-wrap">
-                  <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+            <div class="date-wrap">
+              <div class="date-input-wrap">
+                <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+                <div class="date-input-row">
                   <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-check">✓</div>
                 </div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
           </div>
 
           <div class="combo-card" data-tour="combo-culinary-belem">
-            <div class="combo-top">
-              <div class="combo-info">
-                <div class="combo-title">הסיור הקולינרי + בלם</div>
-                <div class="combo-meta">כ-6 שעות · יש להתחיל בקולינרי בבוקר · הפסקה של כשעה וחצי באמצע</div>
+            <div class="combo-header">
+              <div class="combo-title">הסיור הקולינרי + בלם</div>
+              <div class="combo-meta">כ-6 שעות · יש להתחיל בקולינרי בבוקר</div>
+            </div>
+            <div class="combo-bottom">
+              <div class="combo-price-inline">
+                <div class="combo-price-main">110€ לאדם</div>
+                <div class="combo-price-detail">בקבוצה פרטית של 6 · סה"כ <strong>660€</strong></div>
               </div>
-              <div class="combo-price-block">
-                <div class="combo-price">110€<span style="font-size:14px;color:var(--ink-mute);font-weight:500;"> לאדם</span></div>
-                <div class="combo-total">סה"כ ל-6: 660€</div>
+              <div class="combo-btn-wrap">
+                <button class="interest-btn" onclick="toggleInterest(this, 'combo-culinary-belem')">
+                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+                </button>
               </div>
             </div>
-            <div class="card-action">
-              <button class="interest-btn" onclick="toggleInterest(this, 'combo-culinary-belem')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
-              </button>
-              <div class="date-wrap">
-                <div class="date-input-wrap">
-                  <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+            <div class="date-wrap">
+              <div class="date-input-wrap">
+                <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+                <div class="date-input-row">
                   <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-check">✓</div>
                 </div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
           </div>
@@ -1010,19 +1136,25 @@
             <p class="card-tagline">מארמון פנה אגדי אל הנקודה המערבית באירופה</p>
 
             <div class="card-description">
-              <p>ביום זה נצא לסיור במספר מקומות מחוץ לליסבון. <strong>Sintra</strong> — עיירה קסומה השוכנת כ-30 ק"מ מליסבון. סינטרה ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה. <strong>Cabo da Roca</strong> — הנקודה המערבית ביותר באירופה. <strong>Cascais</strong> — עיירה שבעבר הייתה כפר דייגים קטן אך היום היא ידועה כעיירת נופש מפוארת.</p>
+              <p>ביום זה נצא לסיור במספר מקומות מחוץ לליסבון. <strong>Sintra</strong> — עיירה קסומה השוכנת כ-30 ק"מ מליסבון, ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה. <strong>Cabo da Roca</strong> — הנקודה המערבית ביותר באירופה. <strong>Cascais</strong> — עיירה שבעבר הייתה כפר דייגים קטן אך היום היא ידועה כעיירת נופש מפוארת.</p>
               <p>נתחיל את היום בשעה 8:30 עם איסוף מהמלון וניסע לנקודה הראשונה — סינטרה. נבקר בארמון הפנה המפורסם — האתר המבוקש ביותר — ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה ומאפים מקומיים מסורתיים. לאחר סינטרה נסע לעבר קאבו דה רוקה, ושם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו. לבסוף, נסע לעבר קשקאיש, שם תוכלו לאכול ארוחת צהריים, להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים — גם לרדת לבקר בחוף.</p>
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-8 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>איסוף מהמלון, 8:30</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>יום מלא עם רכב צמוד</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 8:30</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 690€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">690€</div>
+              </div>
             </div>
 
             <div class="price-coverage">
@@ -1031,15 +1163,15 @@
                 <ul class="coverage-list">
                   <li>רכב צמוד כל היום (איסוף והחזרה למלון)</li>
                   <li>כרטיס כניסה לארמון הפנה</li>
-                  <li>הדרכה בעברית</li>
+                  <li>הדרכה בעברית לכל אורך היום</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
                 <div class="coverage-label">✗ לא כלול</div>
                 <ul class="coverage-list">
                   <li>ארוחת צהריים בקשקאיש</li>
-                  <li>שאטל פנימי בארמון הפנה (5€/אדם, אופציונלי)</li>
-                  <li>קפה ומאפים בסינטרה</li>
+                  <li>שאטל פנימי בארמון הפנה (5€ לאדם, אופציונלי)</li>
+                  <li>קפה ומאפים בסינטרה (לבחירה במהלך ההפסקה)</li>
                 </ul>
               </div>
             </div>
@@ -1052,8 +1184,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים והרכב שלנו ונחזור אליכם לאישור. הביקור בארמון הפנה כולל טיפוס של כ-10 דקות — אם נדרש שאטל, ידעו אותנו מראש.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. הביקור בארמון הפנה כולל טיפוס של כ-10 דקות.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -1076,14 +1212,20 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-8 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>איסוף מהמלון, 8:45</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>יום מלא עם רכב צמוד</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 8:45</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 690€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">690€</div>
+              </div>
             </div>
 
             <div class="price-coverage">
@@ -1091,16 +1233,16 @@
                 <div class="coverage-label">✓ כלול במחיר</div>
                 <ul class="coverage-list">
                   <li>רכב צמוד כל היום (איסוף והחזרה למלון)</li>
-                  <li>ביקור ביקב המקומי (טעימת יין)</li>
-                  <li>ביקור במפעל האריחים</li>
-                  <li>הדרכה בעברית</li>
+                  <li>ביקור ביקב המקומי וטעימת יין</li>
+                  <li>ביקור במפעל האריחים בעבודת יד</li>
+                  <li>הדרכה בעברית לכל אורך היום</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
                 <div class="coverage-label">✗ לא כלול</div>
                 <ul class="coverage-list">
                   <li>ארוחת צהריים בסזימברה</li>
-                  <li>תוספות במהלך היום</li>
+                  <li>קפה ומשקאות לבחירה במהלך היום</li>
                 </ul>
               </div>
             </div>
@@ -1113,8 +1255,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים והרכב שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -1137,14 +1283,20 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-8 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>איסוף מהמלון, 9:00</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>יום מלא עם רכב צמוד</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 9:00</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 690€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">690€</div>
+              </div>
             </div>
 
             <div class="price-coverage">
@@ -1153,14 +1305,14 @@
                 <ul class="coverage-list">
                   <li>רכב צמוד כל היום (איסוף והחזרה למלון)</li>
                   <li>כרטיס כניסה למנזר בבטאליה</li>
-                  <li>הדרכה בעברית</li>
+                  <li>הדרכה בעברית לכל אורך היום</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
                 <div class="coverage-label">✗ לא כלול</div>
                 <ul class="coverage-list">
                   <li>ארוחת צהריים באובידוש</li>
-                  <li>כוס הז'ינז'ינייה (אופציונלי בעיירה)</li>
+                  <li>כוס הז'ינז'ינייה ושאר טעימות בעיירה (לבחירה אישית)</li>
                 </ul>
               </div>
             </div>
@@ -1173,8 +1325,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים והרכב שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -1221,31 +1377,24 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-3 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>Praça dos Leões</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>סיור רגלי</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>Praça dos Leões</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 270€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">270€</div>
+              </div>
             </div>
 
-            <div class="price-coverage">
-              <div class="coverage-block included">
-                <div class="coverage-label">✓ כלול במחיר</div>
-                <ul class="coverage-list">
-                  <li>הדרכה בעברית לכל אורך הסיור</li>
-                  <li>הובלה לנקודות תצפית סודיות</li>
-                </ul>
-              </div>
-              <div class="coverage-block excluded">
-                <div class="coverage-label">✗ לא כלול</div>
-                <ul class="coverage-list">
-                  <li>תחבורה ציבורית</li>
-                  <li>כניסות לאתרים פנימיים</li>
-                </ul>
-              </div>
+            <div class="price-includes-simple">
+              <span class="included-label">המחיר כולל:</span> הדרכה בעברית לכל אורך הסיור והובלה לנקודות תצפית סודיות.
             </div>
 
             <div class="card-action">
@@ -1256,8 +1405,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -1280,14 +1433,20 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-3 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>רחבת כנסיית ה-SE</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>סיור רגלי</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>רחבת כנסיית ה-SE</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 480€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">480€</div>
+              </div>
             </div>
 
             <div class="price-coverage">
@@ -1295,14 +1454,14 @@
                 <div class="coverage-label">✓ כלול במחיר</div>
                 <ul class="coverage-list">
                   <li>הדרכה בעברית</li>
-                  <li>טעימות מגוונות של מאכלים</li>
-                  <li>טעימות יין ירוק, אדום, בירה ויינות פורט</li>
+                  <li>טעימות מאכלים מגוונים (גבינות, בקאלה, נקניקים, נשנושים)</li>
+                  <li>טעימות יין ירוק, יין אדום, בירה מקומית ויינות פורט</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
                 <div class="coverage-label">✗ לא כלול</div>
                 <ul class="coverage-list">
-                  <li>תוספות מעבר לתפריט הקבוע</li>
+                  <li>הזמנות מעבר לתפריט הקבוע של המסלול</li>
                   <li>תחבורה לאזור הסיור</li>
                 </ul>
               </div>
@@ -1316,8 +1475,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות — אנא ציינו זאת מראש.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות — אנא ציינו מראש.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -1328,32 +1491,35 @@
 
       <!-- ====== PORTO COMBOS ====== -->
       <div class="combos-block">
-        <h4 class="combos-head">אפשר גם לשלב — טיול יום מלא בעיר</h4>
-        <p class="combos-sub">שילוב של שני הסיורים בפורטו ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
+        <h4 class="combos-head">טיול יום מלא בעיר — שילוב של שני סיורים</h4>
+        <p class="combos-sub">ניתן לשלב את שני הסיורים בפורטו ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
           <div class="combo-card" data-tour="combo-porto-classic-tastings">
-            <div class="combo-top">
-              <div class="combo-info">
-                <div class="combo-title">פורטו הקלאסית + סיור הטעימות</div>
-                <div class="combo-meta">כ-7 שעות · מתחיל ב-Praça dos Leões · הפסקה של כשעה וחצי באמצע</div>
+            <div class="combo-header">
+              <div class="combo-title">פורטו הקלאסית + סיור הטעימות</div>
+              <div class="combo-meta">כ-7 שעות · מתחיל ב-Praça dos Leões</div>
+            </div>
+            <div class="combo-bottom">
+              <div class="combo-price-inline">
+                <div class="combo-price-main">125€ לאדם</div>
+                <div class="combo-price-detail">בקבוצה פרטית של 6 · סה"כ <strong>750€</strong></div>
               </div>
-              <div class="combo-price-block">
-                <div class="combo-price">125€<span style="font-size:14px;color:var(--ink-mute);font-weight:500;"> לאדם</span></div>
-                <div class="combo-total">סה"כ ל-6: 750€</div>
+              <div class="combo-btn-wrap">
+                <button class="interest-btn" onclick="toggleInterest(this, 'combo-porto-classic-tastings')">
+                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+                </button>
               </div>
             </div>
-            <div class="card-action">
-              <button class="interest-btn" onclick="toggleInterest(this, 'combo-porto-classic-tastings')">
-                <span class="check-icon"></span>
-                <span class="btn-label">מעניין אותנו</span>
-              </button>
-              <div class="date-wrap">
-                <div class="date-input-wrap">
-                  <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+            <div class="date-wrap">
+              <div class="date-input-wrap">
+                <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
+                <div class="date-input-row">
                   <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים שלנו ונחזור אליכם לאישור.</div>
+                  <div class="date-input-check">✓</div>
                 </div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
           </div>
@@ -1389,24 +1555,30 @@
             </div>
 
             <div class="card-meta-strip">
-              <div class="meta-item"><span class="meta-icon">•</span> משך: <strong>כ-8 שעות</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> מפגש: <strong>איסוף מהמלון, 8:30</strong></div>
-              <div class="meta-item"><span class="meta-icon">•</span> סוג: <strong>יום מלא עם רכב צמוד</strong></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <strong>איסוף מהמלון, 8:30</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
-              <div><span class="price-amount">125€</span><span class="price-unit">לאדם</span></div>
-              <div class="price-total">6 משתתפים · 750€</div>
+              <div class="price-main">
+                <div class="price-amount-wrap"><span class="price-amount">125€</span><span class="price-unit">לאדם</span></div>
+                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
+              </div>
+              <div class="price-total">
+                <div class="price-total-label">סה"כ לקבוצה</div>
+                <div class="price-total-amount">750€</div>
+              </div>
             </div>
 
             <div class="price-coverage">
               <div class="coverage-block included">
                 <div class="coverage-label">✓ כלול במחיר</div>
                 <ul class="coverage-list">
-                  <li>רכב צמוד כל היום</li>
+                  <li>רכב צמוד כל היום (איסוף והחזרה למלון)</li>
                   <li>ביקור ביקב משפחתי וטעימת יין</li>
                   <li>שייט בנהר הדורו</li>
-                  <li>הדרכה בעברית</li>
+                  <li>הדרכה בעברית לכל אורך היום</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
@@ -1414,7 +1586,7 @@
                 <ul class="coverage-list">
                   <li>ארוחת צהריים בפינייאו</li>
                   <li>קפה ומאפים באמרנטה</li>
-                  <li>כניסות לאתרים נוספים אם תבחרו</li>
+                  <li>כניסות נוספות לאתרים אם תבחרו</li>
                 </ul>
               </div>
             </div>
@@ -1427,8 +1599,12 @@
               <div class="date-wrap">
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
-                  <div class="date-note">התאריך שתבחרו ייבחן על פי זמינות המדריכים והרכב שלנו ונחזור אליכם לאישור. השייט בנהר הדורו מותנה במזג האוויר.</div>
+                  <div class="date-input-row">
+                    <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
+                    <div class="date-input-check">✓</div>
+                  </div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. השייט בנהר הדורו מותנה במזג האוויר.</div>
+                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
             </div>
@@ -1475,7 +1651,7 @@
 
       <div class="terms-section">
         <h4>זמינות</h4>
-        <p>חשוב להבהיר — איננו מתחייבים על זמינות מדריכים או רכבים בתאריך מסוים עד לאישור סופי מצדנו. כל תאריך שתסמנו ייבחן מולנו ונחזור אליכם תוך 24 שעות.</p>
+        <p>איננו מתחייבים על זמינות מדריכים או רכבים בתאריך מסוים עד לאישור סופי מצדנו. כל תאריך שתסמנו בהצעה זו ייבחן מולנו ונחזור אליכם לאישור.</p>
       </div>
 
       <div class="terms-section">
@@ -1498,107 +1674,55 @@
       <div class="form-section-label">בחירת הסיורים והתאריכים</div>
       <div class="form-tour-grid">
         <label class="form-tour-item" data-form-tour="classic-lisbon">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">ליסבון הקלאסית</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">ליסבון הקלאסית</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="belem">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">בלם</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">בלם</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="culinary">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">קולינרי בליסבון</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">קולינרי בליסבון</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="combo-classic-belem">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">שילוב: קלאסית + בלם</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: קלאסית + בלם</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="combo-culinary-classic">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">שילוב: קולינרי + קלאסית</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: קולינרי + קלאסית</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="combo-culinary-belem">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">שילוב: קולינרי + בלם</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: קולינרי + בלם</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="sintra">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">סינטרה</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">סינטרה</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="arrabida">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">אראבידה</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">אראבידה</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="obidos">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">אובידוש</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">אובידוש</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="porto-classic">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">פורטו הקלאסית</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">פורטו הקלאסית</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="porto-tastings">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">טעימות פורטו</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">טעימות פורטו</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="combo-porto-classic-tastings">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">שילוב: פורטו קלאסית + טעימות</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">שילוב: פורטו קלאסית + טעימות</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
         <label class="form-tour-item" data-form-tour="douro">
-          <div class="form-tour-row">
-            <input type="checkbox">
-            <div class="box"></div>
-            <div class="form-tour-label">עמק הדורו</div>
-          </div>
+          <div class="form-tour-row"><input type="checkbox"><div class="box"></div><div class="form-tour-label">עמק הדורו</div></div>
           <div class="form-tour-date"><input type="text" placeholder="תאריך מועדף..."></div>
         </label>
       </div>
@@ -1632,13 +1756,10 @@
 </footer>
 
 <script>
-  // Sync card button with form checkbox (both directions)
   function toggleInterest(btn, tourId) {
     const card = btn.closest('.card, .combo-card');
     if (!card) return;
-    const wasSelected = card.classList.contains('selected');
-    const nowSelected = !wasSelected;
-
+    const nowSelected = !card.classList.contains('selected');
     setCardState(tourId, nowSelected);
     setFormState(tourId, nowSelected);
   }
@@ -1663,16 +1784,24 @@
     if (input) input.checked = selected;
   }
 
-  // Click on form item — toggle and sync to card
   document.querySelectorAll('.form-tour-item').forEach(item => {
     item.addEventListener('click', (e) => {
-      // Don't toggle if clicking inside the date input
       if (e.target.matches('input[type="text"]')) return;
       e.preventDefault();
       const tourId = item.dataset.formTour;
       const nowSelected = !item.classList.contains('checked');
       setFormState(tourId, nowSelected);
       setCardState(tourId, nowSelected);
+    });
+  });
+
+  // Date input feedback
+  document.querySelectorAll('.date-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const filled = input.value.trim().length > 0;
+      input.classList.toggle('filled', filled);
+      const msg = input.closest('.date-input-wrap').querySelector('.date-saved-msg');
+      if (msg) msg.classList.toggle('show', filled);
     });
   });
 </script>
