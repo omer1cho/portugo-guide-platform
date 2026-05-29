@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
 import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
 import { useAuthGuard } from '@/lib/auth';
+import { uploadMonthlyReceipt } from '@/lib/storage';
+import PhotoPicker from '@/components/PhotoPicker';
 
 function formatMonthLabel(year: number, month: number) {
   return new Date(year, month, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
@@ -38,6 +40,12 @@ function CloseMonthContent() {
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [pendingSaving, setPendingSaving] = useState(false);
   const [pendingError, setPendingError] = useState('');
+  // קבלה חודשית — האם המדריך כבר סימן שהוציא קבלה לחודש זה + מודאל צירוף אסמכתא
+  const [receiptIssued, setReceiptIssued] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUploading, setReceiptUploading] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
 
   const loadData = React.useCallback(async () => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -166,6 +174,30 @@ function CloseMonthContent() {
       expensesBalance: openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses,
       salaryWithdrawn,
     });
+
+    // האם המדריך כבר הוציא קבלה אמיתית לחודש זה (לא דחויה)?
+    // fallback אם עמודת is_deferred עוד לא קיימת.
+    const ackPrimary = await supabase
+      .from('receipt_acknowledgements')
+      .select('id, receipt_url, is_deferred')
+      .eq('guide_id', id)
+      .eq('year', year)
+      .eq('month', month + 1)
+      .limit(1);
+    if (ackPrimary.error && ackPrimary.error.message?.toLowerCase().includes('is_deferred')) {
+      const fb = await supabase
+        .from('receipt_acknowledgements')
+        .select('id, receipt_url')
+        .eq('guide_id', id)
+        .eq('year', year)
+        .eq('month', month + 1)
+        .limit(1);
+      setReceiptIssued((fb.data || []).length > 0);
+    } else {
+      const rows = (ackPrimary.data || []) as { is_deferred?: boolean }[];
+      setReceiptIssued(rows.some((r) => !r.is_deferred));
+    }
+
     setLoading(false);
   }, [router, year, month]);
 
@@ -319,6 +351,51 @@ function CloseMonthContent() {
     }
     setShowPendingModal(false);
     await loadData();
+  }
+
+  // צירוף אסמכתא לקבלה החודשית במעמד סגירת החודש:
+  // מעלה את התמונה/PDF ל-Storage ושומר שורה ב-receipt_acknowledgements.
+  // זה נחשב כ"הוצאתי קבלה" — לא תופיע תזכורת בחודש הבא.
+  async function handleReceiptUpload() {
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id) return;
+    if (!receiptFile) {
+      setReceiptError('צריך לצרף תמונה של הקבלה');
+      return;
+    }
+    setReceiptError('');
+    setReceiptUploading(true);
+
+    let receiptUrl: string;
+    try {
+      receiptUrl = await uploadMonthlyReceipt({
+        file: receiptFile,
+        guideId: id,
+        receiptYear: year,
+        receiptMonth: month + 1,
+      });
+    } catch (uploadErr) {
+      setReceiptUploading(false);
+      const msg = uploadErr instanceof Error ? uploadErr.message : 'משהו השתבש';
+      setReceiptError(`העלאת האסמכתא נכשלה: ${msg}`);
+      return;
+    }
+
+    const { error } = await supabase.from('receipt_acknowledgements').insert({
+      guide_id: id,
+      year,
+      month: month + 1,
+      receipt_url: receiptUrl,
+    });
+
+    setReceiptUploading(false);
+    if (error) {
+      setReceiptError('משהו השתבש בשמירה: ' + error.message);
+      return;
+    }
+    setReceiptIssued(true);
+    setShowReceiptModal(false);
+    setReceiptFile(null);
   }
 
   return (
@@ -628,18 +705,39 @@ function CloseMonthContent() {
 
               {/* תזכורת הוצאת קבלה — אחרי סגירת חודש, רק אם יש סכום לקבלה */}
               {alreadyConfirmed && (salary?.receipt_amount || 0) > 0 && (
-                <div className="mt-3 bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">🧾</span>
-                    <div className="text-amber-900">
-                      <div className="font-bold">אל תשכח.י להוציא קבלה החודש!</div>
-                      <div className="mt-0.5">
-                        סכום הקבלה: <span className="font-bold">{(salary?.receipt_amount || 0).toFixed(2)}€</span>.
-                        אם תשכח.י — נזכיר שוב בתחילת החודש הבא.
+                receiptIssued ? (
+                  <div className="mt-3 bg-green-50 border border-green-300 rounded-lg p-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-lg">✓</span>
+                      <div className="text-green-900">
+                        <div className="font-bold">סימנת שהוצאת קבלה לחודש זה.</div>
+                        <div className="mt-0.5">תודה! לא נזכיר שוב בחודש הבא.</div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="mt-3 bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-lg">🧾</span>
+                      <div className="text-amber-900">
+                        <div className="font-bold">אל תשכח.י להוציא קבלה החודש!</div>
+                        <div className="mt-0.5">
+                          סכום הקבלה: <span className="font-bold">{(salary?.receipt_amount || 0).toFixed(2)}€</span>.
+                          כבר הוצאת? אפשר לצרף אותה עכשיו. אם תשכח.י — נזכיר שוב בתחילת החודש הבא.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setReceiptError('');
+                        setShowReceiptModal(true);
+                      }}
+                      className="mt-3 block w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
+                    >
+                      הוצאתי קבלה — צירוף אסמכתא 🧾
+                    </button>
+                  </div>
+                )
               )}
 
               {/* Deposit buttons — שתי אפשרויות: הפקדה מיידית או העברה למעטפת המתנה */}
@@ -804,6 +902,68 @@ function CloseMonthContent() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Receipt upload modal — צירוף אסמכתא לקבלה במעמד סגירת החודש */}
+      {showReceiptModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[slideUp_300ms_ease-out] max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              צירוף אסמכתא לקבלה
+            </h3>
+            <p className="text-sm text-gray-600 mb-1">
+              קבלה על {formatMonthLabel(year, month)}
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              סכום הקבלה: <strong>{(salary?.receipt_amount || 0).toFixed(2)}€</strong>
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">
+                צרף.י קבלה <span className="text-red-600">*</span>
+              </label>
+              <PhotoPicker value={receiptFile} onChange={setReceiptFile} label="" emoji="" acceptPdf />
+            </div>
+
+            {receiptError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
+                {receiptError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleReceiptUpload}
+                disabled={receiptUploading || !receiptFile}
+                className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
+              >
+                {receiptUploading ? 'שולח...' : 'אפשר לשלוח את הקבלה, תודה!'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowReceiptModal(false);
+                  setReceiptFile(null);
+                  setReceiptError('');
+                }}
+                disabled={receiptUploading}
+                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+
+          <style jsx global>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes slideUp {
+              from { opacity: 0; transform: translateY(20px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
         </div>
       )}
     </div>
