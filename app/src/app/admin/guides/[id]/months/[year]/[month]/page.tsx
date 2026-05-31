@@ -413,7 +413,7 @@ function ComparisonRow({
           fontWeight: isMatch ? 400 : 600,
         }}
       >
-        {isMatch ? '✓' : `${diffSign}${diff.toFixed(2)}€`}
+        {isMatch ? '✓' : `${diffSign}${diff.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`}
       </td>
     </tr>
   );

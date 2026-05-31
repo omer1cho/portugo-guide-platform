@@ -817,7 +817,7 @@ function HomeContent() {
                 <div className="text-xs text-red-700 mt-0.5">לחץ.י כאן ברגע שהפקדת</div>
               </div>
               <div className="text-3xl font-bold text-red-700">
-                {summary.pending_total.toFixed(0)}€
+                {summary.pending_total.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
               </div>
             </div>
           </Link>
@@ -840,7 +840,7 @@ function HomeContent() {
                     תזכורת: יש להוציא קבלה על {formatMonthLabel(r.year, r.month - 1)}
                   </div>
                   <div className="text-xs text-amber-800 mt-1">
-                    סכום הקבלה: <strong>{totalSum.toFixed(2)}€</strong>
+                    סכום הקבלה: <strong>{totalSum.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
                   </div>
                   {hasDeferred && (
                     <div className="text-xs text-purple-800 mt-2 bg-purple-50 border border-purple-200 rounded p-2 leading-relaxed">
@@ -848,11 +848,11 @@ function HomeContent() {
                       <ul className="mt-1 mr-4 list-disc">
                         {r.included_deferred.map((d) => (
                           <li key={`${d.year}-${d.month}`}>
-                            {formatMonthLabel(d.year, d.month - 1)}: {d.receipt_amount.toFixed(2)}€
+                            {formatMonthLabel(d.year, d.month - 1)}: {d.receipt_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                           </li>
                         ))}
                         <li className="font-semibold">
-                          {formatMonthLabel(r.year, r.month - 1)}: {r.receipt_amount.toFixed(2)}€
+                          {formatMonthLabel(r.year, r.month - 1)}: {r.receipt_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                         </li>
                       </ul>
                     </div>
@@ -948,7 +948,7 @@ function HomeContent() {
                         className="bg-white border border-gray-200 rounded-xl p-2 hover:bg-gray-50 active:scale-95 transition-transform"
                       >
                         <div className="text-lg font-bold text-green-800">
-                          {mainBalance.toFixed(0)}€
+                          {mainBalance.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                         </div>
                         <div className="text-[11px] text-gray-600 mt-0.5 leading-tight">קופה ראשית</div>
                       </Link>
@@ -957,7 +957,7 @@ function HomeContent() {
                         className="bg-white border border-gray-200 rounded-xl p-2 hover:bg-gray-50 active:scale-95 transition-transform"
                       >
                         <div className="text-lg font-bold text-blue-800">
-                          {changeBalance.toFixed(0)}€
+                          {changeBalance.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                         </div>
                         <div className="text-[11px] text-gray-600 mt-0.5 leading-tight">מעטפת עודף</div>
                       </Link>
@@ -966,7 +966,7 @@ function HomeContent() {
                         className="bg-white border border-gray-200 rounded-xl p-2 hover:bg-gray-50 active:scale-95 transition-transform"
                       >
                         <div className="text-lg font-bold text-amber-700">
-                          {expensesBalance.toFixed(0)}€
+                          {expensesBalance.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                         </div>
                         <div className="text-[11px] text-gray-600 mt-0.5 leading-tight">מעטפת הוצאות</div>
                       </Link>
@@ -983,59 +983,59 @@ function HomeContent() {
                     <div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">שכר מקלאסי:</span>
-                        <span className="font-semibold">{summary.salary.classic_income.toFixed(2)}€</span>
+                        <span className="font-semibold">{summary.salary.classic_income.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                       </div>
                       <div className="text-xs text-gray-500 pr-3 mt-0.5">
-                        בסיס {summary.salary.classic_base.toFixed(2)}€ + טיפים {(summary.salary.classic_income - summary.salary.classic_base).toFixed(2)}€
+                        בסיס {summary.salary.classic_base.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ + טיפים {(summary.salary.classic_income - summary.salary.classic_base).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                       </div>
                     </div>
                   )}
                   {summary.salary.fixed_salaries > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">שכר סיורים קבועים:</span>
-                      <span className="font-semibold">{summary.salary.fixed_salaries.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.fixed_salaries.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.private_salaries > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">שכר סיורים פרטיים:</span>
-                      <span className="font-semibold">{summary.salary.private_salaries.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.private_salaries.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.non_classic_tips > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">טיפים (לא קלאסי):</span>
-                      <span className="font-semibold">{summary.salary.non_classic_tips.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.non_classic_tips.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.eshel > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">אשל יומי ({summary.salary.eshel_days} ימים):</span>
-                      <span className="font-semibold">{summary.salary.eshel.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.eshel.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.habraza > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">הברזה בכיכר:</span>
-                      <span className="font-semibold">{summary.salary.habraza.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.habraza.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.training > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">פעילות הכשרה:</span>
-                      <span className="font-semibold">{summary.salary.training.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.training.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.training_lead > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">הכשרות שהעברתי:</span>
-                      <span className="font-semibold">{summary.salary.training_lead.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.training_lead.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.external.map((ext, i) => (
                     <div key={`ext-${i}`} className="flex justify-between">
                       <span className="text-gray-600">{ext.description || 'פעילות מיוחדת'}:</span>
-                      <span className="font-semibold">{ext.amount.toFixed(2)}€</span>
+                      <span className="font-semibold">{ext.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   ))}
                   {summary.salary.travel > 0 && (
@@ -1043,13 +1043,13 @@ function HomeContent() {
                       <span className="text-gray-600">
                         {summary.travel_type === 'monthly' ? 'חופשי חודשי:' : 'החזר נסיעות:'}
                       </span>
-                      <span className="font-semibold">{summary.salary.travel.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.travel.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                   {summary.salary.management > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">רכיב ניהול:</span>
-                      <span className="font-semibold">{summary.salary.management.toFixed(2)}€</span>
+                      <span className="font-semibold">{summary.salary.management.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   )}
                 </div>
@@ -1101,22 +1101,22 @@ function HomeContent() {
                                   {isClassic ? (
                                     <>
                                       <div className="text-[11px] text-gray-500 leading-snug">
-                                        נאסף {collected.toFixed(0)}€ · הופרש {t.transfer.toFixed(0)}€ לפורטוגו
+                                        נאסף {collected.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€ · הופרש {t.transfer.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€ לפורטוגו
                                       </div>
                                       <div className="text-[11px] text-gray-500 leading-snug">
-                                        בסיס {t.base.toFixed(0)}€ + טיפ נטו {t.tips.toFixed(0)}€
+                                        בסיס {t.base.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€ + טיפ נטו {t.tips.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                                       </div>
                                     </>
                                   ) : (
                                     <div className="text-[11px] text-gray-500 leading-snug">
                                       {t.tips > 0
-                                        ? `בסיס ${t.base.toFixed(0)}€ + טיפ ${t.tips.toFixed(0)}€`
-                                        : `בסיס ${t.base.toFixed(0)}€`}
+                                        ? `בסיס ${t.base.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€ + טיפ ${t.tips.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`
+                                        : `בסיס ${t.base.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`}
                                     </div>
                                   )}
                                 </span>
                                 <span className="font-semibold text-green-800 shrink-0 pt-0.5">
-                                  {t.salary.toFixed(0)}€
+                                  {t.salary.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                                 </span>
                               </li>
                             );
@@ -1130,7 +1130,7 @@ function HomeContent() {
                   <div className="mt-3 pt-3 border-t border-green-200 bg-green-50 -mx-2 px-3 py-2 rounded-lg space-y-1">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-green-900">סיכום שכר מלא</span>
-                      <span className="font-bold text-green-900 text-lg">{summary.salary.total_with_tips.toFixed(2)}€</span>
+                      <span className="font-bold text-green-900 text-lg">{summary.salary.total_with_tips.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
                       כולל טיפים מסיורים רגילים
@@ -1160,17 +1160,17 @@ function HomeContent() {
                   <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-900 font-semibold">סכום לקבלה</span>
-                      <span className="font-bold text-blue-900">{summary.salary.receipt_amount.toFixed(2)}€</span>
+                      <span className="font-bold text-blue-900">{summary.salary.receipt_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                     {summary.salary.vat_amount > 0 && (
                       <>
                         <div className="flex justify-between text-xs text-blue-800">
                           <span>מע"מ (23%):</span>
-                          <span className="font-semibold">{summary.salary.vat_amount.toFixed(2)}€</span>
+                          <span className="font-semibold">{summary.salary.vat_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                         </div>
                         <div className="flex justify-between pt-1 border-t border-blue-200">
                           <span className="text-blue-900 font-semibold">קבלה כולל מע"מ</span>
-                          <span className="font-bold text-blue-900">{summary.salary.receipt_with_vat.toFixed(2)}€</span>
+                          <span className="font-bold text-blue-900">{summary.salary.receipt_with_vat.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                         </div>
                       </>
                     )}
@@ -1213,7 +1213,7 @@ function HomeContent() {
                       {new Date(ext.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}
                     </div>
                   </div>
-                  <span className="font-bold text-amber-900">{ext.amount.toFixed(2)}€</span>
+                  <span className="font-bold text-amber-900">{ext.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
               ))}
             </div>
@@ -1311,7 +1311,7 @@ function HomeContent() {
               return (
                 <>
                   <p className="text-xs text-gray-500 mb-2">
-                    סכום הקבלה: <strong>{totalSum.toFixed(2)}€</strong>
+                    סכום הקבלה: <strong>{totalSum.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
                   </p>
                   {hasDeferred && (
                     <div className="text-xs text-purple-800 mb-4 bg-purple-50 border border-purple-200 rounded p-2 leading-relaxed">
@@ -1319,11 +1319,11 @@ function HomeContent() {
                       <ul className="mt-1 mr-4 list-disc">
                         {receiptUploadModal.included_deferred.map((d) => (
                           <li key={`${d.year}-${d.month}`}>
-                            {formatMonthLabel(d.year, d.month - 1)}: {d.receipt_amount.toFixed(2)}€
+                            {formatMonthLabel(d.year, d.month - 1)}: {d.receipt_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                           </li>
                         ))}
                         <li className="font-semibold">
-                          {formatMonthLabel(receiptUploadModal.year, receiptUploadModal.month - 1)}: {receiptUploadModal.receipt_amount.toFixed(2)}€
+                          {formatMonthLabel(receiptUploadModal.year, receiptUploadModal.month - 1)}: {receiptUploadModal.receipt_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                         </li>
                       </ul>
                     </div>

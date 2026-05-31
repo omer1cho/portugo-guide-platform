@@ -259,7 +259,7 @@ function PostTourExpensesContent() {
     if (isCulinaryTour && paymentSource === 'food_market_card') {
       if (amt > cardBalance + 0.001) {
         setFormError(
-          `אין מספיק בכרטיס טיים אאוט (יש ${cardBalance.toFixed(2)}€, ביקשת ${amt.toFixed(2)}€). אפשר להטעין את הכרטיס במסך הקופות.`,
+          `אין מספיק בכרטיס טיים אאוט (יש ${cardBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€, ביקשת ${amt.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€). אפשר להטעין את הכרטיס במסך הקופות.`,
         );
         return;
       }
@@ -457,7 +457,7 @@ function PostTourExpensesContent() {
                     )}
                   </div>
                 </div>
-                <div className="font-bold text-amber-700">{e.amount.toFixed(2)}€</div>
+                <div className="font-bold text-amber-700">{e.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</div>
               </div>
             ))}
           </div>
@@ -539,7 +539,7 @@ function PostTourExpensesContent() {
               {expectedAmount !== null && (
                 <p className="text-xs text-blue-700 mt-1">
                   💡 חישוב: {quantity} × {selectedCatalogItem.unit_price}€ ={' '}
-                  <span className="font-bold">{expectedAmount.toFixed(2)}€</span>
+                  <span className="font-bold">{expectedAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </p>
               )}
             </div>
@@ -569,7 +569,7 @@ function PostTourExpensesContent() {
               />
               {hasMismatch && expectedAmount !== null && (
                 <div className="mt-2 bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm text-amber-900">
-                  ⚠️ הסכום שונה מהחישוב ({expectedAmount.toFixed(2)}€).
+                  ⚠️ הסכום שונה מהחישוב ({expectedAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€).
                   <br />
                   בבקשה <span className="font-bold">תעדכני את פורטוגו</span> שמחיר הפריט השתנה — את.ה יכול.ה לשמור את הסכום בפועל ולהמשיך.
                 </div>
@@ -610,7 +610,7 @@ function PostTourExpensesContent() {
               </div>
               {paymentSource === 'food_market_card' && (
                 <p className="text-xs text-orange-700 mt-1.5">
-                  יש בכרטיס: <span className="font-bold">{cardBalance.toFixed(2)}€</span>
+                  יש בכרטיס: <span className="font-bold">{cardBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </p>
               )}
             </div>

@@ -444,59 +444,59 @@ function CloseMonthContent() {
                   <div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">שכר מקלאסי:</span>
-                      <span className="font-semibold">{salary.classic_income.toFixed(2)}€</span>
+                      <span className="font-semibold">{salary.classic_income.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                     <div className="text-xs text-gray-500 pr-3 mt-0.5">
-                      בסיס {salary.classic_base.toFixed(2)}€ + טיפים {(salary.classic_income - salary.classic_base).toFixed(2)}€
+                      בסיס {salary.classic_base.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ + טיפים {(salary.classic_income - salary.classic_base).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                     </div>
                   </div>
                 )}
                 {salary.fixed_salaries > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">שכר סיורים קבועים:</span>
-                    <span className="font-semibold">{salary.fixed_salaries.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.fixed_salaries.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.private_salaries > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">שכר סיורים פרטיים:</span>
-                    <span className="font-semibold">{salary.private_salaries.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.private_salaries.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.non_classic_tips > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">טיפים (לא קלאסי):</span>
-                    <span className="font-semibold">{salary.non_classic_tips.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.non_classic_tips.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.eshel > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">אשל יומי ({salary.eshel_days} ימים):</span>
-                    <span className="font-semibold">{salary.eshel.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.eshel.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.habraza > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">הברזה בכיכר:</span>
-                    <span className="font-semibold">{salary.habraza.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.habraza.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.training > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">פעילות הכשרה:</span>
-                    <span className="font-semibold">{salary.training.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.training.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.training_lead > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">הכשרות שהעברתי:</span>
-                    <span className="font-semibold">{salary.training_lead.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.training_lead.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {externalActivities.map((ext, i) => (
                   <div key={`ext-${i}`} className="flex justify-between">
                     <span className="text-gray-600">{ext.description || 'פעילות מיוחדת'}:</span>
-                    <span className="font-semibold">{ext.amount.toFixed(2)}€</span>
+                    <span className="font-semibold">{ext.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 ))}
                 {salary.travel > 0 && (
@@ -504,20 +504,20 @@ function CloseMonthContent() {
                     <span className="text-gray-600">
                       {guide?.travel_type === 'monthly' ? 'חופשי חודשי:' : 'החזר נסיעות:'}
                     </span>
-                    <span className="font-semibold">{salary.travel.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.travel.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 {salary.management > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">רכיב ניהול:</span>
-                    <span className="font-semibold">{salary.management.toFixed(2)}€</span>
+                    <span className="font-semibold">{salary.management.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
               </div>
               <div className="mt-3 pt-3 border-t border-green-200 bg-green-50 -mx-2 px-3 py-2 rounded-lg space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-green-900">סיכום שכר מלא</span>
-                  <span className="font-bold text-green-900 text-lg">{salary.total_with_tips.toFixed(2)}€</span>
+                  <span className="font-bold text-green-900 text-lg">{salary.total_with_tips.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
                 <div className="text-[11px] text-green-800 leading-tight pr-1">
                   כולל טיפים מסיורים רגילים
@@ -544,17 +544,17 @@ function CloseMonthContent() {
                 <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-blue-900 font-semibold">סכום לקבלה</span>
-                    <span className="font-bold text-blue-900">{salary.receipt_amount.toFixed(2)}€</span>
+                    <span className="font-bold text-blue-900">{salary.receipt_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                   {salary.vat_amount > 0 && (
                     <>
                       <div className="flex justify-between text-xs text-blue-800">
                         <span>מע"מ (23%):</span>
-                        <span className="font-semibold">{salary.vat_amount.toFixed(2)}€</span>
+                        <span className="font-semibold">{salary.vat_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                       </div>
                       <div className="flex justify-between pt-1 border-t border-blue-200">
                         <span className="text-blue-900 font-semibold">קבלה כולל מע"מ</span>
-                        <span className="font-bold text-blue-900">{salary.receipt_with_vat.toFixed(2)}€</span>
+                        <span className="font-bold text-blue-900">{salary.receipt_with_vat.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                       </div>
                     </>
                   )}
@@ -574,7 +574,7 @@ function CloseMonthContent() {
 
               <div className="flex justify-between py-2 text-sm border-b border-amber-100">
                 <span className="text-gray-600">יש בקופה הראשית:</span>
-                <span className="font-bold text-gray-900">{mainBox.toFixed(2)}€</span>
+                <span className="font-bold text-gray-900">{mainBox.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
               </div>
 
               {/* Step-by-step */}
@@ -597,10 +597,10 @@ function CloseMonthContent() {
                             {(hasVatComponent || wasRoundedUp) && (
                               <span className="block text-[11px] text-amber-700 font-normal mt-0.5">
                                 {hasVatComponent && (
-                                  <>({baseSalary.toFixed(2)}€ משכורת + {vatAmount.toFixed(2)}€ מע&quot;מ</>
+                                  <>({baseSalary.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ משכורת + {vatAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ מע&quot;מ</>
                                 )}
                                 {!hasVatComponent && wasRoundedUp && (
-                                  <>(שכר בפועל {totalSalaryRaw.toFixed(2)}€</>
+                                  <>(שכר בפועל {totalSalaryRaw.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</>
                                 )}
                                 {wasRoundedUp && <>, מעוגל ל-{totalSalary}€</>}
                                 {takeFromBox < totalSalary - 0.01 && (
@@ -617,10 +617,10 @@ function CloseMonthContent() {
                         steps.push(
                           <span>
                             חזק.י את מעטפת ההוצאות ב-
-                            <span className="font-bold">{expensesRefill.toFixed(2)}€</span>{' '}
+                            <span className="font-bold">{expensesRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>{' '}
                             (ל-{EXPENSES_TARGET}€
                             {coinExtra > 0.01 && (
-                              <> + {coinExtra.toFixed(2)}€ עודף כדי שההפקדה תצא עגולה</>
+                              <> + {coinExtra.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ עודף כדי שההפקדה תצא עגולה</>
                             )}
                             ).
                           </span>
@@ -631,7 +631,7 @@ function CloseMonthContent() {
                         steps.push(
                           <span>
                             חזק.י את מעטפת העודף ב-
-                            <span className="font-bold">{changeRefill.toFixed(2)}€</span>{' '}
+                            <span className="font-bold">{changeRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>{' '}
                             (ל-{CHANGE_TARGET}€).
                           </span>
                         );
@@ -641,7 +641,7 @@ function CloseMonthContent() {
                         steps.push(
                           <span>
                             הפקיד.י לפורטוגו{' '}
-                            <span className="font-bold">{depositToPortugo.toFixed(0)}€</span>{' '}
+                            <span className="font-bold">{depositToPortugo.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</span>{' '}
                             <span className="text-xs text-amber-700 font-semibold">— נא הפקיד.י בהקדם</span>
                           </span>
                         );
@@ -651,7 +651,7 @@ function CloseMonthContent() {
                         steps.push(
                           <span>
                             פורטוגו תשלים לך עוד{' '}
-                            <span className="font-bold">{fromPortugo.toFixed(2)}€</span>{' '}
+                            <span className="font-bold">{fromPortugo.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>{' '}
                             בהעברה נפרדת 💚
                           </span>
                         );
@@ -688,12 +688,12 @@ function CloseMonthContent() {
                   {needsDeposit ? (
                     <div className="text-green-900 mt-1">
                       נשאר להפקיד לפורטוגו{' '}
-                      <span className="font-bold">{depositToPortugo.toFixed(0)}€</span>{' '}
+                      <span className="font-bold">{depositToPortugo.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</span>{' '}
                       — נא להפקיד בהקדם.
                     </div>
                   ) : needsFromPortugo ? (
                     <div className="text-green-900 mt-1">
-                      פורטוגו תעביר לך את היתרה ({fromPortugo.toFixed(2)}€) 💚
+                      פורטוגו תעביר לך את היתרה ({fromPortugo.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€) 💚
                     </div>
                   ) : (
                     <div className="text-green-900 font-bold mt-1 text-center text-base">
@@ -722,7 +722,7 @@ function CloseMonthContent() {
                       <div className="text-amber-900">
                         <div className="font-bold">אל תשכח.י להוציא קבלה החודש!</div>
                         <div className="mt-0.5">
-                          סכום הקבלה: <span className="font-bold">{(salary?.receipt_amount || 0).toFixed(2)}€</span>.
+                          סכום הקבלה: <span className="font-bold">{(salary?.receipt_amount || 0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>.
                           כבר הוצאת? אפשר לצרף אותה עכשיו. אם תשכח.י — נזכיר שוב בתחילת החודש הבא.
                         </div>
                       </div>
@@ -747,13 +747,13 @@ function CloseMonthContent() {
                     href={`/transfers?year=${year}&month=${month + 1}&prefill=${depositToPortugo.toFixed(0)}&note=${encodeURIComponent(`יתרת קופה — סגירת ${formatMonthLabel(year, month)}`)}`}
                     className="block w-full bg-green-700 hover:bg-green-800 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
                   >
-                    הפקדתי עכשיו — דווחי על העברה ({depositToPortugo.toFixed(0)}€) ←
+                    הפקדתי עכשיו — דווחי על העברה ({depositToPortugo.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€) ←
                   </Link>
                   <button
                     onClick={() => setShowPendingModal(true)}
                     className="block w-full bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
                   >
-                    העבר.י למעטפת המתנה ({depositToPortugo.toFixed(0)}€)
+                    העבר.י למעטפת המתנה ({depositToPortugo.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€)
                   </button>
                   <p className="text-[11px] text-gray-500 text-center leading-tight">
                     💡 לא הפקדת עדיין? &quot;מעטפת המתנה&quot; שומרת לך את הסכום עד שתפקיד.י בפועל.
@@ -767,11 +767,11 @@ function CloseMonthContent() {
               <h3 className="font-semibold mb-2 text-sm">מצב המעטפות</h3>
               <div className="grid grid-cols-2 gap-3 text-center">
                 <div className="bg-blue-50 rounded-lg p-3">
-                  <div className="text-lg font-bold text-blue-800">{cash.changeBalance.toFixed(0)}€</div>
+                  <div className="text-lg font-bold text-blue-800">{cash.changeBalance.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</div>
                   <div className="text-xs text-gray-600 mt-0.5">מעטפת עודף</div>
                 </div>
                 <div className="bg-amber-50 rounded-lg p-3">
-                  <div className="text-lg font-bold text-amber-700">{cash.expensesBalance.toFixed(0)}€</div>
+                  <div className="text-lg font-bold text-amber-700">{cash.expensesBalance.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</div>
                   <div className="text-xs text-gray-600 mt-0.5">מעטפת הוצאות</div>
                 </div>
               </div>
@@ -798,19 +798,19 @@ function CloseMonthContent() {
               {needsSalaryWithdraw && (
                 <div className="flex justify-between">
                   <span className="text-gray-700">משיכת משכורת מהקופה:</span>
-                  <span className="font-bold text-amber-900">{takeFromBox.toFixed(2)}€</span>
+                  <span className="font-bold text-amber-900">{takeFromBox.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
               )}
               {needsExpensesRefill && (
                 <div className="flex justify-between">
                   <span className="text-gray-700">חיזוק מעטפת הוצאות:</span>
-                  <span className="font-bold text-amber-900">{expensesRefill.toFixed(2)}€</span>
+                  <span className="font-bold text-amber-900">{expensesRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
               )}
               {needsChangeRefill && (
                 <div className="flex justify-between">
                   <span className="text-gray-700">חיזוק מעטפת עודף:</span>
-                  <span className="font-bold text-amber-900">{changeRefill.toFixed(2)}€</span>
+                  <span className="font-bold text-amber-900">{changeRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
               )}
             </div>
@@ -863,7 +863,7 @@ function CloseMonthContent() {
               העברה למעטפת המתנה
             </h3>
             <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              הסכום הזה <span className="font-bold">{depositToPortugo.toFixed(0)}€</span> יצא
+              הסכום הזה <span className="font-bold">{depositToPortugo.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</span> יצא
               עכשיו מהקופה הראשית ויעבור למעטפת ההמתנה.
               <br />
               כשתפקיד.י בפועל — תיכנס.י למעטפה ותסמן.י &quot;ביצעתי הפקדה&quot; (עם אסמכתא).
@@ -872,7 +872,7 @@ function CloseMonthContent() {
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-700">סכום למעטפת המתנה:</span>
-                <span className="font-bold text-amber-900">{depositToPortugo.toFixed(0)}€</span>
+                <span className="font-bold text-amber-900">{depositToPortugo.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</span>
               </div>
             </div>
 
@@ -916,7 +916,7 @@ function CloseMonthContent() {
               קבלה על {formatMonthLabel(year, month)}
             </p>
             <p className="text-xs text-gray-500 mb-4">
-              סכום הקבלה: <strong>{(salary?.receipt_amount || 0).toFixed(2)}€</strong>
+              סכום הקבלה: <strong>{(salary?.receipt_amount || 0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
             </p>
 
             <div className="mb-4">

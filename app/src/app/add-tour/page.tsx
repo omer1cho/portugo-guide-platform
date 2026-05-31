@@ -1001,7 +1001,7 @@ function AddTourContent() {
                         ? `${(
                             trainingLeadBase(trainingLeadKind, trainingLeadTour) +
                             (trainingLeadIsFullDay(trainingLeadTour) ? 15 : 0)
-                          ).toFixed(0)}€`
+                          ).toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`
                         : '10€'}
                     </span>
                   </label>
@@ -1088,7 +1088,7 @@ function AddTourContent() {
                               <div className="flex justify-between">
                                 <span className="text-gray-700">שכר על ההכשרה:</span>
                                 <span className="font-bold text-blue-900">
-                                  {trainingLeadBase(trainingLeadKind, trainingLeadTour).toFixed(0)}€
+                                  {trainingLeadBase(trainingLeadKind, trainingLeadTour).toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                                 </span>
                               </div>
                               {trainingLeadIsFullDay(trainingLeadTour) && (
@@ -1103,7 +1103,7 @@ function AddTourContent() {
                                   {(
                                     trainingLeadBase(trainingLeadKind, trainingLeadTour) +
                                     (trainingLeadIsFullDay(trainingLeadTour) ? 15 : 0)
-                                  ).toFixed(0)}€
+                                  ).toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
                                 </span>
                               </div>
                               <p className="text-xs text-blue-800 pt-1">

@@ -285,7 +285,7 @@ export default function AdminCashflowPage() {
                     )}
                   </td>
                   <td style={{ padding: '8px 6px', color: ADMIN_COLORS.gray700 }}>
-                    {g.salary_withdrawn != null ? `${g.salary_withdrawn.toFixed(2)}€` : '—'}
+                    {g.salary_withdrawn != null ? `${g.salary_withdrawn.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€` : '—'}
                   </td>
                 </tr>
               ))}
@@ -355,8 +355,8 @@ export default function AdminCashflowPage() {
               {runs.map((r) => (
                 <tr key={r.id} style={{ borderBottom: `1px solid ${ADMIN_COLORS.gray100}` }}>
                   <td style={{ padding: '8px 6px' }}>{formatDateTime(r.generated_at)}</td>
-                  <td style={{ padding: '8px 6px' }}>{r.tours_income.toFixed(2)}€</td>
-                  <td style={{ padding: '8px 6px' }}>{r.total_outflow.toFixed(2)}€</td>
+                  <td style={{ padding: '8px 6px' }}>{r.tours_income.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</td>
+                  <td style={{ padding: '8px 6px' }}>{r.total_outflow.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</td>
                   <td style={{ padding: '8px 6px' }}>{r.transactions_count}</td>
                   <td style={{ padding: '8px 6px' }}>
                     {r.excel_file_url ? (

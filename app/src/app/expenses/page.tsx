@@ -365,7 +365,7 @@ function ExpensesContent() {
       const availableInCard = cardBalance + oldFromCard;
       if (amt > availableInCard + 0.001) {
         setFormError(
-          `אין מספיק בכרטיס טיים אאוט (יש ${availableInCard.toFixed(2)}€, ביקשת ${amt.toFixed(2)}€). אפשר להטעין את הכרטיס מהקופות.`,
+          `אין מספיק בכרטיס טיים אאוט (יש ${availableInCard.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€, ביקשת ${amt.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€). אפשר להטעין את הכרטיס מהקופות.`,
         );
         return;
       }
@@ -524,22 +524,22 @@ function ExpensesContent() {
           {showPaymentSourcePicker && (totalFromCard > 0 || totalFromExpensesBox > 0) ? (
             <>
               <div className="text-sm text-gray-600 mb-1">סה"כ הוצאות החודש</div>
-              <div className="text-2xl font-bold text-amber-700 mb-2">{total.toFixed(2)}€</div>
+              <div className="text-2xl font-bold text-amber-700 mb-2">{total.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
                   <div className="text-gray-600">מקופת הוצאות</div>
-                  <div className="font-bold text-amber-800">{totalFromExpensesBox.toFixed(2)}€</div>
+                  <div className="font-bold text-amber-800">{totalFromExpensesBox.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</div>
                 </div>
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                   <div className="text-gray-600">🍴 מכרטיס טיים אאוט</div>
-                  <div className="font-bold text-orange-800">{totalFromCard.toFixed(2)}€</div>
+                  <div className="font-bold text-orange-800">{totalFromCard.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</div>
                 </div>
               </div>
             </>
           ) : (
             <>
               <div className="text-sm text-gray-600">סה"כ הוצאות (מקופת הוצאות)</div>
-              <div className="text-2xl font-bold text-amber-700">{total.toFixed(2)}€</div>
+              <div className="text-2xl font-bold text-amber-700">{total.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</div>
             </>
           )}
         </div>
@@ -666,7 +666,7 @@ function ExpensesContent() {
                 {expectedAmount !== null && (
                   <p className="text-xs text-blue-700 mt-1">
                     💡 חישוב: {quantity} × {selectedCatalogItem.unit_price}€ ={' '}
-                    <span className="font-bold">{expectedAmount.toFixed(2)}€</span>
+                    <span className="font-bold">{expectedAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </p>
                 )}
               </div>
@@ -702,7 +702,7 @@ function ExpensesContent() {
                 />
                 {hasMismatch && expectedAmount !== null && (
                   <div className="mt-2 bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm text-amber-900">
-                    ⚠️ הסכום שונה מהחישוב ({expectedAmount.toFixed(2)}€).
+                    ⚠️ הסכום שונה מהחישוב ({expectedAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€).
                     <br />
                     בבקשה <span className="font-bold">תעדכני את פורטוגו</span> שמחיר הפריט השתנה — את.ה יכול.ה לשמור את הסכום בפועל ולהמשיך.
                   </div>
@@ -743,7 +743,7 @@ function ExpensesContent() {
                 </div>
                 {paymentSource === 'food_market_card' && (
                   <p className="text-xs text-orange-700 mt-1.5">
-                    יש בכרטיס: <span className="font-bold">{cardBalance.toFixed(2)}€</span>
+                    יש בכרטיס: <span className="font-bold">{cardBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </p>
                 )}
               </div>
@@ -855,10 +855,10 @@ function ExpensesContent() {
                     </div>
                   </div>
                   <div className="text-left shrink-0">
-                    <div className="font-bold text-amber-700">{e.amount.toFixed(2)}€</div>
+                    <div className="font-bold text-amber-700">{e.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</div>
                     {e.expected_amount && e.price_mismatch && (
                       <div className="text-[11px] text-gray-400 line-through">
-                        {e.expected_amount.toFixed(2)}€
+                        {e.expected_amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                       </div>
                     )}
                   </div>
@@ -896,7 +896,7 @@ function ExpensesContent() {
               <p className="text-sm text-gray-600 mb-4">
                 <span className="font-semibold">{expenseToDelete.item}</span>
                 {' · '}
-                <span>{expenseToDelete.amount.toFixed(2)}€</span>
+                <span>{expenseToDelete.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 <br />
                 <span className="text-xs text-gray-500">
                   {new Date(expenseToDelete.expense_date).toLocaleDateString('he-IL')}

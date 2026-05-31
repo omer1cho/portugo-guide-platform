@@ -71,7 +71,7 @@ function Timeline({
             </span>
             <span className="flex-1 text-gray-700 truncate">{m.description}</span>
             <span className={`font-semibold shrink-0 ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
-              {isPositive ? '+' : ''}{m.amount.toFixed(2)}€
+              {isPositive ? '+' : ''}{m.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
             </span>
             {showCancel && (
               <button
@@ -765,7 +765,7 @@ function CashBoxesContent() {
               <div className="bg-red-50 border-2 border-red-400 rounded-xl shadow p-5">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-lg font-bold text-red-700">💰 המתנה להפקדה</h3>
-                  <span className="text-2xl font-bold text-red-700">{pendingTotal.toFixed(0)}€</span>
+                  <span className="text-2xl font-bold text-red-700">{pendingTotal.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</span>
                 </div>
                 <p className="text-xs text-red-700 mb-3">
                   זה הכסף שצבור אצלך וצריך להפקיד לפורטוגו. ברגע שתפקיד.י —
@@ -778,7 +778,7 @@ function CashBoxesContent() {
                       className="flex justify-between items-center text-sm bg-white border border-red-200 rounded-lg p-2"
                     >
                       <div>
-                        <div className="font-semibold text-red-800">{p.amount.toFixed(0)}€</div>
+                        <div className="font-semibold text-red-800">{p.amount.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</div>
                         <div className="text-[11px] text-gray-600">
                           {p.notes || 'ממתין להפקדה'}
                         </div>
@@ -807,7 +807,7 @@ function CashBoxesContent() {
                     }}
                     className="w-full bg-red-600 hover:bg-red-700 active:scale-98 transition-all text-white rounded-lg py-2 font-semibold text-sm"
                   >
-                    סגור את כל המעטפה ({pendingTotal.toFixed(0)}€) ✓
+                    סגור את כל המעטפה ({pendingTotal.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€) ✓
                   </button>
                 )}
               </div>
@@ -817,30 +817,30 @@ function CashBoxesContent() {
             <div className="bg-white rounded-xl shadow p-5">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-bold">קופה ראשית</h3>
-                <span className="text-2xl font-bold text-green-800">{mainBalance.toFixed(2)}€</span>
+                <span className="text-2xl font-bold text-green-800">{mainBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
               </div>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">נאסף בסיורים:</span>
-                  <span className="font-semibold">+{totals.collected.toFixed(2)}€</span>
+                  <span className="font-semibold">+{totals.collected.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
                 {totals.changeGiven > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">עודף שנכנס לקופה:</span>
-                    <span className="font-semibold">+{totals.changeGiven.toFixed(2)}€</span>
+                    <span className="font-semibold">+{totals.changeGiven.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">הועבר לפורטוגו:</span>
                   <span className="font-semibold text-red-700">
-                    -{totals.transferred.toFixed(2)}€
+                    -{totals.transferred.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                   </span>
                 </div>
                 {totals.cashRefill > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">חיזוק למעטפת עודף:</span>
                     <span className="font-semibold text-red-700">
-                      -{totals.cashRefill.toFixed(2)}€
+                      -{totals.cashRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                     </span>
                   </div>
                 )}
@@ -848,7 +848,7 @@ function CashBoxesContent() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">חיזוק למעטפת הוצאות:</span>
                     <span className="font-semibold text-red-700">
-                      -{totals.expensesRefill.toFixed(2)}€
+                      -{totals.expensesRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                     </span>
                   </div>
                 )}
@@ -886,7 +886,7 @@ function CashBoxesContent() {
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-bold">מעטפת עודף</h3>
                 <span className="text-2xl font-bold text-blue-800">
-                  {changeBalance.toFixed(2)}€
+                  {changeBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                 </span>
               </div>
               <div className="space-y-1 text-sm">
@@ -898,24 +898,24 @@ function CashBoxesContent() {
                   return carriedOver > 0.001 ? (
                     <div className="flex justify-between">
                       <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
-                      <span className="font-semibold">+{carriedOver.toFixed(2)}€</span>
+                      <span className="font-semibold">+{carriedOver.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   ) : null;
                 })()}
                 <div className="flex justify-between">
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
-                  <span className="font-semibold">+{totals.cashRefill.toFixed(2)}€</span>
+                  <span className="font-semibold">+{totals.cashRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
                 {totals.adminTopupChange > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">תוספת מפורטוגו:</span>
-                    <span className="font-semibold">+{totals.adminTopupChange.toFixed(2)}€</span>
+                    <span className="font-semibold">+{totals.adminTopupChange.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">עודף שנתתי ללקוחות:</span>
                   <span className="font-semibold text-red-700">
-                    -{totals.changeGiven.toFixed(2)}€
+                    -{totals.changeGiven.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                   </span>
                 </div>
               </div>
@@ -959,7 +959,7 @@ function CashBoxesContent() {
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-bold">מעטפת הוצאות</h3>
                 <span className="text-2xl font-bold text-amber-700">
-                  {expensesBalance.toFixed(2)}€
+                  {expensesBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                 </span>
               </div>
               <div className="space-y-1 text-sm">
@@ -972,31 +972,31 @@ function CashBoxesContent() {
                   return carriedOver > 0.001 ? (
                     <div className="flex justify-between">
                       <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
-                      <span className="font-semibold">+{carriedOver.toFixed(2)}€</span>
+                      <span className="font-semibold">+{carriedOver.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                     </div>
                   ) : null;
                 })()}
                 <div className="flex justify-between">
                   <span className="text-gray-600">חיזוק מהקופה הראשית:</span>
-                  <span className="font-semibold">+{totals.expensesRefill.toFixed(2)}€</span>
+                  <span className="font-semibold">+{totals.expensesRefill.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                 </div>
                 {totals.adminTopupExpenses > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">תוספת מפורטוגו:</span>
-                    <span className="font-semibold">+{totals.adminTopupExpenses.toFixed(2)}€</span>
+                    <span className="font-semibold">+{totals.adminTopupExpenses.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">הוצאות החודש:</span>
                   <span className="font-semibold text-red-700">
-                    -{totals.expenses.toFixed(2)}€
+                    -{totals.expenses.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                   </span>
                 </div>
                 {totals.cardLoad > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">הטענת כרטיס טיים אאוט:</span>
                     <span className="font-semibold text-red-700">
-                      -{totals.cardLoad.toFixed(2)}€
+                      -{totals.cardLoad.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                     </span>
                   </div>
                 )}
@@ -1051,7 +1051,7 @@ function CashBoxesContent() {
                       </div>
                     </div>
                     <span className="text-xl font-bold text-amber-900">
-                      {cardBalance.toFixed(2)}€
+                      {cardBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                     </span>
                   </div>
 
@@ -1063,27 +1063,27 @@ function CashBoxesContent() {
                       return cardCarried > 0.001 ? (
                         <div className="flex justify-between">
                           <span className="text-gray-600">יתרה שעברה מחודש קודם:</span>
-                          <span className="font-semibold">+{cardCarried.toFixed(2)}€</span>
+                          <span className="font-semibold">+{cardCarried.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                         </div>
                       ) : null;
                     })()}
                     {totals.cardLoad > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">הטענה ממעטפת הוצאות:</span>
-                        <span className="font-semibold">+{totals.cardLoad.toFixed(2)}€</span>
+                        <span className="font-semibold">+{totals.cardLoad.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                       </div>
                     )}
                     {totals.adminTopupCard > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">הטענה מפורטוגו:</span>
-                        <span className="font-semibold">+{totals.adminTopupCard.toFixed(2)}€</span>
+                        <span className="font-semibold">+{totals.adminTopupCard.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                       </div>
                     )}
                     {totals.expensesFromCard > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">הוצאות מהכרטיס:</span>
                         <span className="font-semibold text-red-700">
-                          -{totals.expensesFromCard.toFixed(2)}€
+                          -{totals.expensesFromCard.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                         </span>
                       </div>
                     )}
@@ -1180,11 +1180,11 @@ function CashBoxesContent() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 text-sm">
               <div className="flex justify-between mb-1">
                 <span className="text-gray-600">יש כרגע ב{refillSourceLabel}:</span>
-                <span className="font-semibold text-green-800">{refillSourceBalance.toFixed(2)}€</span>
+                <span className="font-semibold text-green-800">{refillSourceBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">יש כרגע ב{refillTargetLabel}:</span>
-                <span className="font-semibold">{currentEnvelope.toFixed(2)}€</span>
+                <span className="font-semibold">{currentEnvelope.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
               </div>
             </div>
 
@@ -1209,15 +1209,15 @@ function CashBoxesContent() {
                 <div className="flex justify-between">
                   <span className="text-gray-700">{refillSourceLabel}:</span>
                   <span className="font-semibold">
-                    {refillSourceBalance.toFixed(2)}€ →{' '}
-                    <span className="text-green-800">{(refillSourceBalance - refillAmt).toFixed(2)}€</span>
+                    {refillSourceBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ →{' '}
+                    <span className="text-green-800">{(refillSourceBalance - refillAmt).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-700">{refillTargetLabel}:</span>
                   <span className="font-semibold">
-                    {currentEnvelope.toFixed(2)}€ →{' '}
-                    <span className="text-blue-800">{(currentEnvelope + refillAmt).toFixed(2)}€</span>
+                    {currentEnvelope.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ →{' '}
+                    <span className="text-blue-800">{(currentEnvelope + refillAmt).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
                   </span>
                 </div>
               </div>
@@ -1270,8 +1270,8 @@ function CashBoxesContent() {
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               {showSettleModal === 'all'
-                ? `סגירת כל המתנה בבת אחת — סה"כ ${pendingTotal.toFixed(0)}€`
-                : `סגירת ההפקדה: ${(showSettleModal as PendingRow).amount.toFixed(0)}€`}
+                ? `סגירת כל המתנה בבת אחת — סה"כ ${pendingTotal.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`
+                : `סגירת ההפקדה: ${(showSettleModal as PendingRow).amount.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`}
             </p>
 
             {/* אסמכתא — חובה אם זו הייתה הפקדה */}

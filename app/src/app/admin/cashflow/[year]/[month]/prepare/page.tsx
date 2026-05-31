@@ -721,11 +721,11 @@ function CashflowRowItem({
                 {row.invoice.absorbed_deferred.map((d, i) => (
                   <span key={`${d.year}-${d.month}`}>
                     {i > 0 && ' · '}
-                    {monthName(d.year, d.month - 1)}: {d.amount.toFixed(2)}€
+                    {monthName(d.year, d.month - 1)}: {d.amount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                   </span>
                 ))}
                 {' · '}
-                <strong>{monthName(row.invoice.service_year, row.invoice.service_month - 1)}: {(row.invoice.own_amount ?? 0).toFixed(2)}€</strong>
+                <strong>{monthName(row.invoice.service_year, row.invoice.service_month - 1)}: {(row.invoice.own_amount ?? 0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</strong>
               </span>
             </div>
           )}

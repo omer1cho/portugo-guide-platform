@@ -145,7 +145,7 @@ export default function GuideStatusCard({ summary, onChange }: Props) {
           }}
         >
           <span>💰 ממתין להפקדה</span>
-          <span style={{ fontSize: 15 }}>{summary.pending_total.toFixed(0)}€</span>
+          <span style={{ fontSize: 15 }}>{summary.pending_total.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€</span>
         </div>
       )}
 

@@ -437,7 +437,7 @@ function InboxAlerts({
     alerts.push({
       kind: 'receipts',
       icon: '🧾',
-      text: `${uniqueGuides} מדריכים לא הוציאו קבלה ${scope} — סה״כ ${totalAmount.toFixed(0)}€`,
+      text: `${uniqueGuides} מדריכים לא הוציאו קבלה ${scope} — סה״כ ${totalAmount.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`,
       color: 'red',
       inlineContent: (
         <ReceiptsInlineList outstanding={outstandingReceipts} onChange={onChange} />
@@ -451,7 +451,7 @@ function InboxAlerts({
     alerts.push({
       kind: 'pending',
       icon: '💰',
-      text: `${guidesWithPending.length} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toFixed(0)}€`,
+      text: `${guidesWithPending.length} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`,
       color: 'red',
       inlineContent: (
         <PendingInlineList guides={guidesWithPending} onChange={onChange} />
@@ -792,7 +792,7 @@ function Highlights({
     cards.push({
       icon: '💰',
       title: 'ממוצע טיפ הכי גבוה (קלאסי)',
-      text: `${topByClassicTip.name} — ממוצע ${topByClassicTip.avgClassic.toFixed(2)}€ פר ראש (${topByClassicTip.classicPeople} משתתפים בקלאסי).`,
+      text: `${topByClassicTip.name} — ממוצע ${topByClassicTip.avgClassic.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ פר ראש (${topByClassicTip.classicPeople} משתתפים בקלאסי).`,
     });
   }
 
@@ -800,7 +800,7 @@ function Highlights({
     cards.push({
       icon: '💵',
       title: 'הכי הרבה טיפים בסיורים רגילים',
-      text: `${topByOtherTips.name} — ${topByOtherTips.tips.toFixed(0)}€ טיפים מסיורים שאינם קלאסי.`,
+      text: `${topByOtherTips.name} — ${topByOtherTips.tips.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€ טיפים מסיורים שאינם קלאסי.`,
     });
   }
 
