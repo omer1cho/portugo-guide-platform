@@ -552,6 +552,8 @@ function TastingSection({ tour }: { tour: TastingTour }) {
           <TastingMobileCard key={row.size} tour={tour} row={row} />
         ))}
       </div>
+
+      {tour.childrenPrices && <ChildrenPriceBlock childrenPrices={tour.childrenPrices} />}
     </section>
   );
 }

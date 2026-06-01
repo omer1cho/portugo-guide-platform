@@ -382,6 +382,27 @@ export const TOURS: Tour[] = [
       { id: 'pkg-winter', label: 'חבילה · חורף (85€)', rows: ARRABIDA_PKG_WINTER_ROWS },
       { id: 'pkg-summer', label: 'חבילה · קיץ (90€)', rows: ARRABIDA_PKG_SUMMER_ROWS },
     ],
+    carCosts: {
+      label: 'יום מלא (8 שעות)',
+      rows: [
+        { sizeLabel: 'עד 7', vehicleA: 'ואן 6/7', costA: 331, vehicleB: '7+1', costB: 323 },
+        { sizeLabel: '8', vehicleA: 'ספרינטר 8', costA: 368, vehicleB: '7+1 / 12+1', costB: 354 },
+        { sizeLabel: '9-12', vehicleA: '16 מקומות', costA: 394, vehicleB: '12+1', costB: 375 },
+        { sizeLabel: '13-15', vehicleA: '16 מקומות', costA: 394, vehicleB: '15+1', costB: 399 },
+        { sizeLabel: '16-25', vehicleA: '19/25 מקומות', costA: 415, vehicleB: '25+1', costB: 444 },
+        { sizeLabel: '26-34', vehicleA: '34 מקומות', costA: 488, vehicleB: '—', costB: null },
+      ],
+      note: 'פרדאוטו כולל תוספת דלק 5%. מורטה כולל מע"מ 6% + ארוחת נהג 20€. עלות הרכב לאדם = עלות הרכב ÷ מספר הנוסעים בפועל. ל-26 איש ומעלה אין רכב אצל מורטה (פרדאוטו בלבד).',
+    },
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: '35€', pkg: '35€' },
+        { ageLabel: '3-6', regular: '40€', pkg: '35€' },
+        { ageLabel: '7-12', regular: '65€', pkg: '60€' },
+        { ageLabel: '13+', regular: '90€', pkg: '85€' },
+      ],
+      note: 'עד 2: 35€ עלות מושב בלבד · 3-6: 40€ (מושב + 5€ סמלי) · 7-12: 65€ (מושב + חצי סיור) · 13+: מחיר מבוגר מלא. כניסה ליקב — ילדים משלמים מחיר מבוגר עד בירור מול הספק. בקיץ (יולי+) מחיר המבוגר 95€/90€, מחיר הילדים לא משתנה.',
+    },
   },
   {
     slug: 'obidos',
@@ -404,6 +425,27 @@ export const TOURS: Tour[] = [
       { id: 'reg', label: 'מחיר רגיל (105€)', rows: OBIDOS_REG_ROWS },
       { id: 'pkg', label: 'חבילה (100€)', rows: OBIDOS_PKG_ROWS },
     ],
+    carCosts: {
+      label: 'יום מלא (8 שעות)',
+      rows: [
+        { sizeLabel: 'עד 7', vehicleA: 'ואן 6/7', costA: 383, vehicleB: '7+1', costB: 449 },
+        { sizeLabel: '8', vehicleA: 'ספרינטר 8', costA: 401, vehicleB: '7+1', costB: 449 },
+        { sizeLabel: '9-12', vehicleA: '16 מקומות', costA: 441, vehicleB: '12+1', costB: 512 },
+        { sizeLabel: '13-15', vehicleA: '16 מקומות', costA: 441, vehicleB: '15+1', costB: 537 },
+        { sizeLabel: '16-25', vehicleA: '19/25 מקומות', costA: 462, vehicleB: '25+1', costB: 581 },
+        { sizeLabel: '26-34', vehicleA: '34 מקומות', costA: 504, vehicleB: '—', costB: null },
+      ],
+      note: 'פרדאוטו כולל תוספת דלק 5%. מורטה כולל מע"מ 6% + ארוחת נהג 20€. עלות הרכב לאדם = עלות הרכב ÷ מספר הנוסעים בפועל. מורטה יקרה משמעותית באובידוש — פרדאוטו עדיף כמעט תמיד. ל-26 איש ומעלה אין רכב אצל מורטה (פרדאוטו בלבד).',
+    },
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: '35€', pkg: '35€' },
+        { ageLabel: '3-6', regular: '40€', pkg: '35€' },
+        { ageLabel: '7-12', regular: '70€', pkg: '65€' },
+        { ageLabel: '13+', regular: '105€', pkg: '100€' },
+      ],
+      note: 'עד 2: 35€ עלות מושב בלבד · 3-6: 40€ (מושב + 5€ סמלי) · 7-12: 70€ (מושב + חצי סיור) · 13+: מחיר מבוגר מלא. כניסות (מנזר + תצפית גלישה) — ילדים משלמים מחיר מבוגר עד בירור מול הספק.',
+    },
   },
   {
     slug: 'douro',
@@ -428,6 +470,23 @@ export const TOURS: Tour[] = [
       { id: 'reg', label: 'מחיר רגיל (105€)', rows: DOURO_REG_ROWS },
       { id: 'pkg', label: 'חבילה (100€)', rows: DOURO_PKG_ROWS },
     ],
+    carCosts: {
+      label: 'יום מלא · פורטו (עד 19 משתתפים)',
+      rows: [
+        { sizeLabel: '2-7', vehicleA: "ואן ז'ורז' (ספק יחיד)", costA: 280, vehicleB: '—', costB: null },
+        { sizeLabel: '8-19', vehicleA: 'מיניבוס · איבורבס', costA: 475, vehicleB: 'מיניבוס · אנטורס', costB: 700 },
+      ],
+      note: '2-7 משתתפים: ז\'ורז\' ספק יחיד 280€. 8-19 משתתפים: איבורבס 475€ (זול), אנטורס 700€ (יקר), קלבר 635€ באמצע. הפער 225€ = ההבדל בין רווח להפסד — חובה לתאם איבורבס/קלבר מראש. מקסימום 19 משתתפים בדורו.',
+    },
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: '35€', pkg: '35€' },
+        { ageLabel: '3-6', regular: '40€', pkg: '35€' },
+        { ageLabel: '7-12', regular: '70€', pkg: '65€' },
+        { ageLabel: '13+', regular: '105€', pkg: '100€' },
+      ],
+      note: 'עד 2: 35€ עלות מושב בלבד · 3-6: 40€ (מושב + 5€ סמלי) · 7-12: 70€ (מושב + חצי סיור) · 13+: מחיר מבוגר מלא. יקב + שייט — ילדים משלמים מחיר מבוגר עד בירור מול הספק.',
+    },
   },
 ];
 
@@ -478,6 +537,7 @@ export type TastingTour = {
     label: string;
     rows: TastingScenarioRow[];
   }[];
+  childrenPrices?: ChildrenPrices; // מחירי ילדים ללקוח
 };
 
 // ─── CULINARY MORNING (gravana = 1 בקבוק לכל 7 אנשים) ───
@@ -611,6 +671,14 @@ export const TASTING_TOURS: TastingTour[] = [
       { id: 'reg', label: 'מחיר רגיל (20€)', rows: BELEM_REG_ROWS },
       { id: 'pkg', label: 'חבילה (15€)', rows: BELEM_PKG_ROWS },
     ],
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 6', regular: 'חינם', pkg: 'חינם' },
+        { ageLabel: '7-12', regular: '10€', pkg: '8€' },
+        { ageLabel: '13+', regular: '20€', pkg: '15€' },
+      ],
+      note: 'עד גיל 6: חינם · 7-12: חצי מחיר · 13+: מחיר מבוגר מלא. פשטל בלם נכלל לכל המשתתפים.',
+    },
   },
   {
     slug: 'culinary-morning',
@@ -623,6 +691,15 @@ export const TASTING_TOURS: TastingTour[] = [
       { id: 'reg', label: 'מחיר רגיל (65€)', rows: CULINARY_MORNING_REG_ROWS },
       { id: 'pkg', label: 'חבילה (60€)', rows: CULINARY_MORNING_PKG_ROWS },
     ],
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: 'חינם', pkg: 'חינם' },
+        { ageLabel: '3-6', regular: '20€', pkg: '15€' },
+        { ageLabel: '7-12', regular: '40€', pkg: '35€' },
+        { ageLabel: '13+', regular: '65€', pkg: '60€' },
+      ],
+      note: 'עד 2: חינם · 3-6: טעימות חלקיות · 7-12: כ-60% מנה · 13+: מחיר מבוגר מלא. הסיור כולל אלכוהול — מתאים בעיקר ל-13+.',
+    },
   },
   {
     slug: 'culinary-lunch',
@@ -635,6 +712,15 @@ export const TASTING_TOURS: TastingTour[] = [
       { id: 'reg', label: 'מחיר רגיל (65€)', rows: CULINARY_LUNCH_REG_ROWS },
       { id: 'pkg', label: 'חבילה (60€)', rows: CULINARY_LUNCH_PKG_ROWS },
     ],
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: 'חינם', pkg: 'חינם' },
+        { ageLabel: '3-6', regular: '20€', pkg: '15€' },
+        { ageLabel: '7-12', regular: '40€', pkg: '35€' },
+        { ageLabel: '13+', regular: '65€', pkg: '60€' },
+      ],
+      note: 'עד 2: חינם · 3-6: טעימות חלקיות · 7-12: כ-60% מנה · 13+: מחיר מבוגר מלא. הסיור כולל אלכוהול — מתאים בעיקר ל-13+.',
+    },
   },
   {
     slug: 'tastings-porto',
@@ -647,6 +733,15 @@ export const TASTING_TOURS: TastingTour[] = [
       { id: 'reg', label: 'מחיר רגיל (65€)', rows: TASTINGS_REG_ROWS },
       { id: 'pkg', label: 'חבילה (60€)', rows: TASTINGS_PKG_ROWS },
     ],
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: 'חינם', pkg: 'חינם' },
+        { ageLabel: '3-6', regular: '20€', pkg: '15€' },
+        { ageLabel: '7-12', regular: '40€', pkg: '35€' },
+        { ageLabel: '13+', regular: '65€', pkg: '60€' },
+      ],
+      note: 'עד 2: חינם · 3-6: טעימות חלקיות · 7-12: כ-60% מנה · 13+: מחיר מבוגר מלא. הסיור כולל אלכוהול — מתאים בעיקר ל-13+.',
+    },
   },
 ];
 
