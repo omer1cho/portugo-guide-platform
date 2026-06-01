@@ -35,6 +35,33 @@ export type Scenario = {
   rows: ScenarioRow[];
 };
 
+// מחיר ללקוח לפי גיל ילד (תצוגת לקוח, לא רווחיות) — לסיורים הרגילים
+export type ChildPriceRow = {
+  ageLabel: string;              // "עד 2" / "3-6" / "7-12" / "13+"
+  regular: string;               // מחיר רגיל ("35€" / "חינם" / "65€")
+  pkg: string;                   // מחיר חבילה
+};
+
+export type ChildrenPrices = {
+  rows: ChildPriceRow[];
+  note?: string;
+};
+
+// עלות רכב מפורטת לפי גודל קבוצה — שני ספקים זה לצד זה
+export type CarCostRow = {
+  sizeLabel: string;             // "עד 7" / "8" / "9-12" ...
+  vehicleA: string;              // רכב פרדאוטו
+  costA: number;
+  vehicleB: string;              // רכב מורטה ("—" אם אין)
+  costB: number | null;          // null = אין ספק
+};
+
+export type CarCosts = {
+  label: string;                 // "יום מלא (8 שעות) — סינטרה"
+  rows: CarCostRow[];
+  note?: string;
+};
+
 export type Tour = {
   slug: string;
   name: string;
@@ -50,6 +77,8 @@ export type Tour = {
     rows: { size: number; values: string[] }[];
   };
   scenarios: Scenario[];
+  carCosts?: CarCosts;           // טבלת עלויות רכב מפורטת (תצוגה ברורה)
+  childrenPrices?: ChildrenPrices; // מחירי ילדים ללקוח
 };
 
 // ─── Summary cards (top of page) ───
@@ -308,6 +337,27 @@ export const TOURS: Tour[] = [
       { id: 'pkg-winter', label: 'חבילה · חורף (85€)', rows: SINTRA_PKG_WINTER_ROWS },
       { id: 'pkg-summer', label: 'חבילה · קיץ (90€)', rows: SINTRA_PKG_SUMMER_ROWS },
     ],
+    carCosts: {
+      label: 'יום מלא (8 שעות)',
+      rows: [
+        { sizeLabel: 'עד 7', vehicleA: 'ואן 6/7', costA: 326, vehicleB: '7+1', costB: 307 },
+        { sizeLabel: '8', vehicleA: 'ספרינטר 8', costA: 362, vehicleB: '7+1 / 12+1', costB: 364 },
+        { sizeLabel: '9-12', vehicleA: '16 מקומות', costA: 389, vehicleB: '12+1', costB: 364 },
+        { sizeLabel: '13-15', vehicleA: '16 מקומות', costA: 389, vehicleB: '15+1', costB: 386 },
+        { sizeLabel: '16-25', vehicleA: '19/25 מקומות', costA: 404, vehicleB: '25+1', costB: 431 },
+        { sizeLabel: '26-34', vehicleA: '34 מקומות', costA: 483, vehicleB: '—', costB: null },
+      ],
+      note: 'פרדאוטו כולל תוספת דלק 5%. מורטה כולל מע"מ 6% + ארוחת נהג 20€. עלות הרכב לאדם = עלות הרכב ÷ מספר הנוסעים בפועל. ל-26 איש ומעלה אין רכב אצל מורטה (פרדאוטו בלבד).',
+    },
+    childrenPrices: {
+      rows: [
+        { ageLabel: 'עד 2', regular: '35€', pkg: '35€' },
+        { ageLabel: '3-6', regular: '40€', pkg: '35€' },
+        { ageLabel: '7-12', regular: '65€', pkg: '60€' },
+        { ageLabel: '13+', regular: '90€', pkg: '85€' },
+      ],
+      note: 'עד 2: 35€ עלות מושב בלבד · 3-6: 40€ (מושב + 5€ סמלי) · 7-12: 65€ (מושב + חצי סיור) · 13+: מחיר מבוגר מלא. ארמון פנה — כניסה חינם עד גיל 16. בקיץ (יולי+) מחיר המבוגר 95€/90€, מחיר הילדים לא משתנה.',
+    },
   },
   {
     slug: 'arrabida',

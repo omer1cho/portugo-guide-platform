@@ -31,6 +31,8 @@ import {
   type TastingScenarioRow,
   type ClassicScenarioRow,
   type ProfitCell,
+  type CarCosts,
+  type ChildrenPrices,
 } from '@/lib/pricing-validation-data';
 import {
   PRIVATE_TOURS,
@@ -309,7 +311,101 @@ function TourSection({ tour }: { tour: Tour }) {
           <ScenarioMobileCard key={row.size} tour={tour} row={row} />
         ))}
       </div>
+
+      {/* Car costs block */}
+      {tour.carCosts && (
+        <CarCostBlock carCosts={tour.carCosts} supplierA={tour.supplierLabelA} supplierB={tour.supplierLabelB} />
+      )}
+
+      {/* Children prices block */}
+      {tour.childrenPrices && <ChildrenPriceBlock childrenPrices={tour.childrenPrices} />}
     </section>
+  );
+}
+
+// ─── Block: Car costs (daily tours) ─────────────────────────────────────
+function CarCostBlock({
+  carCosts,
+  supplierA,
+  supplierB,
+}: {
+  carCosts: CarCosts;
+  supplierA: string;
+  supplierB: string;
+}) {
+  return (
+    <div className="mt-6">
+      <h3 className="text-base font-bold text-emerald-900 mb-2">
+        עלויות רכב <span className="text-xs text-gray-500 font-normal">· {carCosts.label}</span>
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full max-w-2xl text-xs md:text-sm border-collapse">
+          <thead>
+            <tr className="text-right text-slate-600">
+              <th className="bg-emerald-100/60 px-2.5 py-2 font-semibold border-b border-emerald-200">גודל קבוצה</th>
+              <th className="bg-emerald-50 px-2.5 py-2 font-semibold border-b border-emerald-200">רכב · {supplierA}</th>
+              <th className="bg-emerald-50 px-2.5 py-2 font-semibold border-b border-emerald-200">עלות · {supplierA}</th>
+              <th className="bg-sky-50 px-2.5 py-2 font-semibold border-b border-sky-200">רכב · {supplierB}</th>
+              <th className="bg-sky-50 px-2.5 py-2 font-semibold border-b border-sky-200">עלות · {supplierB}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {carCosts.rows.map((r, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="px-2.5 py-2 font-bold whitespace-nowrap">{r.sizeLabel}</td>
+                <td className="px-2.5 py-2 text-slate-700">{r.vehicleA}</td>
+                <td className="px-2.5 py-2 font-semibold text-emerald-900">{fmtEuro(r.costA)}</td>
+                <td className="px-2.5 py-2 text-slate-700">{r.vehicleB}</td>
+                <td className="px-2.5 py-2 font-semibold text-sky-900">
+                  {r.costB === null ? (
+                    <span className="text-gray-400 italic text-[11px]">אין ספק</span>
+                  ) : (
+                    fmtEuro(r.costB)
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {carCosts.note && (
+        <p className="text-xs text-gray-500 mt-2 leading-relaxed">{carCosts.note}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Block: Children prices (daily / regular tours) ─────────────────────
+function ChildrenPriceBlock({ childrenPrices }: { childrenPrices: ChildrenPrices }) {
+  return (
+    <div className="mt-6">
+      <h3 className="text-base font-bold text-pink-900 mb-2">
+        מחירי ילדים <span className="text-xs text-gray-500 font-normal">· מחיר ללקוח לפי גיל</span>
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full max-w-md text-xs md:text-sm border-collapse">
+          <thead>
+            <tr className="text-right text-slate-600">
+              <th className="bg-pink-100/60 px-2.5 py-2 font-semibold border-b border-pink-200">גיל</th>
+              <th className="bg-pink-50 px-2.5 py-2 font-semibold border-b border-pink-200">מחיר רגיל</th>
+              <th className="bg-pink-50 px-2.5 py-2 font-semibold border-b border-pink-200">מחיר חבילה</th>
+            </tr>
+          </thead>
+          <tbody>
+            {childrenPrices.rows.map((r, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="px-2.5 py-2 font-bold whitespace-nowrap">{r.ageLabel}</td>
+                <td className="px-2.5 py-2 font-semibold text-slate-800">{r.regular}</td>
+                <td className="px-2.5 py-2 text-slate-700">{r.pkg}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {childrenPrices.note && (
+        <p className="text-xs text-gray-500 mt-2 leading-relaxed">{childrenPrices.note}</p>
+      )}
+    </div>
   );
 }
 
