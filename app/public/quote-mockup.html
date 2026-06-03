@@ -6,30 +6,38 @@
 <title>פורטוגו · הצעה אישית למשפחת סימאי</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
+    --forest: #0a3d22;
+    --green-deep: #0d6e34;
+    --green-dark: #0d6e34;
     --green: #0d8c3e;
-    --green-dark: #096a2e;
-    --green-soft: #e8f5ec;
-    --green-soft-2: #f0faf3;
-    --red: #dc2626;
-    --red-soft: #fef1f1;
-    --yellow: #fbbf24;
-    --yellow-soft: #fffaf0;
-    --bg: #fafaf7;
-    --surface: #ffffff;
-    --ink: #1a1a1a;
-    --ink-soft: #555;
-    --ink-mute: #888;
-    --border: #e6e6e6;
-    --shadow: 0 2px 12px rgba(0,0,0,0.04);
-    --shadow-hover: 0 6px 24px rgba(0,0,0,0.08);
+    --green-mute: #5aa878;
+    --green-soft: #eef6f0;
+    --green-soft-2: #f3f8f4;
+    --terra: #c4602f;
+    --terra-mute: #9c6b4c;
+    --gold: #bfa14f;
+    --red: #9c6b4c;
+    --red-soft: #f4eee2;
+    --yellow: #bfa14f;
+    --yellow-soft: #f3ecd9;
+    --bg: #faf6ee;
+    --surface: #fffdf8;
+    --band: #f0e9da;
+    --ink: #23281f;
+    --ink-soft: #5b5f54;
+    --ink-mute: #8a8d82;
+    --border: #e3ddcf;
+    --serif: 'Frank Ruhl Libre', 'Heebo', serif;
+    --shadow: 0 2px 12px rgba(35,40,31,0.05);
+    --shadow-hover: 0 8px 26px rgba(35,40,31,0.10);
     --radius: 16px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; direction: rtl; }
   body {
     font-family: 'Heebo', -apple-system, sans-serif;
     background: var(--bg);
@@ -37,8 +45,12 @@
     font-weight: 400;
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
-    font-size: 16px;
+    font-size: 18px;
   }
+
+  /* gentle reveal */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in-view { opacity: 1; transform: none; }
 
   /* ===== Header ===== */
   header {
@@ -60,24 +72,25 @@
 
   /* ===== Hero ===== */
   .hero {
-    position: relative; height: 460px;
+    position: relative; min-height: 440px;
     background:
-      linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%),
+      linear-gradient(180deg, rgba(10,61,34,0.10) 0%, rgba(10,61,34,0.58) 100%),
       url('/hero-quote-2.png') center/cover no-repeat;
-    color: white;
-    display: flex; align-items: flex-end; padding: 56px 32px;
+    color: #fffdf8;
+    display: flex; align-items: flex-end; padding: 56px clamp(20px, 5vw, 32px);
   }
   .hero-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
   .hero h1 {
-    font-size: 52px; font-weight: 800; line-height: 1.1;
+    font-family: var(--serif);
+    font-size: clamp(30px, 5vw, 44px); font-weight: 700; line-height: 1.15;
     margin-bottom: 18px;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    text-shadow: 0 2px 14px rgba(10,61,34,0.35);
   }
   .hero-subtitle {
-    font-size: 20px; font-weight: 400; opacity: 0.95;
+    font-size: 19px; font-weight: 400; opacity: 0.96;
     max-width: 720px;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.3);
-    line-height: 1.55;
+    text-shadow: 0 1px 8px rgba(10,61,34,0.35);
+    line-height: 1.6;
     margin-bottom: 6px;
   }
   .hero-subtitle:last-of-type { margin-bottom: 0; }
@@ -122,14 +135,21 @@
   }
   .city-head {
     margin-bottom: 36px;
-    border-bottom: 3px solid var(--green);
-    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    position: relative;
+  }
+  .city-head::after {
+    content: '';
+    position: absolute; bottom: -1px; inset-inline-start: 0;
+    width: 64px; height: 3px;
+    background: var(--gold); border-radius: 3px;
   }
   .city-head h2 {
-    font-size: 56px; font-weight: 900;
-    letter-spacing: -1px;
-    color: var(--ink);
-    line-height: 1;
+    font-family: var(--serif);
+    font-size: clamp(34px, 6vw, 46px); font-weight: 700;
+    color: var(--forest);
+    line-height: 1.1;
   }
 
   /* ===== Subsection ===== */
@@ -141,8 +161,9 @@
     margin-bottom: 28px;
   }
   .sub-head h3 {
-    font-size: 28px; font-weight: 800;
-    color: var(--ink); margin-bottom: 12px;
+    font-family: var(--serif);
+    font-size: 26px; font-weight: 700;
+    color: var(--forest); margin-bottom: 12px;
   }
   .sub-legend {
     display: flex; gap: 8px; flex-wrap: wrap;
@@ -157,20 +178,25 @@
   }
 
   /* ===== Tour card ===== */
-  .cards { display: grid; gap: 28px; }
+  .cards { display: grid; gap: 56px; }
 
   .card {
     background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow);
-    transition: all 0.3s;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
     display: grid;
-    grid-template-columns: 380px 1fr;
+    grid-template-columns: 1.1fr 1fr;
   }
-  .card:hover { box-shadow: var(--shadow-hover); }
+  /* editorial alternation: image swaps side every other card */
+  .card:nth-child(even) { grid-template-columns: 1fr 1.1fr; }
+  .card:nth-child(even) .card-img-wrap { order: 2; }
+  .card:nth-child(even) .card-body { order: 1; }
+  .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   .card.selected {
-    box-shadow: 0 0 0 3px var(--green), 0 6px 24px rgba(13,140,62,0.15);
+    box-shadow: 0 0 0 2px var(--green), 0 8px 26px rgba(13,140,62,0.12);
   }
 
   .card-img-wrap {
@@ -184,25 +210,25 @@
     display: block;
     transition: transform 0.5s;
   }
-  .card:hover .card-img-wrap img { transform: scale(1.04); }
+  .card:hover .card-img-wrap img { transform: scale(1.02); }
 
-  .card-body { padding: 32px; }
+  .card-body { padding: 36px; display: flex; flex-direction: column; }
 
   .card-title {
-    font-size: 28px; font-weight: 800;
-    color: var(--ink);
-    margin-bottom: 6px;
+    font-family: var(--serif);
+    font-size: 26px; font-weight: 700;
+    color: var(--forest);
+    margin-bottom: 8px;
     line-height: 1.2;
   }
   .card-tagline {
-    font-size: 16px; font-weight: 500;
-    color: var(--green-dark);
+    font-size: 17px; font-weight: 500;
+    color: var(--green-deep);
     margin-bottom: 22px;
-    font-style: italic;
   }
 
   .card-description {
-    font-size: 15px; color: var(--ink-soft);
+    font-size: 17px; color: var(--ink-soft);
     line-height: 1.75;
     margin-bottom: 24px;
   }
@@ -215,12 +241,12 @@
 
   /* Meta strip */
   .card-meta-strip {
-    background: #fafafa;
+    background: var(--band);
     border-radius: 10px;
     padding: 14px 18px;
     margin-bottom: 22px;
     display: flex; gap: 22px;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--ink-soft);
     flex-wrap: wrap;
   }
@@ -241,29 +267,27 @@
     color: var(--ink);
     text-decoration: none;
     font-weight: 600;
-    border-bottom: 1px dashed var(--green-dark);
+    border-bottom: 1px dashed var(--gold);
     transition: all 0.2s;
     display: inline-flex; align-items: center; gap: 4px;
   }
   .map-link:hover {
-    color: var(--green-dark);
-    border-bottom-color: var(--green);
+    color: var(--green-deep);
+    border-bottom-color: var(--green-deep);
   }
   .map-link::after {
     content: '↗';
     font-size: 0.9em;
-    color: var(--green-dark);
+    color: var(--gold);
     font-weight: 700;
   }
 
-  /* Price box */
+  /* Price — a quiet number, not a box */
   .price-box {
-    margin-bottom: 14px;
-    background: linear-gradient(135deg, var(--green-soft) 0%, var(--green-soft-2) 100%);
-    border: 1.5px solid var(--green);
-    border-radius: 12px;
-    padding: 20px 24px;
-    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: baseline; justify-content: space-between;
     gap: 16px; flex-wrap: wrap;
   }
   .price-main { flex: 1; min-width: 200px; }
@@ -271,7 +295,7 @@
     display: flex; align-items: baseline; gap: 6px;
   }
   .price-amount {
-    font-size: 38px; font-weight: 900; color: var(--green-dark);
+    font-size: 32px; font-weight: 700; color: var(--terra);
     line-height: 1;
   }
   .price-unit {
@@ -279,23 +303,21 @@
     font-weight: 500;
   }
   .price-detail {
-    font-size: 13px; color: var(--ink-soft);
+    font-size: 14px; color: var(--ink-mute);
     margin-top: 6px;
   }
   .price-total {
-    text-align: left; flex-shrink: 0;
-    background: white;
-    border: 1px solid var(--green);
-    border-radius: 10px;
-    padding: 10px 16px;
+    text-align: start; flex-shrink: 0;
+    align-self: flex-end;
+    background: none; border: none; padding: 0;
   }
   .price-total-label {
-    font-size: 11px; color: var(--ink-mute);
-    text-transform: uppercase; letter-spacing: 0.5px;
-    font-weight: 600;
+    font-size: 13px; color: var(--ink-mute);
+    text-transform: none; letter-spacing: 0;
+    font-weight: 500;
   }
   .price-total-amount {
-    font-size: 22px; font-weight: 800; color: var(--green-dark);
+    font-size: 16px; font-weight: 600; color: var(--ink-soft);
     margin-top: 2px;
   }
 
@@ -324,22 +346,22 @@
     font-size: 14px;
   }
   .coverage-block.included {
-    background: var(--green-soft);
-    border: 1px solid #b6e2c3;
+    background: rgba(90,168,120,0.10);
+    border: 1px solid #cfe3d4;
   }
   .coverage-block.excluded {
-    background: var(--red-soft);
-    border: 1px solid #fbcaca;
+    background: var(--band);
+    border: 1px solid var(--border);
   }
   .coverage-label {
-    font-size: 12px; font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 14px; font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
     margin-bottom: 8px;
     display: flex; align-items: center; gap: 6px;
   }
-  .coverage-block.included .coverage-label { color: var(--green-dark); }
-  .coverage-block.excluded .coverage-label { color: var(--red); }
+  .coverage-block.included .coverage-label { color: var(--green-deep); }
+  .coverage-block.excluded .coverage-label { color: var(--terra-mute); }
   .coverage-list { list-style: none; padding: 0; margin: 0; }
   .coverage-list li {
     padding: 3px 0;
@@ -381,8 +403,8 @@
     font-size: 14px; font-weight: 900;
   }
   .interest-btn.selected .check-icon {
-    background: white; color: var(--green-dark);
-    border-color: white;
+    background: #fffdf8; color: var(--terra);
+    border-color: #fffdf8;
   }
   .interest-btn.selected .check-icon::after { content: '✓'; }
 
@@ -479,14 +501,16 @@
 
   /* ===== Combos block ===== */
   .combos-block {
-    margin-top: 36px;
-    background: var(--yellow-soft);
+    margin-top: 48px;
+    background: var(--band);
     border-radius: var(--radius);
     padding: 32px;
-    border: 1.5px solid #f5d68e;
+    border: 1px solid var(--border);
+    border-inline-start: 4px solid var(--gold);
   }
   .combos-head {
-    font-size: 24px; font-weight: 800; color: var(--ink);
+    font-family: var(--serif);
+    font-size: 24px; font-weight: 700; color: var(--forest);
     margin-bottom: 6px;
   }
   .combos-sub {
@@ -495,18 +519,21 @@
   }
   .combos-list { display: grid; gap: 16px; }
   .combo-card {
-    background: white;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 24px 28px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    transition: all 0.2s;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
+  .combo-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   .combo-card.selected {
     box-shadow: 0 0 0 2px var(--green);
   }
   .combo-header { margin-bottom: 16px; }
   .combo-title {
-    font-size: 20px; font-weight: 700; color: var(--ink);
+    font-family: var(--serif);
+    font-size: 21px; font-weight: 700; color: var(--forest);
     margin-bottom: 6px;
   }
   .combo-duration {
@@ -515,11 +542,12 @@
 
   /* Combo day plan — meeting points + break */
   .combo-plan {
-    background: #fafafa;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 16px 18px;
     margin-bottom: 16px;
-    font-size: 14px;
+    font-size: 15px;
   }
   .combo-plan-step {
     display: flex; align-items: flex-start; gap: 12px;
@@ -561,7 +589,7 @@
     flex: 1; min-width: 160px;
   }
   .combo-price-main {
-    font-size: 22px; font-weight: 800; color: var(--green-dark);
+    font-size: 22px; font-weight: 700; color: var(--terra);
     line-height: 1.1;
   }
   .combo-price-detail {
@@ -586,7 +614,8 @@
     box-shadow: var(--shadow);
   }
   .terms h3 {
-    font-size: 24px; font-weight: 800; color: var(--ink);
+    font-family: var(--serif);
+    font-size: 24px; font-weight: 700; color: var(--forest);
     margin-bottom: 24px;
   }
   .terms-section { margin-bottom: 22px; }
@@ -626,15 +655,16 @@
 
   /* ===== Form ===== */
   .form-wrap {
-    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--green-deep) 0%, var(--forest) 100%);
+    color: #fffdf8;
     border-radius: var(--radius);
     padding: 48px;
-    margin-top: 32px;
-    box-shadow: 0 8px 32px rgba(13,140,62,0.2);
+    margin-top: 48px;
+    box-shadow: 0 8px 32px rgba(10,61,34,0.22);
   }
   .form-wrap h2 {
-    font-size: 32px; font-weight: 800;
+    font-family: var(--serif);
+    font-size: 30px; font-weight: 700;
     margin-bottom: 8px;
   }
   .form-wrap .lead {
@@ -799,8 +829,11 @@
 
   /* ===== Tablet ===== */
   @media (max-width: 980px) {
-    .card { grid-template-columns: 1fr; }
-    .card-img-wrap { height: 280px; }
+    .card, .card:nth-child(even) { grid-template-columns: 1fr; }
+    .card:nth-child(even) .card-img-wrap { order: 0; }
+    .card:nth-child(even) .card-body { order: 0; }
+    .card-img-wrap { height: 320px; }
+    .cards { gap: 40px; }
   }
 
   /* ===== Mobile ===== */
@@ -831,6 +864,13 @@
     .form-grid-2 { grid-template-columns: 1fr; }
     .terms { padding: 28px 24px; }
     .summary-item { padding: 12px 14px; }
+  }
+
+  /* ===== Reduced motion (accessibility) ===== */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
@@ -1945,6 +1985,20 @@
       updateSummary();
     });
   });
+
+  // Gentle reveal on scroll (respects reduced-motion)
+  (function () {
+    const els = document.querySelectorAll('.card, .combo-card');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !('IntersectionObserver' in window)) return;
+    els.forEach(el => el.classList.add('reveal'));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(el => io.observe(el));
+  })();
 </script>
 
 </body>
