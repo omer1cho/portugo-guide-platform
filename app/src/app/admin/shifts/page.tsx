@@ -395,12 +395,38 @@ function ShiftsContent() {
     };
   }, [weekStart, guides, shifts]);
 
+  /**
+   * שולח מייל אישי לכל מדריך שיש לו שיבוץ מפורסם בשבוע (best-effort).
+   * רץ אחרי פרסום/פרסום-מחדש. לא מפיל את הפעולה אם השליחה נכשלת.
+   * מחזיר את מספר המיילים שנשלחו, או null אם הייתה שגיאה.
+   */
+  async function notifyGuidesOfPublish(): Promise<number | null> {
+    try {
+      const res = await fetch('/api/shifts/notify-publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          weekStart: toIsoDate(weekStart),
+          city: cityFilter,
+          baseUrl: window.location.origin,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) return null;
+      return typeof json.sent === 'number' ? json.sent : 0;
+    } catch {
+      return null;
+    }
+  }
+
   async function handlePublishWeek() {
     if (!confirm(`לפרסם ${totalDraftCount} שיבוצים לשבוע ${fmtWeekRange(weekStart)}?`)) return;
     setPublishing(true);
     try {
       const n = await publishWeek(weekStart, cityFilter);
-      alert(`פורסמו ${n} שיבוצים`);
+      const sent = await notifyGuidesOfPublish();
+      const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה — אפשר לנסות "פרסמי מחדש")' : `\nנשלחו ${sent} מיילים למדריכים`;
+      alert(`פורסמו ${n} שיבוצים${mailMsg}`);
       reload();
     } catch (e) {
       alert('פרסום נכשל: ' + (e instanceof Error ? e.message : ''));
@@ -419,7 +445,9 @@ function ShiftsContent() {
     setPublishing(true);
     try {
       const n = await republishWeek(weekStart, cityFilter);
-      alert(`עודכנו ${n} שיבוצים — הבאנר יחזור למדריכים`);
+      const sent = await notifyGuidesOfPublish();
+      const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה)' : `\nנשלחו ${sent} מיילים למדריכים`;
+      alert(`עודכנו ${n} שיבוצים — הבאנר יחזור למדריכים${mailMsg}`);
       reload();
     } catch (e) {
       alert('עדכון נכשל: ' + (e instanceof Error ? e.message : ''));
