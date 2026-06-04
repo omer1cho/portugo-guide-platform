@@ -98,6 +98,45 @@ const DEFAULT_DURATION_HOURS: Record<string, number> = {
   'פעילות_צוות': 1,
 };
 
+/**
+ * משך בשעות לסיור פרטי, לפי שם הסיור האמיתי שנשמר ב-notes.
+ * סיור פרטי נשמר תמיד כ-tour_type 'פרטי_1'/'פרטי_2', והסיור האמיתי (אראבידה,
+ * סינטרה...) רשום בתחילת ה-notes. בלי המיפוי הזה כל פרטי קיבל 3 שעות קבוע ביומן,
+ * כך שאראבידה פרטי (יום מלא) הופיע כ-3 שעות. המפתחות הם ה-label מתוך TOUR_TYPES.
+ */
+const PRIVATE_DETAIL_DURATION_HOURS: Record<string, number> = {
+  'ליסבון הקלאסית': 3,
+  'פורטו הקלאסית': 3,
+  'בלם': 2,
+  'סינטרה': 8,
+  'אראבידה': 8,
+  'אובידוש': 8,
+  'קולינרי': 3,
+  'סיור טעימות': 2,
+  'עמק הדורו': 8,
+};
+
+/** שולף את שם הסיור האמיתי מתוך notes של סיור פרטי (החלק הראשון, אחרי הסרת תחילית "כנראה") */
+function privateDetailLabel(notes: string | null): string | null {
+  if (!notes) return null;
+  let raw = notes;
+  if (raw.startsWith(TENTATIVE_PREFIX)) raw = raw.slice(TENTATIVE_PREFIX.length).trim();
+  const splitter = raw.includes(' · ') ? ' · ' : raw.includes(' - ') ? ' - ' : raw.includes(' / ') ? ' / ' : null;
+  const detail = splitter ? raw.split(splitter)[0]?.trim() : raw.trim();
+  return detail || null;
+}
+
+/** המשך בשעות של שיבוץ, כולל טיפול נכון בסיורים פרטיים (לפי הסיור האמיתי ב-notes) */
+function shiftDurationHours(s: Shift): number {
+  if (PRIVATE_TOUR_TYPES.has(s.tour_type)) {
+    const detail = privateDetailLabel(s.notes);
+    if (detail && PRIVATE_DETAIL_DURATION_HOURS[detail] != null) {
+      return PRIVATE_DETAIL_DURATION_HOURS[detail];
+    }
+  }
+  return DEFAULT_DURATION_HOURS[s.tour_type] ?? 3;
+}
+
 /** YYYY-MM-DD + HH:MM:SS → "YYYYMMDDTHHMMSS" (פורמט iCalendar local time) */
 function toIcsLocalTime(isoDate: string, hms: string): string {
   const dateClean = isoDate.replace(/-/g, '');
@@ -125,7 +164,7 @@ function buildIcs(shifts: Shift[], guideName: string): string {
   const dtstamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 
   const events = shifts.map((s) => {
-    const durationHours = DEFAULT_DURATION_HOURS[s.tour_type] ?? 3;
+    const durationHours = shiftDurationHours(s);
     const endTime = addHoursToTime(s.shift_time, durationHours);
     const dtstart = toIcsLocalTime(s.shift_date, s.shift_time);
     const dtend = toIcsLocalTime(s.shift_date, endTime);
