@@ -136,10 +136,30 @@ const GUIDE_PALETTE: Array<{ bg: string; fg: string; border: string }> = [
   { bg: '#ccfbf1', fg: '#0f766e', border: '#5eead4' }, // טיל
 ];
 
+// צבע קבוע לכל מדריך לפי השם — כדי שצבע לא "יזוז" כשמוסיפים מדריך חדש.
+// כל מדריך מקבל גוון מובחן וקבוע. תום נשאר אדום (קל להבחין), שקד מקבלת
+// פוקסיה ייחודית. מדריך שלא ברשימה נופל חזרה לחלוקה לפי מיקום (fallback).
+const GUIDE_COLOR_BY_NAME: Record<string, number> = {
+  'אביב': 0,      // ורוד
+  'יניב': 1,      // כחול
+  'עומר הבן': 2,  // צהוב-חום
+  'דותן': 3,      // ירוק
+  'מאיה': 4,      // סגול
+  'מני': 5,       // כתום
+  'ניר': 6,       // טורקיז
+  'תום': 7,       // אדום
+  'רונה': 9,      // אינדיגו
+  'שקד': 10,      // פוקסיה
+  'עומר': 11,     // טיל
+};
+
 function guideColor(guideId: string | null, guides: Guide[]): { bg: string; fg: string; border: string } | null {
   if (!guideId) return null;
   const idx = guides.findIndex((g) => g.id === guideId);
   if (idx < 0) return null;
+  const name = (guides[idx]?.name || '').trim();
+  const fixed = GUIDE_COLOR_BY_NAME[name];
+  if (fixed !== undefined) return GUIDE_PALETTE[fixed];
   return GUIDE_PALETTE[idx % GUIDE_PALETTE.length];
 }
 
