@@ -118,7 +118,9 @@ const TENTATIVE_PREFIX = '[כנראה] ';
 
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
-// Palette צבעים נעימה למדריכים — 8 צבעים עם ניגודיות טקסט גבוהה
+// Palette צבעים נעימה למדריכים — 12 צבעים עם ניגודיות טקסט גבוהה.
+// 8 הראשונים נשמרו כפי שהיו (כדי לא לשנות צבעים קיימים); 4 נוספו כשהגדל
+// מספר המדריכים מעבר ל-8 וגרם לשני מדריכים לקבל אותו צבע. השאר מרווח לעתיד.
 const GUIDE_PALETTE: Array<{ bg: string; fg: string; border: string }> = [
   { bg: '#fce7f3', fg: '#9d174d', border: '#f9a8d4' }, // ורוד
   { bg: '#dbeafe', fg: '#1e40af', border: '#93c5fd' }, // כחול
@@ -128,6 +130,10 @@ const GUIDE_PALETTE: Array<{ bg: string; fg: string; border: string }> = [
   { bg: '#fed7aa', fg: '#9a3412', border: '#fdba74' }, // כתום
   { bg: '#cffafe', fg: '#155e75', border: '#67e8f9' }, // טורקיז
   { bg: '#fecaca', fg: '#991b1b', border: '#fca5a5' }, // אדום
+  { bg: '#ecfccb', fg: '#3f6212', border: '#bef264' }, // ליים
+  { bg: '#e0e7ff', fg: '#3730a3', border: '#a5b4fc' }, // אינדיגו
+  { bg: '#fae8ff', fg: '#86198f', border: '#f0abfc' }, // פוקסיה
+  { bg: '#ccfbf1', fg: '#0f766e', border: '#5eead4' }, // טיל
 ];
 
 function guideColor(guideId: string | null, guides: Guide[]): { bg: string; fg: string; border: string } | null {
