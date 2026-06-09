@@ -190,16 +190,10 @@
     display: flex;
     flex-direction: column;
   }
-  /* top row: image beside the intro text, balanced to the same height */
+  /* banner on top: fixed height for every tour, decoupled from text length */
   .card-top {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
-    min-height: 360px;
+    display: block;
   }
-  /* editorial alternation: image swaps side every other card */
-  .card:nth-child(even) .card-img-wrap { order: 2; }
-  .card:nth-child(even) .card-intro { order: 1; }
   .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   .card.selected {
     box-shadow: 0 0 0 2px var(--green), 0 8px 26px rgba(13,140,62,0.12);
@@ -209,20 +203,20 @@
     position: relative;
     overflow: hidden;
     background: var(--band);
-    min-height: 100%;
+    width: 100%;
+    height: 320px;
   }
   .card-img-wrap img {
     width: 100%; height: 100%; object-fit: cover;
-    position: absolute; inset: 0;
+    object-position: center;
     display: block;
     transition: transform 0.5s;
   }
   .card:hover .card-img-wrap img { transform: scale(1.02); }
 
   .card-intro {
-    padding: 36px;
+    padding: 36px 36px 0;
     display: flex; flex-direction: column;
-    justify-content: center;
   }
   .card-bottom {
     padding: 6px 36px 34px;
@@ -230,21 +224,22 @@
 
   .card-title {
     font-family: var(--serif);
-    font-size: 26px; font-weight: 700;
+    font-size: 27px; font-weight: 700;
     color: var(--forest);
     margin-bottom: 8px;
     line-height: 1.2;
   }
   .card-tagline {
-    font-size: 17px; font-weight: 500;
+    font-size: 17px; font-weight: 600;
     color: var(--green-deep);
     margin-bottom: 22px;
   }
 
   .card-description {
-    font-size: 16px; color: var(--ink-soft);
-    line-height: 1.7;
+    font-size: 18px; color: var(--ink);
+    line-height: 1.75;
     margin-bottom: 22px;
+    max-width: 760px;
   }
   .card-description p { margin-bottom: 12px; }
   .card-description p:last-child { margin-bottom: 0; }
@@ -256,10 +251,11 @@
   /* Meta strip */
   .card-meta-strip {
     background: var(--band);
-    border-radius: 10px;
-    padding: 14px 18px;
+    border-radius: 12px;
+    padding: 16px 24px;
     margin-bottom: 22px;
-    display: flex; gap: 22px;
+    display: flex; gap: 14px 8px;
+    align-items: center; justify-content: space-evenly;
     font-size: 15px;
     color: var(--ink-soft);
     flex-wrap: wrap;
@@ -296,43 +292,53 @@
     font-weight: 700;
   }
 
-  /* Price - a quiet number, not a box */
+  /* Price - one quiet grouped line, never split to opposite edges */
   .price-box {
     margin-bottom: 18px;
-    padding: 16px 0 0;
-    border-top: 1px solid var(--border);
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 16px; flex-wrap: wrap;
+    padding: 4px 0 20px;
+    display: flex; align-items: baseline;
+    justify-content: flex-start;
+    gap: 6px 12px; flex-wrap: wrap;
   }
-  .price-main { flex: 1; min-width: 200px; }
+  .price-main {
+    display: flex; align-items: baseline;
+    gap: 6px 12px; flex-wrap: wrap;
+  }
   .price-amount-wrap {
-    display: flex; align-items: baseline; gap: 6px;
+    display: inline-flex; align-items: baseline; gap: 6px;
   }
   .price-amount {
     font-size: 32px; font-weight: 700; color: var(--terra);
     line-height: 1;
   }
   .price-unit {
-    font-size: 15px; color: var(--ink-soft);
+    font-size: 16px; color: var(--ink-soft);
     font-weight: 500;
   }
   .price-detail {
-    font-size: 14px; color: var(--ink-mute);
-    margin-top: 6px;
+    font-size: 16px; color: var(--ink-soft);
+    position: relative;
+  }
+  .price-detail::before {
+    content: '·'; color: var(--ink-mute);
+    margin-inline-end: 12px; font-weight: 700;
   }
   .price-total {
-    text-align: start; flex-shrink: 0;
-    align-self: flex-end;
-    background: none; border: none; padding: 0;
+    display: inline-flex; align-items: baseline; gap: 6px;
+    text-align: start; background: none; border: none; padding: 0;
+    position: relative;
+  }
+  .price-total::before {
+    content: '·'; color: var(--ink-mute);
+    margin-inline-end: 12px; font-weight: 700;
   }
   .price-total-label {
-    font-size: 13px; color: var(--ink-mute);
+    font-size: 16px; color: var(--ink-soft);
     text-transform: none; letter-spacing: 0;
     font-weight: 500;
   }
   .price-total-amount {
-    font-size: 16px; font-weight: 600; color: var(--ink-soft);
-    margin-top: 2px;
+    font-size: 16px; font-weight: 700; color: var(--ink-soft);
   }
 
   /* Simple includes */
@@ -843,10 +849,7 @@
 
   /* ===== Tablet ===== */
   @media (max-width: 980px) {
-    .card-top, .card:nth-child(even) .card-top { grid-template-columns: 1fr; min-height: 0; }
-    .card:nth-child(even) .card-img-wrap { order: 0; }
-    .card:nth-child(even) .card-intro { order: 0; }
-    .card-img-wrap { min-height: 300px; }
+    .card-img-wrap { height: 280px; }
     .cards { gap: 40px; }
   }
 
@@ -863,14 +866,13 @@
     main { padding: 0 20px; }
     .city-head h2 { font-size: 38px; }
     .sub-head h3 { font-size: 22px; }
-    .card-img-wrap { min-height: 220px; }
-    .card-intro { padding: 24px; }
+    .card-img-wrap { height: 220px; }
+    .card-intro { padding: 24px 24px 0; }
     .card-bottom { padding: 6px 24px 24px; }
-    .card-title { font-size: 22px; }
+    .card-title { font-size: 23px; }
     .price-amount { font-size: 30px; }
-    .price-total { width: 100%; text-align: center; }
     .price-coverage { grid-template-columns: 1fr; }
-    .card-meta-strip { gap: 14px; }
+    .card-meta-strip { gap: 12px 14px; }
     .combos-block { padding: 24px 20px; }
     .combo-card { padding: 20px; }
     .combo-bottom { flex-direction: column; align-items: stretch; }
