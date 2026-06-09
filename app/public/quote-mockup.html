@@ -478,17 +478,28 @@
     padding: 11px 14px;
     font-size: 15px;
     font-family: inherit;
-    color: var(--ink);
+    color: transparent;            /* hide native (often mm/dd/yyyy) text */
     transition: all 0.2s;
     cursor: pointer;
   }
+  .date-input::-webkit-datetime-edit { color: transparent; }
   .date-input::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.65;
     filter: grayscale(1) brightness(0.7);
   }
   .date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
-  .date-input::placeholder { color: var(--ink-mute); }
+  /* our own dd/mm/yyyy overlay, painted on top of the native field */
+  .date-input-row .date-display {
+    position: absolute;
+    inset-inline-start: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .date-input-row .date-display.empty { color: var(--ink-mute); }
   .date-input:focus {
     outline: none;
     border-color: var(--green-dark);
@@ -803,9 +814,10 @@
     border-color: var(--red);
     color: var(--red);
   }
+  .summary-date-field { position: relative; display: inline-flex; }
   .summary-item-date-input {
     font-size: 14px;
-    color: var(--ink);
+    color: transparent;            /* hide native format, overlay shows dd/mm/yyyy */
     background: var(--band);
     border: 1px solid var(--border);
     border-radius: 100px;
@@ -814,12 +826,22 @@
     min-width: 165px;
     cursor: pointer;
   }
+  .summary-item-date-input::-webkit-datetime-edit { color: transparent; }
   .summary-item-date-input::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.6;
     filter: grayscale(1) brightness(0.6);
   }
-  .summary-item-date-input::placeholder { color: var(--ink-mute); }
+  .summary-date-field .date-display {
+    position: absolute;
+    inset-inline-start: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .summary-date-field .date-display.empty { color: var(--ink-mute); }
   .summary-item-date-input:focus {
     outline: none;
     border-color: var(--green);
@@ -2038,7 +2060,43 @@
 
   // today's date (ISO) so the calendar can't pick past dates
   const TODAY_ISO = new Date().toISOString().slice(0, 10);
-  document.querySelectorAll('.date-input').forEach(function(inp){ inp.min = TODAY_ISO; });
+
+  // ISO (yyyy-mm-dd) -> Israeli display (dd/mm/yyyy)
+  function isoToHe(iso) {
+    if (!iso) return '';
+    const p = iso.split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : iso;
+  }
+
+  // The native date field shows the browser-locale format (often mm/dd/yyyy).
+  // We hide that text and paint our own dd/mm/yyyy overlay on top, while the
+  // native calendar still opens on click.
+  function paintCardDate(input) {
+    const he = isoToHe(input.value);
+    const disp = input.parentNode.querySelector('.date-display');
+    if (disp) { disp.textContent = he || 'בחרו תאריך'; disp.classList.toggle('empty', !he); }
+  }
+
+  document.querySelectorAll('.date-input').forEach(function(input) {
+    input.min = TODAY_ISO;
+    // overlay that shows the Israeli-format date
+    const disp = document.createElement('span');
+    disp.className = 'date-display empty';
+    disp.textContent = 'בחרו תאריך';
+    input.parentNode.insertBefore(disp, input);
+    // feedback + summary sync on every change
+    const onChange = () => {
+      const filled = input.value.trim().length > 0;
+      input.classList.toggle('filled', filled);
+      const wrap = input.closest('.date-input-wrap');
+      const msg = wrap ? wrap.querySelector('.date-saved-msg') : null;
+      if (msg) msg.classList.toggle('show', filled);
+      paintCardDate(input);
+      updateSummary();
+    };
+    input.addEventListener('input', onChange);
+    input.addEventListener('change', onChange);
+  });
 
   function toggleInterest(btn, tourId) {
     const card = btn.closest('.card, .combo-card');
@@ -2090,11 +2148,15 @@
         const dateInput = card.querySelector('.date-input');
         const dateVal = dateInput ? dateInput.value.trim() : '';
 
+        const heVal = isoToHe(dateVal);
         const item = document.createElement('div');
         item.className = 'summary-item';
         item.innerHTML = `
           <div class="summary-item-name">${name}</div>
-          <input class="summary-item-date-input" type="date" value="${dateVal.replace(/"/g, '&quot;')}" min="${TODAY_ISO}" title="תאריך מבוקש (אופציונלי)" onclick="if(this.showPicker)this.showPicker()" oninput="syncSummaryDate('${tourId}', this.value)">
+          <span class="summary-date-field">
+            <input class="summary-item-date-input" type="date" value="${dateVal.replace(/"/g, '&quot;')}" min="${TODAY_ISO}" title="תאריך מבוקש (אופציונלי)" onclick="if(this.showPicker)this.showPicker()" onchange="summaryDateChanged('${tourId}', this.value)">
+            <span class="date-display ${heVal ? '' : 'empty'}">${heVal || 'בחרו תאריך'}</span>
+          </span>
           <button class="summary-item-remove" onclick="removeTour('${tourId}')" title="הסר מהבחירה">✕</button>
         `;
         list.appendChild(item);
@@ -2118,31 +2180,24 @@
     addWrap.style.display = addable > 0 ? 'block' : 'none';
   }
 
-  // Write a date from the summary input back to the tour card, WITHOUT rebuilding
-  // the summary (rebuilding would steal focus while the user is typing).
-  function syncSummaryDate(tourId, val) {
+  // A date picked in the summary writes back to the tour card, then we rebuild
+  // the summary so its overlay shows the new Israeli-format date.
+  function summaryDateChanged(tourId, val) {
     const card = document.querySelector(`[data-tour="${tourId}"]`);
-    if (!card) return;
-    const input = card.querySelector('.date-input');
-    if (!input) return;
-    input.value = val;
-    const filled = val.trim().length > 0;
-    input.classList.toggle('filled', filled);
-    const wrap = input.closest('.date-input-wrap');
-    const msg = wrap ? wrap.querySelector('.date-saved-msg') : null;
-    if (msg) msg.classList.toggle('show', filled);
+    if (card) {
+      const input = card.querySelector('.date-input');
+      if (input) {
+        input.value = val;
+        const filled = val.trim().length > 0;
+        input.classList.toggle('filled', filled);
+        const wrap = input.closest('.date-input-wrap');
+        const msg = wrap ? wrap.querySelector('.date-saved-msg') : null;
+        if (msg) msg.classList.toggle('show', filled);
+        paintCardDate(input);
+      }
+    }
+    updateSummary();
   }
-
-  // Date input feedback + summary sync
-  document.querySelectorAll('.date-input').forEach(input => {
-    input.addEventListener('input', () => {
-      const filled = input.value.trim().length > 0;
-      input.classList.toggle('filled', filled);
-      const msg = input.closest('.date-input-wrap').querySelector('.date-saved-msg');
-      if (msg) msg.classList.toggle('show', filled);
-      updateSummary();
-    });
-  });
 
   // Initial render so the "add a tour" chips appear even before any selection
   updateSummary();
