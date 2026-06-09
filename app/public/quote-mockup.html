@@ -335,10 +335,8 @@
   /* Price - one quiet grouped line, never split to opposite edges */
   .price-box {
     margin-bottom: 22px;
-    padding: 20px 24px;
-    background: var(--band);
-    border: 1px solid var(--border);
-    border-radius: 14px;
+    display: flex; flex-direction: column;
+    align-items: flex-start; gap: 6px;
   }
   .price-main {
     display: flex; flex-direction: column;
@@ -359,9 +357,8 @@
     font-size: 15px; color: var(--ink-mute);
   }
   .price-total {
-    display: flex; align-items: baseline;
-    justify-content: space-between;
-    margin-top: 14px; padding-top: 14px;
+    display: inline-flex; align-items: baseline; gap: 8px;
+    margin-top: 6px; padding-top: 12px;
     border-top: 1px dashed var(--border);
   }
   .price-total-label {
@@ -388,36 +385,33 @@
 
   /* Full coverage */
   .price-coverage {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
     margin-bottom: 22px;
   }
   .coverage-block {
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 14px;
+    padding: 0;
+    font-size: 15px;
+    background: none; border: none;
   }
-  .coverage-block.included {
-    background: rgba(90,168,120,0.10);
-    border: 1px solid #cfe3d4;
-  }
+  .coverage-block.included { padding-inline-end: 28px; }
   .coverage-block.excluded {
-    background: var(--band);
-    border: 1px solid var(--border);
+    border-inline-start: 1px solid var(--border);
+    padding-inline-start: 28px;
   }
   .coverage-label {
-    font-size: 14px; font-weight: 700;
+    font-size: 15px; font-weight: 700;
     text-transform: none;
     letter-spacing: 0;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: flex; align-items: center; gap: 6px;
   }
   .coverage-block.included .coverage-label { color: var(--green-deep); }
   .coverage-block.excluded .coverage-label { color: var(--terra-mute); }
   .coverage-list { list-style: none; padding: 0; margin: 0; }
   .coverage-list li {
-    padding: 3px 0;
-    color: var(--ink);
-    line-height: 1.5;
+    padding: 4px 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
   }
 
   /* Action: button + date */
@@ -1055,10 +1049,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener"><bdi>Praça Luís de Camões</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1114,10 +1108,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כשעה וחצי</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener"><bdi>Torre de Belém</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1176,10 +1170,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener"><bdi>A Brasileira (Chiado)</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1431,10 +1425,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1506,10 +1500,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1581,10 +1575,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1680,10 +1674,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener"><bdi>Praça dos Leões</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1740,10 +1734,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener"><bdi>Sé do Porto</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1890,10 +1884,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
             <div class="price-box">
