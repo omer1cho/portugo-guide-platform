@@ -6,7 +6,7 @@
 <title>פורטוגו · הצעה אישית למשפחת סימאי</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --forest: #0a3d22;
@@ -30,7 +30,7 @@
     --ink-soft: #5b5f54;
     --ink-mute: #8a8d82;
     --border: #e3ddcf;
-    --serif: 'Frank Ruhl Libre', 'Heebo', serif;
+    --serif: 'Assistant', -apple-system, sans-serif;
     --shadow: 0 2px 12px rgba(35,40,31,0.05);
     --shadow-hover: 0 8px 26px rgba(35,40,31,0.10);
     --radius: 16px;
@@ -39,7 +39,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; direction: rtl; }
   body {
-    font-family: 'Heebo', -apple-system, sans-serif;
+    font-family: 'Assistant', -apple-system, sans-serif;
     background: var(--bg);
     color: var(--ink);
     font-weight: 400;
@@ -187,13 +187,19 @@
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  /* top row: image beside the intro text, balanced to the same height */
+  .card-top {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    align-items: start;
+    align-items: stretch;
+    min-height: 360px;
   }
   /* editorial alternation: image swaps side every other card */
   .card:nth-child(even) .card-img-wrap { order: 2; }
-  .card:nth-child(even) .card-body { order: 1; }
+  .card:nth-child(even) .card-intro { order: 1; }
   .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   .card.selected {
     box-shadow: 0 0 0 2px var(--green), 0 8px 26px rgba(13,140,62,0.12);
@@ -203,8 +209,7 @@
     position: relative;
     overflow: hidden;
     background: var(--band);
-    aspect-ratio: 4 / 3;
-    min-height: 0;
+    min-height: 100%;
   }
   .card-img-wrap img {
     width: 100%; height: 100%; object-fit: cover;
@@ -214,7 +219,14 @@
   }
   .card:hover .card-img-wrap img { transform: scale(1.02); }
 
-  .card-body { padding: 34px 36px; display: flex; flex-direction: column; }
+  .card-intro {
+    padding: 36px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+  }
+  .card-bottom {
+    padding: 6px 36px 34px;
+  }
 
   .card-title {
     font-family: var(--serif);
@@ -284,7 +296,7 @@
     font-weight: 700;
   }
 
-  /* Price — a quiet number, not a box */
+  /* Price - a quiet number, not a box */
   .price-box {
     margin-bottom: 18px;
     padding: 16px 0 0;
@@ -542,7 +554,7 @@
     font-size: 13px; color: var(--ink-soft);
   }
 
-  /* Combo day plan — meeting points + break */
+  /* Combo day plan - meeting points + break */
   .combo-plan {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -831,10 +843,10 @@
 
   /* ===== Tablet ===== */
   @media (max-width: 980px) {
-    .card, .card:nth-child(even) { grid-template-columns: 1fr; }
+    .card-top, .card:nth-child(even) .card-top { grid-template-columns: 1fr; min-height: 0; }
     .card:nth-child(even) .card-img-wrap { order: 0; }
-    .card:nth-child(even) .card-body { order: 0; }
-    .card-img-wrap { height: 320px; }
+    .card:nth-child(even) .card-intro { order: 0; }
+    .card-img-wrap { min-height: 300px; }
     .cards { gap: 40px; }
   }
 
@@ -851,8 +863,9 @@
     main { padding: 0 20px; }
     .city-head h2 { font-size: 38px; }
     .sub-head h3 { font-size: 22px; }
-    .card-img-wrap { height: 220px; }
-    .card-body { padding: 24px; }
+    .card-img-wrap { min-height: 220px; }
+    .card-intro { padding: 24px; }
+    .card-bottom { padding: 6px 24px 24px; }
     .card-title { font-size: 22px; }
     .price-amount { font-size: 30px; }
     .price-total { width: 100%; text-align: center; }
@@ -956,19 +969,23 @@
 
         <!-- CLASSIC LISBON -->
         <div class="card" data-tour="classic-lisbon" data-tour-name="ליסבון הקלאסית">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=900&q=80" alt="ליסבון הקלאסית">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">הסיור של ליסבון הקלאסית</h3>
             <p class="card-tagline">שלוש שעות שיגרמו לכם להתאהב בעיר</p>
 
             <div class="card-description">
-              <p>נצא לסיור מקיף וקולע באזורי המרכז של ליסבון: <strong>Chiado</strong> — שכונה ססגונית ומרכזית של העיר; <strong>Bairro Alto</strong> — השכונה הכי תוססת של העיר; <strong>Baixa</strong> — האזור המישור של העיר בו ממוקם הרובע היהודי; ו-<strong>Alfama</strong> — השכונה העתיקה והקסומה של העיר.</p>
+              <p>נצא לסיור מקיף וקולע באזורי המרכז של ליסבון: <strong>Chiado</strong>, שכונה ססגונית ומרכזית של העיר; <strong>Bairro Alto</strong>, השכונה הכי תוססת של העיר; <strong>Baixa</strong>, האזור המישור של העיר בו ממוקם הרובע היהודי; ו-<strong>Alfama</strong>, השכונה העתיקה והקסומה של העיר.</p>
               <p>במהלך הסיור נעבור בנקודות תצפית סודיות, נבקר במונומנטים המרכזיים אך נטייל גם ברחובות הצרים והמיוחדים שהתייר הממוצע אינו מכיר. בין היתר נרחיב על ההיסטוריה של פורטוגל, על ההקשר היהודי ועל אופי השכונות המיוחדות. כמו כן, נכיר את סמלי העיר השונים, ותוכלו לטעום את הליקר המפורסם <strong>Ginjinha</strong>.</p>
               <p>המסלול הוא ייחודי בכך שבמשך שלוש שעות בלבד הוא מאפשר לכם להכיר את העיר לעומקה ולהתאהב.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span></div>
@@ -1001,7 +1018,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1011,10 +1028,11 @@
 
         <!-- BELEM -->
         <div class="card" data-tour="belem" data-tour-name="בלם">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/belem.jpg" alt="בלם">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">הסיור באזור בלם</h3>
             <p class="card-tagline">מגדל ים, מנזר ופשטל מסורתי בעקבות מגלי הארצות</p>
 
@@ -1022,7 +1040,10 @@
               <p>נצא לסיור רגלי בשכונת <strong>Belém</strong>, הידועה בהקשרה לתקופת עידן התגליות של פורטוגל. זהו אזור מקסים, המרוחק כששה קילומטרים ממרכז העיר, בו נמצא <strong>המגדל המפורסם של בלם</strong>, <strong>אנדרטת מגלי הארצות</strong> וכן <strong>מנזר ז'רונימוש</strong>.</p>
               <p>במהלך הסיור נטייל בין האתרים המרכזיים של האזור ונטעם את הקינוח המסורתי <strong>Pastel de Nata</strong>, בתצורתו המקורית במאפיה המסורתית Pastel de Belém.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כשעה וחצי</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span></div>
@@ -1055,7 +1076,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1065,21 +1086,25 @@
 
         <!-- CULINARY -->
         <div class="card" data-tour="culinary" data-tour-name="קולינרי בליסבון">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/culinary.jpg" alt="סיור קולינרי">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">סיור קולינרי בליסבון</h3>
-            <p class="card-tagline">מסע בעקבות הקולינריה והתרבות הפורטוגזיות — ביס אחד מושלם</p>
+            <p class="card-tagline">מסע בעקבות הקולינריה והתרבות הפורטוגזיות, ביס אחד מושלם</p>
 
             <div class="card-description">
-              <p>סיור רגלי שהוא מסע בעקבות הקולינריה והתרבות הפורטוגזיות. במהלך הסיור נטייל בין הסימטאות היפות של ליסבון ונבקר במגוון מקומות בעלי אופי משתנה. לאורך המסלול נטעם מאכלים ומשקאות פורטוגליים ייחודיים. מלבד הטעמים, המסלול כולל ביקור באתרים מעניינים, לרבות תצפית מרהיבה, חנות ספרים עתיקה ואיך לא — שוק האוכל המפורסם של ליסבון.</p>
+              <p>סיור רגלי שהוא מסע בעקבות הקולינריה והתרבות הפורטוגזיות. במהלך הסיור נטייל בין הסימטאות היפות של ליסבון ונבקר במגוון מקומות בעלי אופי משתנה. לאורך המסלול נטעם מאכלים ומשקאות פורטוגליים ייחודיים. מלבד הטעמים, המסלול כולל ביקור באתרים מעניינים, לרבות תצפית מרהיבה, חנות ספרים עתיקה ואיך לא, שוק האוכל המפורסם של ליסבון.</p>
               <p>ניתן לבחור בין סיור בוקר לבין סיור צהריים:</p>
-              <p><strong>סיור קולינרי בבוקר</strong> — מאפים פורטוגלים לצד קפה אמיתי, "פשטל דה בקלאו" בליווי משקה מקומי פופולארי, סרדינים בשילוב יין מקומי ומטעמים נוספים שיפתחו לכם את היום בטעם טוב.</p>
-              <p><strong>סיור קולינרי בצהריים</strong> — מנות חמות ומפתיעות: אמפדות עסיסיות, מנת בקלאו אותנטית בצלחת, סרדינים בשילוב יין מקומי ועוד הפתעות משובחות שישלימו את החוויה.</p>
+              <p><strong>סיור קולינרי בבוקר</strong>: מאפים פורטוגלים לצד קפה אמיתי, "פשטל דה בקלאו" בליווי משקה מקומי פופולארי, סרדינים בשילוב יין מקומי ומטעמים נוספים שיפתחו לכם את היום בטעם טוב.</p>
+              <p><strong>סיור קולינרי בצהריים</strong>: מנות חמות ומפתיעות: אמפדות עסיסיות, מנת בקלאו אותנטית בצלחת, סרדינים בשילוב יין מקומי ועוד הפתעות משובחות שישלימו את החוויה.</p>
               <p>חקרנו את השטח היטב ויצרנו עבורכם מסלול שהוא כולו ביס אחד מושלם.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span></div>
@@ -1126,7 +1151,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות — אנא ציינו מראש.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות, אנא ציינו מראש.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1138,7 +1163,7 @@
 
       <!-- ====== LISBON COMBOS ====== -->
       <div class="combos-block">
-        <h4 class="combos-head">טיולי יום מלא בעיר — שילוב של שני סיורים</h4>
+        <h4 class="combos-head">טיולי יום מלא בעיר: שילוב של שני סיורים</h4>
         <p class="combos-sub">ניתן לשלב שני סיורים ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
@@ -1151,7 +1176,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">1</div>
                 <div class="step-content">
-                  <span class="step-label">בוקר — ליסבון הקלאסית</span>
+                  <span class="step-label">בוקר:ליסבון הקלאסית</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span>
                 </div>
               </div>
@@ -1165,7 +1190,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">2</div>
                 <div class="step-content">
-                  <span class="step-label">צהריים — בלם</span>
+                  <span class="step-label">צהריים:בלם</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span>
                 </div>
               </div>
@@ -1188,7 +1213,7 @@
                   <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
                   <div class="date-input-check">✓</div>
                 </div>
-                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
                 <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
@@ -1203,7 +1228,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">1</div>
                 <div class="step-content">
-                  <span class="step-label">בוקר — הסיור הקולינרי</span>
+                  <span class="step-label">בוקר:הסיור הקולינרי</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span>
                 </div>
               </div>
@@ -1217,7 +1242,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">2</div>
                 <div class="step-content">
-                  <span class="step-label">צהריים — ליסבון הקלאסית</span>
+                  <span class="step-label">צהריים:ליסבון הקלאסית</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span>
                 </div>
               </div>
@@ -1240,7 +1265,7 @@
                   <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
                   <div class="date-input-check">✓</div>
                 </div>
-                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
                 <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
@@ -1255,7 +1280,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">1</div>
                 <div class="step-content">
-                  <span class="step-label">בוקר — הסיור הקולינרי</span>
+                  <span class="step-label">בוקר:הסיור הקולינרי</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span>
                 </div>
               </div>
@@ -1269,7 +1294,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">2</div>
                 <div class="step-content">
-                  <span class="step-label">צהריים — בלם</span>
+                  <span class="step-label">צהריים:בלם</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span>
                 </div>
               </div>
@@ -1292,7 +1317,7 @@
                   <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
                   <div class="date-input-check">✓</div>
                 </div>
-                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
                 <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
@@ -1317,18 +1342,22 @@
 
         <!-- SINTRA -->
         <div class="card" data-tour="sintra" data-tour-name="סינטרה">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/sintra.jpg" alt="סינטרה">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">סינטרה והסביבה</h3>
             <p class="card-tagline">מארמון פנה אגדי אל הנקודה המערבית באירופה</p>
 
             <div class="card-description">
-              <p>ביום זה נצא לסיור במספר מקומות מחוץ לליסבון. <strong>Sintra</strong> — עיירה קסומה השוכנת כ-30 ק"מ מליסבון, ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה. <strong>Cabo da Roca</strong> — הנקודה המערבית ביותר באירופה. <strong>Cascais</strong> — עיירה שבעבר הייתה כפר דייגים קטן אך היום היא ידועה כעיירת נופש מפוארת.</p>
-              <p>נתחיל את היום בשעה 8:30 עם איסוף מהמלון וניסע לנקודה הראשונה — סינטרה. נבקר בארמון הפנה המפורסם — האתר המבוקש ביותר — ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה ומאפים מקומיים מסורתיים. לאחר סינטרה נסע לעבר קאבו דה רוקה, ושם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו. לבסוף, נסע לעבר קשקאיש, שם תוכלו לאכול ארוחת צהריים, להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים — גם לרדת לבקר בחוף.</p>
+              <p>ביום זה נצא לסיור במספר מקומות מחוץ לליסבון. <strong>Sintra</strong>, עיירה קסומה השוכנת כ-30 ק"מ מליסבון, ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה. <strong>Cabo da Roca</strong>, הנקודה המערבית ביותר באירופה. <strong>Cascais</strong>, עיירה שבעבר הייתה כפר דייגים קטן אך היום היא ידועה כעיירת נופש מפוארת.</p>
+              <p>נתחיל את היום בשעה 8:30 עם איסוף מהמלון וניסע לנקודה הראשונה, סינטרה. נבקר בארמון הפנה המפורסם, האתר המבוקש ביותר, ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה ומאפים מקומיים מסורתיים. לאחר סינטרה נסע לעבר קאבו דה רוקה, ושם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו. לבסוף, נסע לעבר קשקאיש, שם תוכלו לאכול ארוחת צהריים, להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים, גם לרדת לבקר בחוף.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:30</span></div>
@@ -1376,7 +1405,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. הביקור בארמון הפנה כולל טיפוס של כ-10 דקות.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. הביקור בארמון הפנה כולל טיפוס של כ-10 דקות.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1386,19 +1415,23 @@
 
         <!-- ARRABIDA -->
         <div class="card" data-tour="arrabida" data-tour-name="אראבידה">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/arrabida.jpg" alt="אראבידה">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">אראבידה והסביבה</h3>
             <p class="card-tagline">טירה עתיקה, שמורת טבע ויקב מקומי בצדו הדרומי של הנהר</p>
 
             <div class="card-description">
-              <p>נתחיל את היום בשעה 8:45 עם איסוף מהמלון ונסע לכיוון דרום, לצדו השני של הנהר. נתחיל בביקור בטירה של <strong>Palmela</strong>, אחת מהטירות העתיקות של פורטוגל, ממנה נהנה גם מתצפית מרהיבה. משם נמשיך בנסיעה דרך <strong>Serra da Arrábida</strong> — שמורת טבע מרהיבה ביופייה. הדרך עצמה תהיה מרשימה וכן הנקודה בה נעצור להתרשם מהחופים המיוחדים.</p>
+              <p>נתחיל את היום בשעה 8:45 עם איסוף מהמלון ונסע לכיוון דרום, לצדו השני של הנהר. נתחיל בביקור בטירה של <strong>Palmela</strong>, אחת מהטירות העתיקות של פורטוגל, ממנה נהנה גם מתצפית מרהיבה. משם נמשיך בנסיעה דרך <strong>Serra da Arrábida</strong>, שמורת טבע מרהיבה ביופייה. הדרך עצמה תהיה מרשימה וכן הנקודה בה נעצור להתרשם מהחופים המיוחדים.</p>
               <p>לאחר מכן נתקדם לאזור <strong>Azeitão</strong>, שם נבקר בשני מקומות מעניינים: מפעל מקומי לייצור אריחים בעבודת יד וביקור ביקב מקומי, בו נשתתף בסיור מטעם המקום בשפה האנגלית. נתקדם לארוחת צהריים בעיירת החוף <strong>Sesimbra</strong>, הידועה במסעדות הדגים המוצלחות שלה.</p>
-              <p>מבחינת המסלול — נצא למסלול מעגלי שחוצה את שני הגשרים המפורסמים של ליסבון: בהלוך נחצה את הגשר הכי ארוך באירופה — <strong>Vasco da Gama</strong> — ובחזור נחצה את הגשר האדום — <strong>Ponte 25 de Abril</strong> — אשר נהוג להשוות ל"גולדן גייט ברידג'".</p>
+              <p>מבחינת המסלול, נצא למסלול מעגלי שחוצה את שני הגשרים המפורסמים של ליסבון: בהלוך נחצה את הגשר הכי ארוך באירופה, <strong>Vasco da Gama</strong>, ובחזור נחצה את הגשר האדום, <strong>Ponte 25 de Abril</strong>, אשר נהוג להשוות ל"גולדן גייט ברידג'".</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:45</span></div>
@@ -1446,7 +1479,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1456,19 +1489,23 @@
 
         <!-- OBIDOS -->
         <div class="card" data-tour="obidos" data-tour-name="אובידוש">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/obidos.jpg" alt="אובידוש">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">אובידוש והסביבה</h3>
             <p class="card-tagline">מנזר היסטורי, גלי הענק של נזארה ועיירת ימי-ביניים ציורית</p>
 
             <div class="card-description">
-              <p>ביום זה נבקר בשלושה יעדים ברצועה המערבית של פורטוגל: <strong>Batalha</strong> — עיר "הקרב" המפורסמת בזכות המנזר המרשים שלה. <strong>Nazaré</strong> — "נצרת" של פורטוגל, ומדוע נצרת? נגלה לכם שם. <strong>Obidos</strong> — עיירה ציורית מבוצרת עד היום.</p>
-              <p>נתחיל את היום בשעה 9:00 עם איסוף מהמלון וניסע לעיר בטאליה. שם נבקר במנזר המפורסם שנבנה במאה ה-14 לספירה, כשלוש שנים לאחר הניצחון הגדול של הפורטוגלים על הספרדים. משם נתקדם לנזארה, שמלבד שמה הייחודי היא ידועה כמקום שבו נרשמו הגלים הגבוהים ביותר בעולם — מדי שנה מתקיימות במקום תחרויות הגלישה הידועות ביותר. בביקורנו במקום נהנה מתצפית מרהיבה על האוקיינוס והגלים.</p>
-              <p>לסיום, בחלקו האחרון של היום, נבקר בעיירה הציורית מימי הביניים — אובידוש. שם נעצור להפסקת צהריים והסתובבות חופשית בין סמטאותיה הקסומות. בזמנכם תוכלו ליהנות מטיול על החומה אשר עד היום מקיפה את העיירה, לטעום בכוס שוקולד מהמשקה המסורתי "<strong>ז'ינז'ינייה</strong>" שמקורו בעיירה, וכן לטייל בין החנויות והבתים המיוחדים של המקום.</p>
+              <p>ביום זה נבקר בשלושה יעדים ברצועה המערבית של פורטוגל: <strong>Batalha</strong>, עיר "הקרב" המפורסמת בזכות המנזר המרשים שלה. <strong>Nazaré</strong>, "נצרת" של פורטוגל, ומדוע נצרת? נגלה לכם שם. <strong>Obidos</strong>, עיירה ציורית מבוצרת עד היום.</p>
+              <p>נתחיל את היום בשעה 9:00 עם איסוף מהמלון וניסע לעיר בטאליה. שם נבקר במנזר המפורסם שנבנה במאה ה-14 לספירה, כשלוש שנים לאחר הניצחון הגדול של הפורטוגלים על הספרדים. משם נתקדם לנזארה, שמלבד שמה הייחודי היא ידועה כמקום שבו נרשמו הגלים הגבוהים ביותר בעולם, מדי שנה מתקיימות במקום תחרויות הגלישה הידועות ביותר. בביקורנו במקום נהנה מתצפית מרהיבה על האוקיינוס והגלים.</p>
+              <p>לסיום, בחלקו האחרון של היום, נבקר בעיירה הציורית מימי הביניים, אובידוש. שם נעצור להפסקת צהריים והסתובבות חופשית בין סמטאותיה הקסומות. בזמנכם תוכלו ליהנות מטיול על החומה אשר עד היום מקיפה את העיירה, לטעום בכוס שוקולד מהמשקה המסורתי "<strong>ז'ינז'ינייה</strong>" שמקורו בעיירה, וכן לטייל בין החנויות והבתים המיוחדים של המקום.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 9:00</span></div>
@@ -1515,7 +1552,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1549,19 +1586,23 @@
 
         <!-- PORTO CLASSIC -->
         <div class="card" data-tour="porto-classic" data-tour-name="פורטו הקלאסית">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="https://images.unsplash.com/photo-1555990538-32d5d4c5dfaa?w=900&q=80" alt="פורטו הקלאסית">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">פורטו הקלאסית</h3>
-            <p class="card-tagline">מהבאישה אל הריביירה — ההיסטוריה והקסם של פורטו</p>
+            <p class="card-tagline">מהבאישה אל הריביירה: ההיסטוריה והקסם של פורטו</p>
 
             <div class="card-description">
-              <p>נצא לסיור רגלי מקיף וקולע באזורי המרכז של פורטו: <strong>Baixa</strong> — המרכז של המרכז של העיר; <strong>Vitória</strong> — השכונה בה היה ממוקם הגטו היהודי; <strong>Ribeira</strong> — אזור הנהר השוקק.</p>
-              <p>נתחיל את הסיור עם מוקדי העניין של האזור הראשון — הבאישה. משם נמשיך דרך השכונה בה היה ממוקם הגטו היהודי, נתקדם דרך אזורים נוספים של הבאישה — גלויים ונסתרים כאחד — ונסיים באזור הריביירה השוקק למרגלות נהר הדורו.</p>
+              <p>נצא לסיור רגלי מקיף וקולע באזורי המרכז של פורטו: <strong>Baixa</strong>, המרכז של המרכז של העיר; <strong>Vitória</strong>, השכונה בה היה ממוקם הגטו היהודי; <strong>Ribeira</strong>, אזור הנהר השוקק.</p>
+              <p>נתחיל את הסיור עם מוקדי העניין של האזור הראשון, הבאישה. משם נמשיך דרך השכונה בה היה ממוקם הגטו היהודי, נתקדם דרך אזורים נוספים של הבאישה, גלויים ונסתרים כאחד, ונסיים באזור הריביירה השוקק למרגלות נהר הדורו.</p>
               <p>לאורך הסיור נעבור באתרי החובה המוכרים, אך גם נוביל אתכם לפינות קטנות ונסתרות שכיף לגלות בעיר. נגלה נקודות תצפית חבויות, נתרשם מההיסטוריה המרתקת של העיר ונהנה מקסמיה.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener">Praça dos Leões</a></span></div>
@@ -1594,7 +1635,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1604,19 +1645,23 @@
 
         <!-- PORTO TASTINGS -->
         <div class="card" data-tour="porto-tastings" data-tour-name="טעימות פורטו">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/porto-tastings.jpg" alt="טעימות פורטו">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">סיור הטעימות בפורטו</h3>
-            <p class="card-tagline">מסע טעימות לאורך הדורו — מפורטו לוילה נובה דה גאיה</p>
+            <p class="card-tagline">מסע טעימות לאורך הדורו: מפורטו לוילה נובה דה גאיה</p>
 
             <div class="card-description">
               <p>בסיור זה נצא למסע של טעימות בסביבת פורטו, במסגרתו נטעם משקאות המאפיינים את צפון המדינה לצד מאכלים מקומיים. בעוד שהסיור מתחיל מהעיר פורטו, רובו מתקיים מצדו השני של נהר הדורו בעיר שנקראת <strong>וילה נובה דה גאיה</strong>. לשם אנו מגיעים בחצייה רגלית של הגשר המפורסם מעל הנהר.</p>
-              <p>בסיור זה אנו חווים את פורטוגל דרך הרגליים והבטן, בכך שאנו משלבים טעימות מגוונת כגון: גבינות מקומיות, מנה ייחודית של דג הבקאלה, נקניקים, נשנושים מסורתיים ועוד. זאת לצד משקאות ייחודיים כמו: יין ירוק, יין אדום, בירה מקומית — ואיך לא — <strong>יינות הפורט</strong> המפורסמים.</p>
+              <p>בסיור זה אנו חווים את פורטוגל דרך הרגליים והבטן, בכך שאנו משלבים טעימות מגוונת כגון: גבינות מקומיות, מנה ייחודית של דג הבקאלה, נקניקים, נשנושים מסורתיים ועוד. זאת לצד משקאות ייחודיים כמו: יין ירוק, יין אדום, בירה מקומית, ואיך לא, <strong>יינות הפורט</strong> המפורסמים.</p>
               <p>המקומות בהם נבקר יהיו מגוונים: החל מבתי עסק ותיקים ואותנטיים, ממשיך דרך חנות בוטיק ושוק מקומי, וכלה כמובן במרכז טעימות מקומי ליינות הפורט.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener">רחבת כנסיית ה-SE</a></span></div>
@@ -1663,7 +1708,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות — אנא ציינו מראש.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות, אנא ציינו מראש.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1675,7 +1720,7 @@
 
       <!-- ====== PORTO COMBOS ====== -->
       <div class="combos-block">
-        <h4 class="combos-head">טיול יום מלא בעיר — שילוב של שני סיורים</h4>
+        <h4 class="combos-head">טיול יום מלא בעיר: שילוב של שני סיורים</h4>
         <p class="combos-sub">ניתן לשלב את שני הסיורים בפורטו ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
@@ -1688,7 +1733,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">1</div>
                 <div class="step-content">
-                  <span class="step-label">בוקר — פורטו הקלאסית</span>
+                  <span class="step-label">בוקר:פורטו הקלאסית</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener">Praça dos Leões</a></span>
                 </div>
               </div>
@@ -1702,7 +1747,7 @@
               <div class="combo-plan-step">
                 <div class="step-num">2</div>
                 <div class="step-content">
-                  <span class="step-label">צהריים — סיור הטעימות</span>
+                  <span class="step-label">צהריים:סיור הטעימות</span>
                   <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener">רחבת כנסיית ה-SE</a></span>
                 </div>
               </div>
@@ -1725,7 +1770,7 @@
                   <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני">
                   <div class="date-input-check">✓</div>
                 </div>
-                <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות ונחזור אליכם לאישור.</div>
+                <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
                 <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
               </div>
             </div>
@@ -1748,19 +1793,23 @@
 
         <!-- DOURO -->
         <div class="card" data-tour="douro" data-tour-name="עמק הדורו">
+          <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/douro.jpg" alt="עמק הדורו">
           </div>
-          <div class="card-body">
+          <div class="card-intro">
             <h3 class="card-title">עמק הדורו והסביבה</h3>
-            <p class="card-tagline">יקבים, טרסות והנהר — אזור יינות הפורט המפורסם</p>
+            <p class="card-tagline">יקבים, טרסות והנהר: אזור יינות הפורט המפורסם</p>
 
             <div class="card-description">
-              <p>ביום זה נצא לטיול באחד האזורים היפים ביותר בפורטוגל — המקום בו מייצרים את <strong>יינות הפורט</strong> המפורסמים: עמק הדורו. נתחיל את היום בשעה 8:30 עם איסוף מהמלון ונסע לעבר העיירה <strong>אמרנטה</strong>, שם נעצור לשתות קפה ולהתרשם מעיירה מתוקה בדרך.</p>
-              <p>משם נתקדם בנסיעה ל"דרך היין" הידועה — דרך יפייפיה שבמהלכה נהנה ממראות הטרסות, ההרים, הגפנים והנהר. התחנה הראשונה בעמק תהיה ביקור ביקב משפחתי מקומי שממוקם מול פיסת נוף עוצרת נשימה. נקבל הדרכה קצרה במקום ונטעם את היינות הייחודים של היקב.</p>
-              <p>לאחר מכן, נתקדם בתוך העמק לעבר תצפית סודית המשקיפה על הנהר, וממנה נרד לעיירה הידועה <strong>פינייאו</strong>. שם נעצור להפסקת צהריים, שבסופה נתכנס בנמל ונצא ל<strong>שייט בנהר הדורו</strong> עצמו. בדרכנו חזרה לפורטו, נעצור גם בנקודת הגשרים המפורסמת של בירת העמק — <strong>פסו דה רגואה</strong>.</p>
+              <p>ביום זה נצא לטיול באחד האזורים היפים ביותר בפורטוגל, המקום בו מייצרים את <strong>יינות הפורט</strong> המפורסמים: עמק הדורו. נתחיל את היום בשעה 8:30 עם איסוף מהמלון ונסע לעבר העיירה <strong>אמרנטה</strong>, שם נעצור לשתות קפה ולהתרשם מעיירה מתוקה בדרך.</p>
+              <p>משם נתקדם בנסיעה ל"דרך היין" הידועה, דרך יפייפיה שבמהלכה נהנה ממראות הטרסות, ההרים, הגפנים והנהר. התחנה הראשונה בעמק תהיה ביקור ביקב משפחתי מקומי שממוקם מול פיסת נוף עוצרת נשימה. נקבל הדרכה קצרה במקום ונטעם את היינות הייחודים של היקב.</p>
+              <p>לאחר מכן, נתקדם בתוך העמק לעבר תצפית סודית המשקיפה על הנהר, וממנה נרד לעיירה הידועה <strong>פינייאו</strong>. שם נעצור להפסקת צהריים, שבסופה נתכנס בנמל ונצא ל<strong>שייט בנהר הדורו</strong> עצמו. בדרכנו חזרה לפורטו, נעצור גם בנקודת הגשרים המפורסמת של בירת העמק, <strong>פסו דה רגואה</strong>.</p>
             </div>
+          </div>
+          </div>
 
+          <div class="card-bottom">
             <div class="card-meta-strip">
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:30</span></div>
@@ -1809,7 +1858,7 @@
                     <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה — נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. השייט בנהר הדורו מותנה במזג האוויר.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. השייט בנהר הדורו מותנה במזג האוויר.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
                 </div>
               </div>
@@ -1829,7 +1878,7 @@
       <div class="terms-section">
         <h4>מדיניות תשלום</h4>
         <ul>
-          <li>בסיורים עם רכב — תשלום ראשון של 20% מהעלות הכוללת יועבר לא יאוחר מ-60 יום לפני המועד, באמצעות פייפאל או העברה בנקאית.</li>
+          <li>בסיורים עם רכב: תשלום ראשון של 20% מהעלות הכוללת יועבר לא יאוחר מ-60 יום לפני המועד, באמצעות פייפאל או העברה בנקאית.</li>
           <li>תשלום שני, השלמה ל-100% מהעלות, יועבר במועד הסיור.</li>
         </ul>
         <div class="note">שימו לב: ביצוע העברה בנקאית כרוך בתוספת עמלה הנגבית על ידי הבנק, ללא קשר לפורטוגו.</div>
@@ -1838,18 +1887,18 @@
       <div class="terms-section">
         <h4>מדיניות ביטולים</h4>
         <ul>
-          <li>ביטול עד 30 ימים לפני המועד — ללא עלות. התשלום הראשון יוחזר בהתאם.</li>
-          <li>ביטול בין 29-15 ימים לפני המועד — דמי ביטול של 20% מהעלות הכוללת. התשלום הראשון לא יוחזר.</li>
-          <li>ביטול החל מ-14 ימים לפני המועד — דמי ביטול מלאים.</li>
+          <li>ביטול עד 30 ימים לפני המועד: ללא עלות. התשלום הראשון יוחזר בהתאם.</li>
+          <li>ביטול בין 29-15 ימים לפני המועד: דמי ביטול של 20% מהעלות הכוללת. התשלום הראשון לא יוחזר.</li>
+          <li>ביטול החל מ-14 ימים לפני המועד: דמי ביטול מלאים.</li>
         </ul>
-        <div class="note">שימו לב: ביטול תשלום שנעשה באמצעות פייפאל יהיה כרוך בעמלת שירות הנגבית על ידי פייפאל. בביטול תשלום שנעשה באמצעות העברה בנקאית — לא תוחזר העמלה שנגבית על ידי הבנק. אלו עמלות שאינן באחריות פורטוגו.</div>
+        <div class="note">שימו לב: ביטול תשלום שנעשה באמצעות פייפאל יהיה כרוך בעמלת שירות הנגבית על ידי פייפאל. בביטול תשלום שנעשה באמצעות העברה בנקאית, לא תוחזר העמלה שנגבית על ידי הבנק. אלו עמלות שאינן באחריות פורטוגו.</div>
       </div>
 
       <div class="terms-section">
         <h4>תכנית הסיור</h4>
         <ul>
           <li>התכנית בימי ההדרכה כפופה לכך שנצמד לתכנית המפורטת ולא נתעכב באזורים מסוימים מעבר למצופה.</li>
-          <li>כמובן שיש לכם בחירה בנושא, וככל שתבחרו להתעכב במקום מסוים — ייתכן שנפספס אזורים אחרים.</li>
+          <li>כמובן שיש לכם בחירה בנושא, וככל שתבחרו להתעכב במקום מסוים, ייתכן שנפספס אזורים אחרים.</li>
           <li>שינויים בתכנית יש לתאם מראש.</li>
           <li>ברגע האחרון ייתכן ולא יהיה ניתן לבצע שינויים (החלפת ימים, שינוי יעדים וכד').</li>
         </ul>
@@ -1862,7 +1911,7 @@
 
       <div class="terms-section">
         <h4>שינויים במספר המשתתפים</h4>
-        <p>המחירים המוצגים בהצעה זו מותאמים לקבוצה של 6 משתתפים. בכל מקרה של שינוי במספר המשתתפים — המחירים יעודכנו בהתאם לטבלת התמחור שלנו.</p>
+        <p>המחירים המוצגים בהצעה זו מותאמים לקבוצה של 6 משתתפים. בכל מקרה של שינוי במספר המשתתפים, המחירים יעודכנו בהתאם לטבלת התמחור שלנו.</p>
       </div>
     </div>
   </section>
@@ -1873,7 +1922,7 @@
     <p class="lead">להלן הסיורים שסימנת. אנא השלימו את פרטי הקשר ונחזור אליכם תוך 24 שעות לבדיקת זמינות ולתיאום סופי.</p>
 
     <div class="form-availability-note">
-      התאריכים שבחרת הם בקשה — נבדוק אותם מול לוח הזמנים של המדריכים שלנו ונחזור אליך לאישור.
+      התאריכים שבחרת הם בקשה, נבדוק אותם מול לוח הזמנים של המדריכים שלנו ונחזור אליך לאישור.
     </div>
 
     <!-- Dynamic summary -->
@@ -1907,7 +1956,7 @@
       <textarea class="form-textarea" placeholder="קושי הליכה, צמחונות, ילדים, אלרגיות, בקשות מיוחדות..."></textarea>
     </div>
 
-    <button class="submit-btn" id="submit-btn" onclick="alert('זה רק mockup — בגרסה האמיתית זה ישלח מייל לעומר ורונה ויישמר במערכת')">שלחו לנו את הבחירה</button>
+    <button class="submit-btn" id="submit-btn" onclick="alert('זה רק mockup, בגרסה האמיתית זה ישלח מייל לעומר ורונה ויישמר במערכת')">שלחו לנו את הבחירה</button>
   </section>
 
 </main>
