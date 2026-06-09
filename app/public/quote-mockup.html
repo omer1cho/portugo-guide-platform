@@ -811,6 +811,53 @@
     border-color: var(--red);
     color: var(--red);
   }
+  .summary-item-date-input {
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--band);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 7px 14px;
+    font-family: inherit;
+    min-width: 170px;
+  }
+  .summary-item-date-input::placeholder { color: var(--ink-mute); }
+  .summary-item-date-input:focus {
+    outline: none;
+    border-color: var(--green);
+    background: #fff;
+  }
+  .summary-add {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+  }
+  .summary-add-label {
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 12px;
+    opacity: 0.92;
+  }
+  .summary-add-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .summary-add-chip {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.30);
+    color: #fff;
+    border-radius: 100px;
+    padding: 9px 15px;
+    font-size: 14px; font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .summary-add-chip:hover {
+    background: #fff;
+    color: var(--green-dark);
+    transform: translateY(-1px);
+  }
+  .summary-add-chip .plus { font-weight: 800; font-size: 16px; }
 
   .form-input, .form-textarea {
     width: 100%;
@@ -1949,36 +1996,26 @@
   <!-- ===== FORM ===== -->
   <section class="form-wrap" id="form">
     <h2>מעולה! איך נמשיך?</h2>
-    <p class="lead">להלן הסיורים שסימנת. אנא השלימו את פרטי הקשר ונחזור אליכם תוך 24 שעות לבדיקת זמינות ולתיאום סופי.</p>
+    <p class="lead">אלו הסיורים שסימנתם. אפשר להוסיף, להסיר או לעדכן תאריכים כאן למטה. כשתסיימו, שלחו לנו את הבחירה ונחזור אליכם לבדיקת זמינות ולתיאום סופי.</p>
 
     <div class="form-availability-note">
-      התאריכים שבחרת הם בקשה, נבדוק אותם מול לוח הזמנים של המדריכים שלנו ונחזור אליך לאישור.
+      התאריכים שתבחרו הם בקשה בלבד, נבדוק אותם מול לוח הזמנים של המדריכים שלנו ונחזור אליכם לאישור.
     </div>
 
     <!-- Dynamic summary -->
     <div class="selected-summary" id="selected-summary">
       <div class="summary-header">
-        <span>הסיורים שסימנת</span>
+        <span>הסיורים שסימנתם</span>
         <span class="summary-count" id="summary-count" style="display:none">0</span>
       </div>
       <div class="summary-empty" id="summary-empty">
-        עדיין לא סימנת סיורים.<br>
-        <a href="#lisbon">חזרה לרשימת הסיורים →</a>
+        עדיין לא סימנתם סיורים. אפשר להוסיף אותם כאן למטה, או לגלול חזרה ולסמן ✓ על הסיורים שמעניינים אתכם.
       </div>
       <div class="summary-list" id="summary-list"></div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-label">פרטי קשר</div>
-      <div class="form-grid-2">
-        <input class="form-input" type="text" placeholder="טלפון ליצירת קשר">
-        <input class="form-input" type="text" placeholder="דוא״ל">
+      <div class="summary-add" id="summary-add" style="display:none">
+        <div class="summary-add-label">להוסיף עוד סיור:</div>
+        <div class="summary-add-chips" id="summary-add-chips"></div>
       </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-label">פרטי טיסה / מועדי הגעה ויציאה</div>
-      <input class="form-input" type="text" placeholder="לדוגמה: מגיעים 10.6, יוצאים 22.6">
     </div>
 
     <div class="form-section">
@@ -2028,37 +2065,70 @@
 
   function updateSummary() {
     const selectedCards = document.querySelectorAll('.card.selected, .combo-card.selected');
+    const allCards = document.querySelectorAll('.card[data-tour], .combo-card[data-tour]');
     const list = document.getElementById('summary-list');
     const empty = document.getElementById('summary-empty');
     const count = document.getElementById('summary-count');
+    const addWrap = document.getElementById('summary-add');
+    const addChips = document.getElementById('summary-add-chips');
 
+    // selected list
     if (selectedCards.length === 0) {
       empty.style.display = 'block';
       list.innerHTML = '';
       count.style.display = 'none';
-      return;
+    } else {
+      empty.style.display = 'none';
+      count.style.display = 'inline-block';
+      count.textContent = selectedCards.length;
+      list.innerHTML = '';
+      selectedCards.forEach(card => {
+        const tourId = card.dataset.tour;
+        const name = card.dataset.tourName || tourId;
+        const dateInput = card.querySelector('.date-input');
+        const dateVal = dateInput ? dateInput.value.trim() : '';
+
+        const item = document.createElement('div');
+        item.className = 'summary-item';
+        item.innerHTML = `
+          <div class="summary-item-name">${name}</div>
+          <input class="summary-item-date-input" type="text" value="${dateVal.replace(/"/g, '&quot;')}" placeholder="📅 תאריך מבוקש (אופציונלי)" oninput="syncSummaryDate('${tourId}', this.value)">
+          <button class="summary-item-remove" onclick="removeTour('${tourId}')" title="הסר מהבחירה">✕</button>
+        `;
+        list.appendChild(item);
+      });
     }
 
-    empty.style.display = 'none';
-    count.style.display = 'inline-block';
-    count.textContent = selectedCards.length;
-
-    list.innerHTML = '';
-    selectedCards.forEach(card => {
+    // add-more chips (every tour not already selected)
+    addChips.innerHTML = '';
+    let addable = 0;
+    allCards.forEach(card => {
+      if (card.classList.contains('selected')) return;
       const tourId = card.dataset.tour;
       const name = card.dataset.tourName || tourId;
-      const dateInput = card.querySelector('.date-input');
-      const dateVal = dateInput ? dateInput.value.trim() : '';
-
-      const item = document.createElement('div');
-      item.className = 'summary-item';
-      item.innerHTML = `
-        <div class="summary-item-name">${name}</div>
-        <div class="summary-item-date ${dateVal ? '' : 'empty'}">${dateVal ? '📅 ' + dateVal : 'תאריך לא צוין'}</div>
-        <button class="summary-item-remove" onclick="removeTour('${tourId}')" title="הסר מהבחירה">✕</button>
-      `;
-      list.appendChild(item);
+      const chip = document.createElement('button');
+      chip.className = 'summary-add-chip';
+      chip.innerHTML = `<span class="plus">+</span>${name}`;
+      chip.onclick = () => { setCardState(tourId, true); updateSummary(); };
+      addChips.appendChild(chip);
+      addable++;
     });
+    addWrap.style.display = addable > 0 ? 'block' : 'none';
+  }
+
+  // Write a date from the summary input back to the tour card, WITHOUT rebuilding
+  // the summary (rebuilding would steal focus while the user is typing).
+  function syncSummaryDate(tourId, val) {
+    const card = document.querySelector(`[data-tour="${tourId}"]`);
+    if (!card) return;
+    const input = card.querySelector('.date-input');
+    if (!input) return;
+    input.value = val;
+    const filled = val.trim().length > 0;
+    input.classList.toggle('filled', filled);
+    const wrap = input.closest('.date-input-wrap');
+    const msg = wrap ? wrap.querySelector('.date-saved-msg') : null;
+    if (msg) msg.classList.toggle('show', filled);
   }
 
   // Date input feedback + summary sync
@@ -2071,6 +2141,9 @@
       updateSummary();
     });
   });
+
+  // Initial render so the "add a tour" chips appear even before any selection
+  updateSummary();
 
   // Gentle reveal on scroll (respects reduced-motion)
   (function () {
