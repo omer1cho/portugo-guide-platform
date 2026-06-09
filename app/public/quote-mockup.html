@@ -216,6 +216,14 @@
     color: #fff;
     transform: translateY(-1px);
   }
+  .legend-item.legend-combo {
+    background: rgba(191,161,79,0.16);
+    color: #8a6d1f;
+  }
+  .legend-item.legend-combo:hover {
+    background: var(--gold);
+    color: #fff;
+  }
   .card[data-tour] { scroll-margin-top: 24px; }
 
   /* ===== Tour card ===== */
@@ -535,8 +543,14 @@
   }
 
   /* ===== Combos block ===== */
+  .combos-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 44px 0;
+  }
   .combos-block {
-    margin-top: 48px;
+    margin-top: 0;
+    scroll-margin-top: 24px;
     background: var(--band);
     border-radius: var(--radius);
     padding: 32px;
@@ -546,10 +560,11 @@
   .combos-head {
     font-family: var(--serif);
     font-size: 24px; font-weight: 700; color: var(--forest);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .combos-sub {
-    font-size: 14px; color: var(--ink-soft);
+    font-size: 15px; color: var(--ink-soft);
+    line-height: 1.7;
     margin-bottom: 24px;
   }
   .combos-list { display: grid; gap: 16px; }
@@ -670,20 +685,21 @@
   .terms-section ul { list-style: none; padding: 0; margin: 0; }
   .terms-section li {
     font-size: 14px; color: var(--ink-soft);
-    padding: 6px 0 6px 22px;
+    padding-block: 6px;
+    padding-inline-start: 22px;
     position: relative;
     line-height: 1.65;
   }
   .terms-section li::before {
     content: '•';
-    position: absolute; right: 4px; top: 6px;
+    position: absolute; inset-inline-start: 4px; top: 6px;
     color: var(--green-dark);
     font-weight: 700;
   }
   .terms-section .note {
     font-size: 13px;
     color: var(--ink-mute);
-    margin-right: 20px;
+    margin-inline-start: 20px;
     margin-top: 2px;
     font-style: italic;
   }
@@ -1014,6 +1030,7 @@
           <a class="legend-item" href="#t-classic-lisbon">ליסבון הקלאסית</a>
           <a class="legend-item" href="#t-belem">סיור באזור בלם</a>
           <a class="legend-item" href="#t-culinary">סיור קולינרי בליסבון</a>
+          <a class="legend-item legend-combo" href="#lisbon-combos">שילוב של שני סיורים ביום אחד</a>
         </div>
       </div>
 
@@ -1199,9 +1216,10 @@
       </div>
 
       <!-- ====== LISBON COMBOS ====== -->
-      <div class="combos-block">
-        <h4 class="combos-head">טיולי יום מלא בעיר: שילוב של שני סיורים</h4>
-        <p class="combos-sub">ניתן לשלב שני סיורים ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
+      <hr class="combos-divider">
+      <div class="combos-block" id="lisbon-combos">
+        <h4 class="combos-head">שילוב של שני סיורים בעיר ביום אחד</h4>
+        <p class="combos-sub">אם אתם רוצים לקיים טיול של יום מלא בעיר, ניתן לשלב שני סיורים ביחד, עם הפסקה של כשעה וחצי באמצע. בסיור הקולינרי יש שתי אפשרויות, בוקר או צהריים, כך שנוצרים שני שילובים אפשריים.</p>
         <div class="combos-list">
 
           <div class="combo-card" data-tour="combo-classic-belem" data-tour-name="שילוב: קלאסית + בלם">
@@ -1603,6 +1621,7 @@
         <div class="sub-legend">
           <a class="legend-item" href="#t-porto-classic">פורטו הקלאסית</a>
           <a class="legend-item" href="#t-porto-tastings">סיור טעימות בפורטו</a>
+          <a class="legend-item legend-combo" href="#porto-combos">שילוב של שני סיורים ביום אחד</a>
         </div>
       </div>
 
@@ -1733,9 +1752,10 @@
       </div>
 
       <!-- ====== PORTO COMBOS ====== -->
-      <div class="combos-block">
-        <h4 class="combos-head">טיול יום מלא בעיר: שילוב של שני סיורים</h4>
-        <p class="combos-sub">ניתן לשלב את שני הסיורים בפורטו ליום מלא, עם הפסקה של כשעה וחצי באמצע.</p>
+      <hr class="combos-divider">
+      <div class="combos-block" id="porto-combos">
+        <h4 class="combos-head">שילוב של שני סיורים בעיר ביום אחד</h4>
+        <p class="combos-sub">אם אתם רוצים לקיים טיול של יום מלא בעיר, ניתן לשלב את שני הסיורים ביום אחד, עם הפסקה של כשעה וחצי באמצע.</p>
         <div class="combos-list">
 
           <div class="combo-card" data-tour="combo-porto-classic-tastings" data-tour-name="שילוב: פורטו קלאסית + טעימות">
