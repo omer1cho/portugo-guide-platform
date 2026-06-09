@@ -334,51 +334,42 @@
 
   /* Price - one quiet grouped line, never split to opposite edges */
   .price-box {
-    margin-bottom: 18px;
-    padding: 4px 0 20px;
-    display: flex; align-items: baseline;
-    justify-content: flex-start;
-    gap: 6px 12px; flex-wrap: wrap;
+    margin-bottom: 22px;
+    padding: 20px 24px;
+    background: var(--band);
+    border: 1px solid var(--border);
+    border-radius: 14px;
   }
   .price-main {
-    display: flex; align-items: baseline;
-    gap: 6px 12px; flex-wrap: wrap;
+    display: flex; flex-direction: column;
+    align-items: flex-start; gap: 4px;
   }
   .price-amount-wrap {
-    display: inline-flex; align-items: baseline; gap: 6px;
+    display: inline-flex; align-items: baseline; gap: 8px;
   }
   .price-amount {
-    font-size: 32px; font-weight: 700; color: var(--terra);
+    font-size: 34px; font-weight: 700; color: var(--terra);
     line-height: 1;
   }
   .price-unit {
-    font-size: 16px; color: var(--ink-soft);
-    font-weight: 500;
+    font-size: 18px; color: var(--ink-soft);
+    font-weight: 600;
   }
   .price-detail {
-    font-size: 16px; color: var(--ink-soft);
-    position: relative;
-  }
-  .price-detail::before {
-    content: '·'; color: var(--ink-mute);
-    margin-inline-end: 12px; font-weight: 700;
+    font-size: 15px; color: var(--ink-mute);
   }
   .price-total {
-    display: inline-flex; align-items: baseline; gap: 6px;
-    text-align: start; background: none; border: none; padding: 0;
-    position: relative;
-  }
-  .price-total::before {
-    content: '·'; color: var(--ink-mute);
-    margin-inline-end: 12px; font-weight: 700;
+    display: flex; align-items: baseline;
+    justify-content: space-between;
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed var(--border);
   }
   .price-total-label {
     font-size: 16px; color: var(--ink-soft);
-    text-transform: none; letter-spacing: 0;
     font-weight: 500;
   }
   .price-total-amount {
-    font-size: 16px; font-weight: 700; color: var(--ink-soft);
+    font-size: 19px; font-weight: 700; color: var(--ink);
   }
 
   /* Simple includes */
@@ -971,11 +962,16 @@
       <circle cx="13" cy="4" r="2" fill="currentColor"/>
       <path d="M9 21l2-6 3 2v4M14 12l-3-3-2 3-3 0M15 11l3 1 2 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
-    <symbol id="icon-van" viewBox="0 0 24 24">
-      <path d="M3 17V8a2 2 0 0 1 2-2h9v11H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M14 10h4l3 4v3h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-      <circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    <symbol id="icon-bus" viewBox="0 0 24 24">
+      <rect x="4" y="4" width="16" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <line x1="4" y1="11" x2="20" y2="11" stroke="currentColor" stroke-width="2"/>
+      <line x1="12" y1="4" x2="12" y2="11" stroke="currentColor" stroke-width="2"/>
+      <circle cx="8" cy="20" r="1.6" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="16" cy="20" r="1.6" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="icon-guide" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </symbol>
   </defs>
 </svg>
@@ -1059,8 +1055,9 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener"><bdi>Praça Luís de Camões</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1117,8 +1114,9 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כשעה וחצי</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כשעה וחצי</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener"><bdi>Torre de Belém</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1178,8 +1176,9 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener"><bdi>A Brasileira (Chiado)</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1249,7 +1248,7 @@
                 <div class="step-num">1</div>
                 <div class="step-content">
                   <span class="step-label">בוקר:ליסבון הקלאסית</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener"><bdi>Praça Luís de Camões</bdi></a></span>
                 </div>
               </div>
               <div class="combo-plan-step break">
@@ -1263,7 +1262,7 @@
                 <div class="step-num">2</div>
                 <div class="step-content">
                   <span class="step-label">צהריים:בלם</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener"><bdi>Torre de Belém</bdi></a></span>
                 </div>
               </div>
             </div>
@@ -1301,7 +1300,7 @@
                 <div class="step-num">1</div>
                 <div class="step-content">
                   <span class="step-label">בוקר:הסיור הקולינרי</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener"><bdi>A Brasileira (Chiado)</bdi></a></span>
                 </div>
               </div>
               <div class="combo-plan-step break">
@@ -1315,7 +1314,7 @@
                 <div class="step-num">2</div>
                 <div class="step-content">
                   <span class="step-label">צהריים:ליסבון הקלאסית</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener">כיכר לואיש דה קמואיש</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+Lu%C3%ADs+de+Cam%C3%B5es+Lisbon" target="_blank" rel="noopener"><bdi>Praça Luís de Camões</bdi></a></span>
                 </div>
               </div>
             </div>
@@ -1353,7 +1352,7 @@
                 <div class="step-num">1</div>
                 <div class="step-content">
                   <span class="step-label">בוקר:הסיור הקולינרי</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener">A Brasileira (Chiado)</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=A+Brasileira+R.+Garrett+122+Lisbon" target="_blank" rel="noopener"><bdi>A Brasileira (Chiado)</bdi></a></span>
                 </div>
               </div>
               <div class="combo-plan-step break">
@@ -1367,7 +1366,7 @@
                 <div class="step-num">2</div>
                 <div class="step-content">
                   <span class="step-label">צהריים:בלם</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener">מחוץ למגדל בלם</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Torre+de+Bel%C3%A9m+Lisbon" target="_blank" rel="noopener"><bdi>Torre de Belém</bdi></a></span>
                 </div>
               </div>
             </div>
@@ -1425,16 +1424,17 @@
 
             <div class="card-description">
               <p>ביום זה נצא לסיור במספר מקומות מחוץ לליסבון. <strong>Sintra</strong>, עיירה קסומה השוכנת כ-30 ק"מ מליסבון, ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה. <strong>Cabo da Roca</strong>, הנקודה המערבית ביותר באירופה. <strong>Cascais</strong>, עיירה שבעבר הייתה כפר דייגים קטן אך היום היא ידועה כעיירת נופש מפוארת.</p>
-              <p>נתחיל את היום בשעה 8:30 עם איסוף מהמלון וניסע לנקודה הראשונה, סינטרה. נבקר בארמון הפנה המפורסם, האתר המבוקש ביותר, ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה ומאפים מקומיים מסורתיים. לאחר סינטרה נסע לעבר קאבו דה רוקה, ושם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו. לבסוף, נסע לעבר קשקאיש, שם תוכלו לאכול ארוחת צהריים, להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים, גם לרדת לבקר בחוף.</p>
+              <p>נתחיל את היום עם איסוף מהמלון וניסע לנקודה הראשונה, סינטרה. נבקר בארמון הפנה המפורסם, האתר המבוקש ביותר, ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה ומאפים מקומיים מסורתיים. לאחר סינטרה נסע לעבר קאבו דה רוקה, ושם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו. לבסוף, נסע לעבר קשקאיש, שם תוכלו לאכול ארוחת צהריים, להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים, גם לרדת לבקר בחוף.</p>
             </div>
           </div>
           </div>
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:30</span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1497,7 +1497,7 @@
             <p class="card-tagline">טירה עתיקה, שמורת טבע ויקב מקומי בצדו הדרומי של הנהר</p>
 
             <div class="card-description">
-              <p>נתחיל את היום בשעה 8:45 עם איסוף מהמלון ונסע לכיוון דרום, לצדו השני של הנהר. נתחיל בביקור בטירה של <strong>Palmela</strong>, אחת מהטירות העתיקות של פורטוגל, ממנה נהנה גם מתצפית מרהיבה. משם נמשיך בנסיעה דרך <strong>Serra da Arrábida</strong>, שמורת טבע מרהיבה ביופייה. הדרך עצמה תהיה מרשימה וכן הנקודה בה נעצור להתרשם מהחופים המיוחדים.</p>
+              <p>נתחיל את היום עם איסוף מהמלון ונסע לכיוון דרום, לצדו השני של הנהר. נתחיל בביקור בטירה של <strong>Palmela</strong>, אחת מהטירות העתיקות של פורטוגל, ממנה נהנה גם מתצפית מרהיבה. משם נמשיך בנסיעה דרך <strong>Serra da Arrábida</strong>, שמורת טבע מרהיבה ביופייה. הדרך עצמה תהיה מרשימה וכן הנקודה בה נעצור להתרשם מהחופים המיוחדים.</p>
               <p>לאחר מכן נתקדם לאזור <strong>Azeitão</strong>, שם נבקר בשני מקומות מעניינים: מפעל מקומי לייצור אריחים בעבודת יד וביקור ביקב מקומי, בו נשתתף בסיור מטעם המקום בשפה האנגלית. נתקדם לארוחת צהריים בעיירת החוף <strong>Sesimbra</strong>, הידועה במסעדות הדגים המוצלחות שלה.</p>
               <p>מבחינת המסלול, נצא למסלול מעגלי שחוצה את שני הגשרים המפורסמים של ליסבון: בהלוך נחצה את הגשר הכי ארוך באירופה, <strong>Vasco da Gama</strong>, ובחזור נחצה את הגשר האדום, <strong>Ponte 25 de Abril</strong>, אשר נהוג להשוות ל"גולדן גייט ברידג'".</p>
             </div>
@@ -1506,9 +1506,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:45</span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1572,7 +1573,7 @@
 
             <div class="card-description">
               <p>ביום זה נבקר בשלושה יעדים ברצועה המערבית של פורטוגל: <strong>Batalha</strong>, עיר "הקרב" המפורסמת בזכות המנזר המרשים שלה. <strong>Nazaré</strong>, "נצרת" של פורטוגל, ומדוע נצרת? נגלה לכם שם. <strong>Obidos</strong>, עיירה ציורית מבוצרת עד היום.</p>
-              <p>נתחיל את היום בשעה 9:00 עם איסוף מהמלון וניסע לעיר בטאליה. שם נבקר במנזר המפורסם שנבנה במאה ה-14 לספירה, כשלוש שנים לאחר הניצחון הגדול של הפורטוגלים על הספרדים. משם נתקדם לנזארה, שמלבד שמה הייחודי היא ידועה כמקום שבו נרשמו הגלים הגבוהים ביותר בעולם, מדי שנה מתקיימות במקום תחרויות הגלישה הידועות ביותר. בביקורנו במקום נהנה מתצפית מרהיבה על האוקיינוס והגלים.</p>
+              <p>נתחיל את היום עם איסוף מהמלון וניסע לעיר בטאליה. שם נבקר במנזר המפורסם שנבנה במאה ה-14 לספירה, כשלוש שנים לאחר הניצחון הגדול של הפורטוגלים על הספרדים. משם נתקדם לנזארה, שמלבד שמה הייחודי היא ידועה כמקום שבו נרשמו הגלים הגבוהים ביותר בעולם, מדי שנה מתקיימות במקום תחרויות הגלישה הידועות ביותר. בביקורנו במקום נהנה מתצפית מרהיבה על האוקיינוס והגלים.</p>
               <p>לסיום, בחלקו האחרון של היום, נבקר בעיירה הציורית מימי הביניים, אובידוש. שם נעצור להפסקת צהריים והסתובבות חופשית בין סמטאותיה הקסומות. בזמנכם תוכלו ליהנות מטיול על החומה אשר עד היום מקיפה את העיירה, לטעום בכוס שוקולד מהמשקה המסורתי "<strong>ז'ינז'ינייה</strong>" שמקורו בעיירה, וכן לטייל בין החנויות והבתים המיוחדים של המקום.</p>
             </div>
           </div>
@@ -1580,9 +1581,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 9:00</span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
@@ -1678,8 +1680,9 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener">Praça dos Leões</a></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener"><bdi>Praça dos Leões</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1737,8 +1740,9 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-3 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener">רחבת כנסיית ה-SE</a></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-3 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>נקודת המפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener"><bdi>Sé do Porto</bdi></a></span></div>
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-walking"/></svg><span><strong>סיור רגלי</strong></span></div>
             </div>
 
@@ -1808,7 +1812,7 @@
                 <div class="step-num">1</div>
                 <div class="step-content">
                   <span class="step-label">בוקר:פורטו הקלאסית</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener">Praça dos Leões</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a+de+Gomes+Teixeira+Porto" target="_blank" rel="noopener"><bdi>Praça dos Leões</bdi></a></span>
                 </div>
               </div>
               <div class="combo-plan-step break">
@@ -1822,7 +1826,7 @@
                 <div class="step-num">2</div>
                 <div class="step-content">
                   <span class="step-label">צהריים:סיור הטעימות</span>
-                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener">רחבת כנסיית ה-SE</a></span>
+                  <span class="step-detail">נקודת מפגש: <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=S%C3%A9+do+Porto" target="_blank" rel="noopener"><bdi>Sé do Porto</bdi></a></span>
                 </div>
               </div>
             </div>
@@ -1877,7 +1881,7 @@
             <p class="card-tagline">יקבים, טרסות והנהר: אזור יינות הפורט המפורסם</p>
 
             <div class="card-description">
-              <p>ביום זה נצא לטיול באחד האזורים היפים ביותר בפורטוגל, המקום בו מייצרים את <strong>יינות הפורט</strong> המפורסמים: עמק הדורו. נתחיל את היום בשעה 8:30 עם איסוף מהמלון ונסע לעבר העיירה <strong>אמרנטה</strong>, שם נעצור לשתות קפה ולהתרשם מעיירה מתוקה בדרך.</p>
+              <p>ביום זה נצא לטיול באחד האזורים היפים ביותר בפורטוגל, המקום בו מייצרים את <strong>יינות הפורט</strong> המפורסמים: עמק הדורו. נתחיל את היום עם איסוף מהמלון ונסע לעבר העיירה <strong>אמרנטה</strong>, שם נעצור לשתות קפה ולהתרשם מעיירה מתוקה בדרך.</p>
               <p>משם נתקדם בנסיעה ל"דרך היין" הידועה, דרך יפייפיה שבמהלכה נהנה ממראות הטרסות, ההרים, הגפנים והנהר. התחנה הראשונה בעמק תהיה ביקור ביקב משפחתי מקומי שממוקם מול פיסת נוף עוצרת נשימה. נקבל הדרכה קצרה במקום ונטעם את היינות הייחודים של היקב.</p>
               <p>לאחר מכן, נתקדם בתוך העמק לעבר תצפית סודית המשקיפה על הנהר, וממנה נרד לעיירה הידועה <strong>פינייאו</strong>. שם נעצור להפסקת צהריים, שבסופה נתכנס בנמל ונצא ל<strong>שייט בנהר הדורו</strong> עצמו. בדרכנו חזרה לפורטו, נעצור גם בנקודת הגשרים המפורסמת של בירת העמק, <strong>פסו דה רגואה</strong>.</p>
             </div>
@@ -1886,9 +1890,10 @@
 
           <div class="card-bottom">
             <div class="card-meta-strip">
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך: <strong>כ-8 שעות</strong></span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון, 8:30</span></div>
-              <div class="meta-item"><svg class="meta-icon"><use href="#icon-van"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>משך הסיור: <strong>כ-8 שעות</strong></span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-pin"/></svg><span>איסוף מהמלון</span></div>
+              <div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>יום מלא עם רכב צמוד</strong></span></div>
             </div>
 
             <div class="price-box">
