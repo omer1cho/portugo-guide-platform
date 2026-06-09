@@ -470,44 +470,45 @@
     margin-bottom: 10px;
   }
   .date-input-row { position: relative; }
+  /* the real date field, made fully transparent and laid over the visible face
+     so the native calendar opens on click but its locale-format text never shows */
   .date-input {
-    width: 100%;
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    margin: 0; padding: 0; border: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+  /* the visible field we draw ourselves, always dd/mm/yyyy */
+  .date-input-row .date-face {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     border: 1.5px solid var(--green);
     background: white;
     border-radius: 8px;
     padding: 11px 14px;
     font-size: 15px;
-    font-family: inherit;
-    color: transparent;            /* hide native (often mm/dd/yyyy) text */
-    transition: all 0.2s;
-    cursor: pointer;
-  }
-  .date-input::-webkit-datetime-edit { color: transparent; }
-  .date-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.65;
-    filter: grayscale(1) brightness(0.7);
-  }
-  .date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
-  /* our own dd/mm/yyyy overlay, painted on top of the native field */
-  .date-input-row .date-display {
-    position: absolute;
-    inset-inline-start: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    font-size: 15px;
     color: var(--ink);
+    transition: all 0.2s;
   }
-  .date-input-row .date-display.empty { color: var(--ink-mute); }
-  .date-input:focus {
-    outline: none;
+  .date-input:focus + .date-face {
     border-color: var(--green-dark);
     box-shadow: 0 0 0 3px rgba(13,140,62,0.15);
   }
-  .date-input.filled {
+  .date-input-row .date-face.filled {
     border-color: var(--green-dark);
     background: #f6fdf8;
+  }
+  .date-display { color: var(--ink); }
+  .date-display.empty { color: var(--ink-mute); }
+  .date-cal-icon {
+    margin-inline-start: auto;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.75;
   }
   .date-input-check { display: none; }
   .date-note {
@@ -814,34 +815,32 @@
     border-color: var(--red);
     color: var(--red);
   }
-  .summary-date-field { position: relative; display: inline-flex; }
+  .summary-date-field { position: relative; display: inline-flex; min-width: 165px; }
   .summary-item-date-input {
-    font-size: 14px;
-    color: transparent;            /* hide native format, overlay shows dd/mm/yyyy */
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    margin: 0; padding: 0; border: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .summary-date-field .date-face {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
     background: var(--band);
     border: 1px solid var(--border);
     border-radius: 100px;
     padding: 7px 14px;
-    font-family: inherit;
-    min-width: 165px;
-    cursor: pointer;
-  }
-  .summary-item-date-input::-webkit-datetime-edit { color: transparent; }
-  .summary-item-date-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.6;
-    filter: grayscale(1) brightness(0.6);
-  }
-  .summary-date-field .date-display {
-    position: absolute;
-    inset-inline-start: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
     font-size: 14px;
     color: var(--ink);
   }
-  .summary-date-field .date-display.empty { color: var(--ink-mute); }
+  .summary-item-date-input:focus + .date-face {
+    border-color: var(--green);
+    background: #fff;
+  }
   .summary-item-date-input:focus {
     outline: none;
     border-color: var(--green);
@@ -2069,29 +2068,32 @@
   }
 
   // The native date field shows the browser-locale format (often mm/dd/yyyy).
-  // We hide that text and paint our own dd/mm/yyyy overlay on top, while the
-  // native calendar still opens on click.
+  // We lay the real (transparent) date input over a "face" we draw ourselves,
+  // always in dd/mm/yyyy, so the native calendar still opens but its text never shows.
   function paintCardDate(input) {
     const he = isoToHe(input.value);
-    const disp = input.parentNode.querySelector('.date-display');
-    if (disp) { disp.textContent = he || 'בחרו תאריך'; disp.classList.toggle('empty', !he); }
+    const filled = !!he;
+    const row = input.closest('.date-input-row');
+    if (!row) return;
+    const disp = row.querySelector('.date-display');
+    const face = row.querySelector('.date-face');
+    if (disp) { disp.textContent = he || 'בחרו תאריך'; disp.classList.toggle('empty', !filled); }
+    if (face) face.classList.toggle('filled', filled);
   }
 
   document.querySelectorAll('.date-input').forEach(function(input) {
     input.min = TODAY_ISO;
-    // overlay that shows the Israeli-format date
-    const disp = document.createElement('span');
-    disp.className = 'date-display empty';
-    disp.textContent = 'בחרו תאריך';
-    input.parentNode.insertBefore(disp, input);
+    // build the visible face (date text + calendar icon) after the real input
+    const face = document.createElement('div');
+    face.className = 'date-face';
+    face.innerHTML = '<span class="date-display empty">בחרו תאריך</span><span class="date-cal-icon">📅</span>';
+    input.parentNode.appendChild(face);
     // feedback + summary sync on every change
     const onChange = () => {
-      const filled = input.value.trim().length > 0;
-      input.classList.toggle('filled', filled);
+      paintCardDate(input);
       const wrap = input.closest('.date-input-wrap');
       const msg = wrap ? wrap.querySelector('.date-saved-msg') : null;
-      if (msg) msg.classList.toggle('show', filled);
-      paintCardDate(input);
+      if (msg) msg.classList.toggle('show', input.value.trim().length > 0);
       updateSummary();
     };
     input.addEventListener('input', onChange);
@@ -2155,7 +2157,7 @@
           <div class="summary-item-name">${name}</div>
           <span class="summary-date-field">
             <input class="summary-item-date-input" type="date" value="${dateVal.replace(/"/g, '&quot;')}" min="${TODAY_ISO}" title="תאריך מבוקש (אופציונלי)" onclick="if(this.showPicker)this.showPicker()" onchange="summaryDateChanged('${tourId}', this.value)">
-            <span class="date-display ${heVal ? '' : 'empty'}">${heVal || 'בחרו תאריך'}</span>
+            <span class="date-face"><span class="date-display ${heVal ? '' : 'empty'}">${heVal || 'בחרו תאריך'}</span><span class="date-cal-icon">📅</span></span>
           </span>
           <button class="summary-item-remove" onclick="removeTour('${tourId}')" title="הסר מהבחירה">✕</button>
         `;
