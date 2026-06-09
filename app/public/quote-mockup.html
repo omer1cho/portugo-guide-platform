@@ -207,7 +207,16 @@
     padding: 6px 14px;
     border-radius: 100px;
     font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
   }
+  .legend-item:hover {
+    background: var(--green);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .card[data-tour] { scroll-margin-top: 24px; }
 
   /* ===== Tour card ===== */
   .cards { display: grid; gap: 56px; }
@@ -1022,9 +1031,9 @@
         <h3>סיורים רגליים בתוך העיר</h3>
         <p class="sub-desc">סיורים רגליים בלב ליסבון, להכיר את העיר לעומק.</p>
         <div class="sub-legend">
-          <span class="legend-item">ליסבון הקלאסית</span>
-          <span class="legend-item">סיור באזור בלם</span>
-          <span class="legend-item">סיור קולינרי בליסבון</span>
+          <a class="legend-item" href="#t-classic-lisbon">ליסבון הקלאסית</a>
+          <a class="legend-item" href="#t-belem">סיור באזור בלם</a>
+          <a class="legend-item" href="#t-culinary">סיור קולינרי בליסבון</a>
         </div>
       </div>
 
@@ -1396,9 +1405,9 @@
         <h3>טיולי יום מחוץ לעיר</h3>
         <p class="sub-desc">יום שלם ברכב צמוד אל מחוץ לעיר, אל אתרים מרהיבים בסביבה.</p>
         <div class="sub-legend">
-          <span class="legend-item">סינטרה והסביבה</span>
-          <span class="legend-item">אראבידה והסביבה</span>
-          <span class="legend-item">אובידוש והסביבה</span>
+          <a class="legend-item" href="#t-sintra">סינטרה והסביבה</a>
+          <a class="legend-item" href="#t-arrabida">אראבידה והסביבה</a>
+          <a class="legend-item" href="#t-obidos">אובידוש והסביבה</a>
         </div>
       </div>
 
@@ -1642,8 +1651,8 @@
         <h3>סיורים רגליים בתוך העיר</h3>
         <p class="sub-desc">סיורים רגליים בלב פורטו, להכיר את העיר לעומק.</p>
         <div class="sub-legend">
-          <span class="legend-item">פורטו הקלאסית</span>
-          <span class="legend-item">סיור טעימות בפורטו</span>
+          <a class="legend-item" href="#t-porto-classic">פורטו הקלאסית</a>
+          <a class="legend-item" href="#t-porto-tastings">סיור טעימות בפורטו</a>
         </div>
       </div>
 
@@ -1851,7 +1860,7 @@
         <h3>טיולי יום מחוץ לעיר</h3>
         <p class="sub-desc">יום שלם ברכב צמוד אל מחוץ לעיר, אל אתרים מרהיבים בסביבה.</p>
         <div class="sub-legend">
-          <span class="legend-item">עמק הדורו והסביבה</span>
+          <a class="legend-item" href="#t-douro">עמק הדורו והסביבה</a>
         </div>
       </div>
 
@@ -2032,6 +2041,11 @@
 </footer>
 
 <script>
+  // give each tour card an id matching its data-tour, so legend chips can jump to it
+  document.querySelectorAll('.card[data-tour]').forEach(function(c){
+    if (!c.id) c.id = 't-' + c.getAttribute('data-tour');
+  });
+
   function toggleInterest(btn, tourId) {
     const card = btn.closest('.card, .combo-card');
     if (!card) return;
