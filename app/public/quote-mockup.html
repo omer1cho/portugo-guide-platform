@@ -338,35 +338,22 @@
     display: flex; flex-direction: column;
     align-items: flex-start; gap: 6px;
   }
-  .price-main {
-    display: flex; flex-direction: column;
-    align-items: flex-start; gap: 4px;
-  }
   .price-amount-wrap {
     display: inline-flex; align-items: baseline; gap: 8px;
   }
   .price-amount {
     font-size: 34px; font-weight: 700; color: var(--terra);
-    line-height: 1;
+    line-height: 1.1;
   }
   .price-unit {
     font-size: 18px; color: var(--ink-soft);
     font-weight: 600;
   }
   .price-detail {
-    font-size: 15px; color: var(--ink-mute);
+    font-size: 15px; color: var(--ink-soft);
   }
-  .price-total {
-    display: inline-flex; align-items: baseline; gap: 8px;
-    margin-top: 6px; padding-top: 12px;
-    border-top: 1px dashed var(--border);
-  }
-  .price-total-label {
-    font-size: 16px; color: var(--ink-soft);
-    font-weight: 500;
-  }
-  .price-total-amount {
-    font-size: 19px; font-weight: 700; color: var(--ink);
+  .price-detail strong {
+    color: var(--ink); font-weight: 700;
   }
 
   /* Simple includes */
@@ -385,18 +372,21 @@
 
   /* Full coverage */
   .price-coverage {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     margin-bottom: 22px;
   }
   .coverage-block {
-    padding: 0;
+    border-radius: 12px;
+    padding: 16px 18px;
     font-size: 15px;
-    background: none; border: none;
   }
-  .coverage-block.included { padding-inline-end: 28px; }
+  .coverage-block.included {
+    background: rgba(90,168,120,0.10);
+    border: 1px solid #cfe3d4;
+  }
   .coverage-block.excluded {
-    border-inline-start: 1px solid var(--border);
-    padding-inline-start: 28px;
+    background: var(--band);
+    border: 1px solid var(--border);
   }
   .coverage-label {
     font-size: 15px; font-weight: 700;
@@ -1056,14 +1046,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">270€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>270€</strong></div>
             </div>
 
             <div class="price-includes-simple">
@@ -1115,14 +1099,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">30€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">180€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">30€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>180€</strong></div>
             </div>
 
             <div class="price-includes-simple">
@@ -1177,14 +1155,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">480€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>480€</strong></div>
             </div>
 
             <div class="price-coverage">
@@ -1432,14 +1404,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">690€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>690€</strong></div>
             </div>
 
             <div class="price-coverage">
@@ -1507,14 +1473,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">690€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>690€</strong></div>
             </div>
 
             <div class="price-coverage">
@@ -1582,14 +1542,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">690€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">115€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>690€</strong></div>
             </div>
 
             <div class="price-coverage">
@@ -1681,14 +1635,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">270€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">45€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>270€</strong></div>
             </div>
 
             <div class="price-includes-simple">
@@ -1741,14 +1689,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">480€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">80€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>480€</strong></div>
             </div>
 
             <div class="price-coverage">
@@ -1891,14 +1833,8 @@
             </div>
 
             <div class="price-box">
-              <div class="price-main">
-                <div class="price-amount-wrap"><span class="price-amount">125€</span><span class="price-unit">לאדם</span></div>
-                <div class="price-detail">בקבוצה פרטית של 6 משתתפים</div>
-              </div>
-              <div class="price-total">
-                <div class="price-total-label">סה"כ לקבוצה</div>
-                <div class="price-total-amount">750€</div>
-              </div>
+              <div class="price-amount-wrap"><span class="price-amount">125€</span><span class="price-unit">לאדם</span></div>
+              <div class="price-detail">בקבוצה פרטית של 6 · סה"כ <strong>750€</strong></div>
             </div>
 
             <div class="price-coverage">
