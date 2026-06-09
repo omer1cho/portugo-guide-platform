@@ -41,6 +41,7 @@ import {
 import type { Guide, GuideVacation } from '@/lib/supabase';
 import { TOUR_TYPES } from '@/lib/supabase';
 import { getCalendarEventsForDate } from '@/lib/calendar-events';
+import DateField from '@/components/DateField';
 
 // סוגי סיור פרטיים — מוצגים אחרת בכרטיס (פוקוס על שם הלקוח/סוג, לא על "פרטי_1")
 const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
@@ -1750,15 +1751,13 @@ function GuideCardRow({
               )}
               {vacations.map((v, i) => (
                 <div key={i} style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <input
-                    type="date"
+                  <DateField
                     value={v.start}
                     onChange={(e) => updateVacation(i, 'start', e.target.value)}
                     style={{ ...inputStyle, padding: '4px 6px', fontSize: 12, flex: '1 1 100px' }}
                   />
                   <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>עד</span>
-                  <input
-                    type="date"
+                  <DateField
                     value={v.end}
                     onChange={(e) => updateVacation(i, 'end', e.target.value)}
                     style={{ ...inputStyle, padding: '4px 6px', fontSize: 12, flex: '1 1 100px' }}
@@ -1982,7 +1981,7 @@ function ManualAddModal({
           לסיורים פרטיים או חד-פעמיים שלא מסונכרנים מהאתר
         </p>
         <label style={labelStyle}>תאריך
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
+          <DateField value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
         </label>
         <label style={labelStyle}>שעה
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={inputStyle} />
@@ -2226,7 +2225,7 @@ function EditShiftModal({
           עיר: {shift.city === 'lisbon' ? 'ליסבון' : 'פורטו'} · {shift.source === 'manual' ? 'נוסף ידנית' : 'מהאתר'}
         </p>
         <label style={labelStyle}>תאריך
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
+          <DateField value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
         </label>
         <label style={labelStyle}>שעה
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={inputStyle} />

@@ -16,6 +16,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ADMIN_COLORS } from '@/lib/admin/theme';
+import DateField from '@/components/DateField';
 
 type Envelope = 'change' | 'expenses' | 'card';
 
@@ -194,8 +195,7 @@ export default function AdminEnvelopeTopupModal({ guideId, guideName, canTopupCa
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
             תאריך
           </label>
-          <input
-            type="date"
+          <DateField
             value={date}
             onChange={(e) => setDate(e.target.value)}
             style={{

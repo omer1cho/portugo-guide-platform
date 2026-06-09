@@ -20,6 +20,7 @@ import {
 } from '@/lib/supabase';
 import { uploadTourPhoto } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
+import DateField from '@/components/DateField';
 import { useAuthGuard } from '@/lib/auth';
 
 type Booking = {
@@ -635,8 +636,7 @@ function AddTourContent() {
             <div className="bg-white rounded-xl shadow p-4 space-y-3">
               <div>
                 <label className="block text-sm font-semibold mb-1">תאריך</label>
-                <input
-                  type="date"
+                <DateField
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg box-border"
@@ -941,8 +941,7 @@ function AddTourContent() {
           <div className="bg-white rounded-xl shadow p-4 space-y-3">
             <div>
               <label className="block text-sm font-semibold mb-1">תאריך</label>
-              <input
-                type="date"
+              <DateField
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg box-border"

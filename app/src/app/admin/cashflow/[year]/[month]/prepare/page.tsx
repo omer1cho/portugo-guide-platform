@@ -32,6 +32,7 @@ import {
   type CashflowSalaryInvoice,
 } from '@/lib/admin/cashflow-data';
 import { uploadExpenseReceipt, uploadMonthlyReceipt } from '@/lib/storage';
+import DateField from '@/components/DateField';
 
 // ספקים תכופים — autocomplete לעמודת "ספק"
 const FREQUENT_SUPPLIERS = [
@@ -1098,8 +1099,7 @@ function DepositRow({
   return (
     <tr style={{ borderBottom: `1px solid ${ADMIN_COLORS.gray100}` }}>
       <td style={tdStyle}>
-        <input
-          type="date"
+        <DateField
           value={date}
           onChange={(ev) => setDate(ev.target.value)}
           style={{ ...inputStyle(), width: 140 }}
@@ -1292,8 +1292,7 @@ function SalaryRow({
         <td style={tdStyle}>{invoice.guide_name}</td>
         <td style={tdStyle}>{invoice.service_month}/{invoice.service_year}</td>
         <td style={tdStyle}>
-          <input
-            type="date"
+          <DateField
             value={invoiceDate}
             onChange={(ev) => setInvoiceDate(ev.target.value)}
             style={{ ...inputStyle(), width: 140 }}
@@ -1521,7 +1520,7 @@ function AddAdminExpenseModal({
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Field label="תאריך הקבלה">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle(true)} />
+            <DateField value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle(true)} />
           </Field>
           <Field label="שם ספק *">
             <input
