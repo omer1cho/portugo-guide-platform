@@ -174,6 +174,67 @@ function fmtWeekRange(weekStart: Date): string {
   return `${weekStart.getDate()}/${weekStart.getMonth() + 1} – ${end.getDate()}/${end.getMonth() + 1}`;
 }
 
+// --- תצוגת חודש (מבט-על, שבועות אחד מתחת לשני) ---
+
+/** היום הראשון בחודש של תאריך נתון */
+function firstOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+/** שם חודש + שנה בעברית, למשל "יוני 2026" */
+function monthLabel(d: Date): string {
+  return d.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+}
+
+/** כל תחילות-השבוע (ימי ראשון) שמשתתפות בחודש של ה-anchor */
+function weeksOfMonth(anchor: Date): Date[] {
+  const first = firstOfMonth(anchor);
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  const weeks: Date[] = [];
+  let ws = weekStartOf(first);
+  while (ws.getTime() <= last.getTime()) {
+    weeks.push(ws);
+    ws = addDays(ws, 7);
+  }
+  return weeks;
+}
+
+/** גבהים אחידים לאזורי חגים/חופשות/ליסבון, לשבוע נתון. משותף לתצוגת שבוע וחודש. */
+function computeAreaHeights(ws: Date, guides: Guide[], shifts: Shift[]) {
+  const HOLIDAY_PILL_HEIGHT = 16;
+  const VACATION_PILL_HEIGHT = 24;
+  const CARD_HEIGHT = 70;
+  const CARD_GAP = 4;
+  const SECTION_OVERHEAD = 26;
+  let maxHolidays = 0;
+  let maxVacations = 0;
+  let maxLisbon = 0;
+  for (let i = 0; i < 7; i++) {
+    const isoDate = toIsoDate(addDays(ws, i));
+    const evCount = getCalendarEventsForDate(isoDate)
+      .filter((e) => e.category === 'israel' || e.category === 'portugal').length;
+    const vacCount = guides.filter((g) =>
+      g.vacations?.some((v) => isoDate >= v.start && isoDate <= v.end),
+    ).length;
+    const lisbonCount = shifts.filter(
+      (s) => s.shift_date === isoDate && s.city === 'lisbon' && s.status !== 'cancelled',
+    ).length;
+    if (evCount > maxHolidays) maxHolidays = evCount;
+    if (vacCount > maxVacations) maxVacations = vacCount;
+    if (lisbonCount > maxLisbon) maxLisbon = lisbonCount;
+  }
+  return {
+    maxHolidaysHeight:
+      maxHolidays * HOLIDAY_PILL_HEIGHT + (maxHolidays > 1 ? (maxHolidays - 1) * 2 : 0),
+    maxVacationsHeight:
+      maxVacations * VACATION_PILL_HEIGHT + (maxVacations > 1 ? (maxVacations - 1) * 3 : 0),
+    lisbonAreaMinHeight:
+      maxLisbon > 0
+        ? maxLisbon * CARD_HEIGHT + (maxLisbon - 1) * CARD_GAP + SECTION_OVERHEAD
+        : 0,
+  };
+}
+
 /** פורמט תאריך קצר 'D/M' מ-YYYY-MM-DD */
 function shortDate(iso: string): string {
   const [, m, d] = iso.split('-');
@@ -322,6 +383,8 @@ export default function AdminShiftsPage() {
 
 function ShiftsContent() {
   const [weekStart, setWeekStart] = useState<Date>(() => weekStartOf(new Date()));
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [monthAnchor, setMonthAnchor] = useState<Date>(() => firstOfMonth(new Date()));
   const [cityFilter, setCityFilter] = useState<'all' | 'lisbon' | 'porto'>('all');
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
@@ -338,6 +401,25 @@ function ShiftsContent() {
     let cancelled = false;
     setLoading(true);
     setError(null);
+
+    if (viewMode === 'month') {
+      // מבט-על: טוענים את כל שבועות החודש במקביל ומאחדים. בלי אוטופיל
+      // (אוטופיל כותב למסד — לא רוצים להריץ אותו על 5-6 שבועות בכל צפייה).
+      const weeks = weeksOfMonth(monthAnchor);
+      Promise.all([
+        Promise.all(weeks.map((ws) => loadShiftsForWeek(ws, cityFilter))),
+        loadAvailableGuides(),
+      ])
+        .then(([weekly, g]) => {
+          if (cancelled) return;
+          setShifts(weekly.flat());
+          setGuides(g);
+        })
+        .catch((e) => !cancelled && setError(e.message || 'משהו השתבש'))
+        .finally(() => !cancelled && setLoading(false));
+      return () => { cancelled = true; };
+    }
+
     Promise.all([loadShiftsForWeek(weekStart, cityFilter), loadAvailableGuides()])
       .then(async ([s, g]) => {
         if (cancelled) return;
@@ -358,21 +440,18 @@ function ShiftsContent() {
       .catch((e) => !cancelled && setError(e.message || 'משהו השתבש'))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [weekStart, cityFilter, reloadCounter]);
+  }, [weekStart, viewMode, monthAnchor, cityFilter, reloadCounter]);
 
-  // קיבוץ שיבוצים לפי יום
+  // קיבוץ שיבוצים לפי יום (לכל הטווח שנטען — עובד גם לשבוע וגם לחודש)
   const shiftsByDay = useMemo(() => {
     const map = new Map<string, Shift[]>();
-    for (let i = 0; i < 7; i++) {
-      const d = addDays(weekStart, i);
-      map.set(toIsoDate(d), []);
-    }
     for (const s of shifts) {
       const arr = map.get(s.shift_date);
       if (arr) arr.push(s);
+      else map.set(s.shift_date, [s]);
     }
     return map;
-  }, [shifts, weekStart]);
+  }, [shifts]);
 
   const totalDraftCount = shifts.filter((s) => s.status === 'draft').length;
   const assignedDraftCount = shifts.filter((s) => s.status === 'draft' && s.guide_id).length;
@@ -384,43 +463,50 @@ function ShiftsContent() {
   // אם אין יותר drafts אבל יש published — מציגים "פרסמי מחדש" ו-"בטלי פרסום" במקום "פרסמי שבוע"
   const allPublished = totalDraftCount === 0 && publishedCount > 0;
 
-  // חישוב גבהים אחידים לאזורים — כדי שכל הימים יישרו בקו אנכי אחד
-  // (חגים, חופשות, ובעיקר: סקציית ליסבון, כדי שפורטו תתחיל באותה גובה בכל הימים)
-  const HOLIDAY_PILL_HEIGHT = 16;
-  const VACATION_PILL_HEIGHT = 24;
-  const CARD_HEIGHT = 70; // נדיב — קלף עם כותרת 2 שורות + הערה לוקח ~70px. מבטיח שום עמודה לא חורגת
-  const CARD_GAP = 4;
-  const SECTION_OVERHEAD = 26; // label + padding + margin
-  const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(() => {
-    let maxHolidays = 0;
-    let maxVacations = 0;
-    let maxLisbon = 0;
-    for (let i = 0; i < 7; i++) {
-      const d = addDays(weekStart, i);
-      const isoDate = toIsoDate(d);
-      const evCount = getCalendarEventsForDate(isoDate)
-        .filter((e) => e.category === 'israel' || e.category === 'portugal').length;
-      const vacCount = guides.filter((g) =>
-        g.vacations?.some((v) => isoDate >= v.start && isoDate <= v.end),
-      ).length;
-      const lisbonCount = shifts.filter(
-        (s) => s.shift_date === isoDate && s.city === 'lisbon' && s.status !== 'cancelled',
-      ).length;
-      if (evCount > maxHolidays) maxHolidays = evCount;
-      if (vacCount > maxVacations) maxVacations = vacCount;
-      if (lisbonCount > maxLisbon) maxLisbon = lisbonCount;
-    }
-    return {
-      maxHolidaysHeight:
-        maxHolidays * HOLIDAY_PILL_HEIGHT + (maxHolidays > 1 ? (maxHolidays - 1) * 2 : 0),
-      maxVacationsHeight:
-        maxVacations * VACATION_PILL_HEIGHT + (maxVacations > 1 ? (maxVacations - 1) * 3 : 0),
-      lisbonAreaMinHeight:
-        maxLisbon > 0
-          ? maxLisbon * CARD_HEIGHT + (maxLisbon - 1) * CARD_GAP + SECTION_OVERHEAD
-          : 0,
-    };
-  }, [weekStart, guides, shifts]);
+  // חישוב גבהים אחידים לאזורים (תצוגת שבוע) — כדי שכל הימים יישרו בקו אנכי אחד.
+  // בתצוגת חודש מחושב לכל שבוע בנפרד בתוך ה-render.
+  const { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight } = useMemo(
+    () => computeAreaHeights(weekStart, guides, shifts),
+    [weekStart, guides, shifts],
+  );
+
+  // לוח של שבוע יחיד (7 ימים). משותף לתצוגת שבוע ולכל שורת-שבוע בתצוגת חודש.
+  function renderWeekGrid(
+    ws: Date,
+    heights: { maxHolidaysHeight: number; maxVacationsHeight: number; lisbonAreaMinHeight: number },
+  ) {
+    return (
+      <div
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4 }}
+        data-shifts-board
+      >
+        {Array.from({ length: 7 }).map((_, i) => {
+          const d = addDays(ws, i);
+          const isoDate = toIsoDate(d);
+          const dayShifts = shiftsByDay.get(isoDate) || [];
+          const vacationsForDay = guides
+            .map((g) => {
+              const v = g.vacations?.find((vac) => isoDate >= vac.start && isoDate <= vac.end);
+              return v ? { guide: g, label: v.label || null } : null;
+            })
+            .filter((x): x is { guide: Guide; label: string | null } => x !== null);
+          return (
+            <DayColumn
+              key={isoDate}
+              date={d}
+              shifts={dayShifts}
+              guides={guides}
+              vacationsForDay={vacationsForDay}
+              holidaysAreaMinHeight={heights.maxHolidaysHeight}
+              vacationsAreaMinHeight={heights.maxVacationsHeight}
+              lisbonAreaMinHeight={heights.lisbonAreaMinHeight}
+              onChange={reload}
+            />
+          );
+        })}
+      </div>
+    );
+  }
 
   /**
    * שולח מייל אישי לכל מדריך שיש לו שיבוץ מפורסם בשבוע (best-effort).
@@ -518,6 +604,50 @@ function ShiftsContent() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <CitySwitcher value={cityFilter} onChange={setCityFilter} />
+          {/* מתג תצוגה: שבוע / חודש (מבט-על) */}
+          <div style={{ display: 'inline-flex', border: `1px solid ${ADMIN_COLORS.gray300}`, borderRadius: 8, overflow: 'hidden' }}>
+            <button
+              onClick={() => {
+                if (viewMode === 'week') return;
+                // חוזרים לשבוע — נוחתים בשבוע הראשון של החודש שצפינו בו
+                setWeekStart(weekStartOf(firstOfMonth(monthAnchor)));
+                setViewMode('week');
+              }}
+              style={{
+                padding: '8px 14px',
+                background: viewMode === 'week' ? ADMIN_COLORS.green700 : '#fff',
+                color: viewMode === 'week' ? '#fff' : ADMIN_COLORS.gray700,
+                border: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              שבוע
+            </button>
+            <button
+              onClick={() => {
+                if (viewMode === 'month') return;
+                // עוברים לחודש — מעגנים על החודש הדומיננטי של השבוע הנוכחי (יום חמישי)
+                setMonthAnchor(firstOfMonth(addDays(weekStart, 4)));
+                setViewMode('month');
+              }}
+              style={{
+                padding: '8px 14px',
+                background: viewMode === 'month' ? ADMIN_COLORS.green700 : '#fff',
+                color: viewMode === 'month' ? '#fff' : ADMIN_COLORS.gray700,
+                border: 'none',
+                borderRight: `1px solid ${ADMIN_COLORS.gray300}`,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              חודש
+            </button>
+          </div>
           <button
             onClick={() => setShowGuidesPanel(true)}
             style={secondaryBtnStyle}
@@ -525,10 +655,12 @@ function ShiftsContent() {
           >
             👥 מדריכים & 🌴 חופשות
           </button>
-          <button onClick={() => setShowAddModal(true)} style={secondaryBtnStyle}>
-            + הוסיפי שיבוץ
-          </button>
-          {allPublished ? (
+          {viewMode === 'week' && (
+            <button onClick={() => setShowAddModal(true)} style={secondaryBtnStyle}>
+              + הוסיפי שיבוץ
+            </button>
+          )}
+          {viewMode === 'week' && (allPublished ? (
             // מצב "הכל פורסם" — מציגים שני כפתורים: עדכון פרסום (ירוק) + ביטול (אפור)
             <>
               <button
@@ -586,7 +718,7 @@ function ShiftsContent() {
             >
               📤 פרסמי שבוע ({totalDraftCount})
             </button>
-          )}
+          ))}
         </div>
       </header>
 
@@ -603,10 +735,14 @@ function ShiftsContent() {
       >
         <button
           data-nav-prev
-          onClick={() => setWeekStart(addDays(weekStart, -7))}
+          onClick={() =>
+            viewMode === 'month'
+              ? setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() - 1, 1))
+              : setWeekStart(addDays(weekStart, -7))
+          }
           style={navBtnStyle}
         >
-          ▶ שבוע קודם
+          {viewMode === 'month' ? '▶ חודש קודם' : '▶ שבוע קודם'}
         </button>
         <div
           data-nav-center
@@ -619,10 +755,17 @@ function ShiftsContent() {
           }}
         >
           <div style={{ fontSize: 16, fontWeight: 600, color: ADMIN_COLORS.gray700 }}>
-            {fmtWeekRange(weekStart)}
+            {viewMode === 'month' ? monthLabel(monthAnchor) : fmtWeekRange(weekStart)}
           </div>
-          <button onClick={() => setWeekStart(weekStartOf(new Date()))} style={navBtnStyle}>
-            השבוע
+          <button
+            onClick={() =>
+              viewMode === 'month'
+                ? setMonthAnchor(firstOfMonth(new Date()))
+                : setWeekStart(weekStartOf(new Date()))
+            }
+            style={navBtnStyle}
+          >
+            {viewMode === 'month' ? 'החודש' : 'השבוע'}
           </button>
           {/* קפיצה לתאריך — הקלט עצמו שקוף ופרוס על כל שטח הכפתור,
               כך שכל לחיצה (גם במובייל!) פותחת את הלוח הנייטיבי. showPicker
@@ -642,16 +785,19 @@ function ShiftsContent() {
               overflow: 'hidden',
             }}
           >
-            <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>📅 בחירת תאריך</span>
+            <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
+              {viewMode === 'month' ? '📅 בחירת חודש' : '📅 בחירת תאריך'}
+            </span>
             <input
               ref={datePickerRef}
               type="date"
-              value={toIsoDate(weekStart)}
+              value={viewMode === 'month' ? toIsoDate(monthAnchor) : toIsoDate(weekStart)}
               onChange={(e) => {
                 const v = e.target.value;
                 if (!v) return;
                 const [y, m, d] = v.split('-').map(Number);
-                setWeekStart(weekStartOf(new Date(y, m - 1, d)));
+                if (viewMode === 'month') setMonthAnchor(new Date(y, m - 1, 1));
+                else setWeekStart(weekStartOf(new Date(y, m - 1, d)));
               }}
               onClick={(e) => {
                 // בדסקטופ, native click על input[type=date] פותח picker רק
@@ -680,10 +826,14 @@ function ShiftsContent() {
         </div>
         <button
           data-nav-next
-          onClick={() => setWeekStart(addDays(weekStart, 7))}
+          onClick={() =>
+            viewMode === 'month'
+              ? setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 1))
+              : setWeekStart(addDays(weekStart, 7))
+          }
           style={navBtnStyle}
         >
-          שבוע הבא ◀
+          {viewMode === 'month' ? 'חודש הבא ◀' : 'שבוע הבא ◀'}
         </button>
       </div>
 
@@ -705,41 +855,28 @@ function ShiftsContent() {
       {loading && <div style={{ padding: 30, textAlign: 'center', color: ADMIN_COLORS.gray500 }}>טוענים שיבוצים...</div>}
       {error && <div style={{ padding: 16, background: '#fef2f2', color: '#991b1b', borderRadius: 8 }}>{error}</div>}
 
-      {/* Week board */}
-      {!loading && !error && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-            gap: 4,
-          }}
-          data-shifts-board
-        >
-          {Array.from({ length: 7 }).map((_, i) => {
-            const d = addDays(weekStart, i);
-            const isoDate = toIsoDate(d);
-            const dayShifts = shiftsByDay.get(isoDate) || [];
-            // מחשבים אילו מדריכים בחופש ביום הזה
-            const vacationsForDay = guides
-              .map((g) => {
-                const v = g.vacations?.find((vac) => isoDate >= vac.start && isoDate <= vac.end);
-                return v ? { guide: g, label: v.label || null } : null;
-              })
-              .filter((x): x is { guide: Guide; label: string | null } => x !== null);
-            return (
-              <DayColumn
-                key={isoDate}
-                date={d}
-                shifts={dayShifts}
-                guides={guides}
-                vacationsForDay={vacationsForDay}
-                holidaysAreaMinHeight={maxHolidaysHeight}
-                vacationsAreaMinHeight={maxVacationsHeight}
-                lisbonAreaMinHeight={lisbonAreaMinHeight}
-                onChange={reload}
-              />
-            );
-          })}
+      {/* Board — שבוע יחיד או חודש מלא (שבועות אחד מתחת לשני) */}
+      {!loading && !error && viewMode === 'week' &&
+        renderWeekGrid(weekStart, { maxHolidaysHeight, maxVacationsHeight, lisbonAreaMinHeight })}
+
+      {!loading && !error && viewMode === 'month' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {weeksOfMonth(monthAnchor).map((ws) => (
+            <div key={toIsoDate(ws)} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: ADMIN_COLORS.green900,
+                  borderBottom: `2px solid ${ADMIN_COLORS.gray300}`,
+                  paddingBottom: 4,
+                }}
+              >
+                שבוע {fmtWeekRange(ws)}
+              </div>
+              {renderWeekGrid(ws, computeAreaHeights(ws, guides, shifts))}
+            </div>
+          ))}
         </div>
       )}
 
