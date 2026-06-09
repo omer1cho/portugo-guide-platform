@@ -476,12 +476,18 @@
     background: white;
     border-radius: 8px;
     padding: 11px 14px;
-    padding-left: 42px;
-    font-size: 14px;
+    font-size: 15px;
     font-family: inherit;
     color: var(--ink);
     transition: all 0.2s;
+    cursor: pointer;
   }
+  .date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.65;
+    filter: grayscale(1) brightness(0.7);
+  }
+  .date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .date-input::placeholder { color: var(--ink-mute); }
   .date-input:focus {
     outline: none;
@@ -492,21 +498,7 @@
     border-color: var(--green-dark);
     background: #f6fdf8;
   }
-  .date-input-check {
-    position: absolute; left: 14px; top: 50%;
-    transform: translateY(-50%) scale(0.5);
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: var(--green-dark);
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 900;
-    opacity: 0;
-    transition: all 0.25s;
-  }
-  .date-input.filled + .date-input-check {
-    opacity: 1; transform: translateY(-50%) scale(1);
-  }
+  .date-input-check { display: none; }
   .date-note {
     font-size: 12px; color: var(--ink-soft);
     display: flex; align-items: flex-start; gap: 6px;
@@ -812,14 +804,20 @@
     color: var(--red);
   }
   .summary-item-date-input {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--ink);
     background: var(--band);
     border: 1px solid var(--border);
     border-radius: 100px;
     padding: 7px 14px;
     font-family: inherit;
-    min-width: 170px;
+    min-width: 165px;
+    cursor: pointer;
+  }
+  .summary-item-date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    filter: grayscale(1) brightness(0.6);
   }
   .summary-item-date-input::placeholder { color: var(--ink-mute); }
   .summary-item-date-input:focus {
@@ -1126,7 +1124,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
@@ -1179,7 +1177,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
@@ -1249,7 +1247,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות, אנא ציינו מראש.</div>
@@ -1312,7 +1310,7 @@
               <div class="date-input-wrap">
                 <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
                 <div class="date-input-row">
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
+                  <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                   <div class="date-input-check">✓</div>
                 </div>
                 <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
@@ -1364,7 +1362,7 @@
               <div class="date-input-wrap">
                 <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
                 <div class="date-input-row">
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
+                  <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                   <div class="date-input-check">✓</div>
                 </div>
                 <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
@@ -1416,7 +1414,7 @@
               <div class="date-input-wrap">
                 <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
                 <div class="date-input-row">
-                  <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני">
+                  <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                   <div class="date-input-check">✓</div>
                 </div>
                 <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
@@ -1500,7 +1498,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. הביקור בארמון הפנה כולל טיפוס של כ-10 דקות.</div>
@@ -1569,7 +1567,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
@@ -1637,7 +1635,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 12 ביוני, או טווח של 12-14 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
@@ -1717,7 +1715,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור.</div>
@@ -1785,7 +1783,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות, אנא ציינו מראש.</div>
@@ -1848,7 +1846,7 @@
               <div class="date-input-wrap">
                 <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את היום המלא?</div>
                 <div class="date-input-row">
-                  <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני">
+                  <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                   <div class="date-input-check">✓</div>
                 </div>
                 <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
@@ -1932,7 +1930,7 @@
                 <div class="date-input-wrap">
                   <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
                   <div class="date-input-row">
-                    <input class="date-input" type="text" placeholder="לדוגמה: 18 ביוני, או טווח של 18-20 ביוני">
+                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
                   <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. השייט בנהר הדורו מותנה במזג האוויר.</div>
@@ -2038,6 +2036,10 @@
     if (!c.id) c.id = 't-' + c.getAttribute('data-tour');
   });
 
+  // today's date (ISO) so the calendar can't pick past dates
+  const TODAY_ISO = new Date().toISOString().slice(0, 10);
+  document.querySelectorAll('.date-input').forEach(function(inp){ inp.min = TODAY_ISO; });
+
   function toggleInterest(btn, tourId) {
     const card = btn.closest('.card, .combo-card');
     if (!card) return;
@@ -2092,7 +2094,7 @@
         item.className = 'summary-item';
         item.innerHTML = `
           <div class="summary-item-name">${name}</div>
-          <input class="summary-item-date-input" type="text" value="${dateVal.replace(/"/g, '&quot;')}" placeholder="📅 תאריך מבוקש (אופציונלי)" oninput="syncSummaryDate('${tourId}', this.value)">
+          <input class="summary-item-date-input" type="date" value="${dateVal.replace(/"/g, '&quot;')}" min="${TODAY_ISO}" title="תאריך מבוקש (אופציונלי)" onclick="if(this.showPicker)this.showPicker()" oninput="syncSummaryDate('${tourId}', this.value)">
           <button class="summary-item-remove" onclick="removeTour('${tourId}')" title="הסר מהבחירה">✕</button>
         `;
         list.appendChild(item);
