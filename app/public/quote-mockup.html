@@ -109,24 +109,51 @@
   /* ===== Main layout ===== */
   main { max-width: 920px; margin: 0 auto; padding: 0 32px; }
 
+  /* ===== Table of contents ===== */
   .toc {
-    display: flex; gap: 10px; flex-wrap: wrap;
-    padding: 28px 0;
+    padding: 32px 0 36px;
     border-bottom: 1px solid var(--border);
   }
-  .toc a {
+  .toc-head {
+    font-size: 14px; font-weight: 700;
+    color: var(--green-deep);
+    margin-bottom: 16px;
+  }
+  .toc-list {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; gap: 10px;
+  }
+  .toc-list a {
+    display: flex; align-items: center; gap: 14px;
     text-decoration: none;
     background: var(--surface);
     border: 1px solid var(--border);
-    color: var(--ink-soft);
-    padding: 9px 18px; border-radius: 100px;
-    font-size: 14px; font-weight: 500;
-    transition: all 0.2s;
+    border-radius: 14px;
+    padding: 14px 16px;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
-  .toc a:hover {
-    border-color: var(--green); color: var(--green-dark);
+  .toc-list a:hover {
+    border-color: var(--green);
+    box-shadow: 0 4px 14px rgba(35,40,31,0.06);
     transform: translateY(-1px);
   }
+  .toc-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    background: var(--green-soft); color: var(--green-dark);
+    border-radius: 50%;
+    font-size: 16px; font-weight: 700;
+  }
+  .toc-text { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .toc-title { font-size: 17px; font-weight: 700; color: var(--forest); }
+  .toc-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
+  .toc-arrow {
+    flex-shrink: 0; color: var(--gold);
+    font-size: 20px; font-weight: 700;
+    transition: transform 0.2s;
+  }
+  .toc-list a:hover .toc-arrow { transform: translateX(-4px); }
 
   /* ===== City frame ===== */
   .city-frame {
@@ -163,7 +190,12 @@
   .sub-head h3 {
     font-family: var(--serif);
     font-size: 26px; font-weight: 700;
-    color: var(--forest); margin-bottom: 12px;
+    color: var(--forest); margin-bottom: 8px;
+  }
+  .sub-desc {
+    font-size: 16px; color: var(--ink-soft);
+    line-height: 1.6; margin-bottom: 14px;
+    max-width: 620px;
   }
   .sub-legend {
     display: flex; gap: 8px; flex-wrap: wrap;
@@ -940,11 +972,40 @@
 </svg>
 
 <main>
-  <nav class="toc">
-    <a href="#lisbon">ליסבון</a>
-    <a href="#porto">פורטו</a>
-    <a href="#terms">תנאים והערות</a>
-    <a href="#form">לבחירה</a>
+  <nav class="toc" aria-label="תוכן ההצעה">
+    <div class="toc-head">תוכן ההצעה, אפשר לקפוץ לכל חלק:</div>
+    <ol class="toc-list">
+      <li><a href="#lisbon">
+        <span class="toc-num">1</span>
+        <span class="toc-text">
+          <span class="toc-title">סיורים בסביבת ליסבון</span>
+          <span class="toc-sub">סיורים רגליים בתוך העיר · טיולי יום מחוץ לעיר</span>
+        </span>
+        <span class="toc-arrow" aria-hidden="true">←</span>
+      </a></li>
+      <li><a href="#porto">
+        <span class="toc-num">2</span>
+        <span class="toc-text">
+          <span class="toc-title">סיורים בסביבת פורטו</span>
+          <span class="toc-sub">סיורים רגליים בתוך העיר · טיולי יום מחוץ לעיר</span>
+        </span>
+        <span class="toc-arrow" aria-hidden="true">←</span>
+      </a></li>
+      <li><a href="#terms">
+        <span class="toc-num">3</span>
+        <span class="toc-text">
+          <span class="toc-title">תנאים והערות חשובות</span>
+        </span>
+        <span class="toc-arrow" aria-hidden="true">←</span>
+      </a></li>
+      <li><a href="#form">
+        <span class="toc-num">4</span>
+        <span class="toc-text">
+          <span class="toc-title">בחירת הסיורים המבוקשים</span>
+        </span>
+        <span class="toc-arrow" aria-hidden="true">←</span>
+      </a></li>
+    </ol>
   </nav>
 
   <!-- ============================================ -->
@@ -958,11 +1019,12 @@
     <!-- ====== INSIDE CITY ====== -->
     <div class="subsection">
       <div class="sub-head">
-        <h3>סיורים בתוך העיר</h3>
+        <h3>סיורים רגליים בתוך העיר</h3>
+        <p class="sub-desc">סיורים רגליים בלב ליסבון, להכיר את העיר לעומק.</p>
         <div class="sub-legend">
-          <span class="legend-item">הקלאסי</span>
-          <span class="legend-item">בלם</span>
-          <span class="legend-item">קולינרי</span>
+          <span class="legend-item">ליסבון הקלאסית</span>
+          <span class="legend-item">סיור באזור בלם</span>
+          <span class="legend-item">סיור קולינרי בליסבון</span>
         </div>
       </div>
 
@@ -975,7 +1037,7 @@
             <img src="https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=900&q=80" alt="ליסבון הקלאסית">
           </div>
           <div class="card-intro">
-            <h3 class="card-title">הסיור של ליסבון הקלאסית</h3>
+            <h3 class="card-title">ליסבון הקלאסית</h3>
             <p class="card-tagline">שלוש שעות שיגרמו לכם להתאהב בעיר</p>
 
             <div class="card-description">
@@ -1034,7 +1096,7 @@
             <img src="/tours/belem.jpg" alt="בלם">
           </div>
           <div class="card-intro">
-            <h3 class="card-title">הסיור באזור בלם</h3>
+            <h3 class="card-title">סיור באזור בלם</h3>
             <p class="card-tagline">מגדל ים, מנזר ופשטל מסורתי בעקבות מגלי הארצות</p>
 
             <div class="card-description">
@@ -1170,7 +1232,7 @@
 
           <div class="combo-card" data-tour="combo-classic-belem" data-tour-name="שילוב: קלאסית + בלם">
             <div class="combo-header">
-              <div class="combo-title">ליסבון הקלאסית + בלם</div>
+              <div class="combo-title">ליסבון הקלאסית + סיור באזור בלם</div>
               <div class="combo-duration">⏱ סה"כ כ-6 שעות</div>
             </div>
             <div class="combo-plan">
@@ -1222,7 +1284,7 @@
 
           <div class="combo-card" data-tour="combo-culinary-classic" data-tour-name="שילוב: קולינרי + קלאסית">
             <div class="combo-header">
-              <div class="combo-title">הסיור הקולינרי + ליסבון הקלאסית</div>
+              <div class="combo-title">סיור קולינרי + ליסבון הקלאסית</div>
               <div class="combo-duration">⏱ סה"כ כ-7 שעות · יש להתחיל בקולינרי בבוקר</div>
             </div>
             <div class="combo-plan">
@@ -1274,7 +1336,7 @@
 
           <div class="combo-card" data-tour="combo-culinary-belem" data-tour-name="שילוב: קולינרי + בלם">
             <div class="combo-header">
-              <div class="combo-title">הסיור הקולינרי + בלם</div>
+              <div class="combo-title">סיור קולינרי + סיור באזור בלם</div>
               <div class="combo-duration">⏱ סה"כ כ-6 שעות · יש להתחיל בקולינרי בבוקר</div>
             </div>
             <div class="combo-plan">
@@ -1332,10 +1394,11 @@
     <div class="subsection">
       <div class="sub-head">
         <h3>טיולי יום מחוץ לעיר</h3>
+        <p class="sub-desc">יום שלם ברכב צמוד אל מחוץ לעיר, אל אתרים מרהיבים בסביבה.</p>
         <div class="sub-legend">
-          <span class="legend-item">סינטרה</span>
-          <span class="legend-item">אראבידה</span>
-          <span class="legend-item">אובידוש</span>
+          <span class="legend-item">סינטרה והסביבה</span>
+          <span class="legend-item">אראבידה והסביבה</span>
+          <span class="legend-item">אובידוש והסביבה</span>
         </div>
       </div>
 
@@ -1576,10 +1639,11 @@
     <!-- ====== INSIDE CITY ====== -->
     <div class="subsection">
       <div class="sub-head">
-        <h3>סיורים בתוך העיר</h3>
+        <h3>סיורים רגליים בתוך העיר</h3>
+        <p class="sub-desc">סיורים רגליים בלב פורטו, להכיר את העיר לעומק.</p>
         <div class="sub-legend">
           <span class="legend-item">פורטו הקלאסית</span>
-          <span class="legend-item">טעימות פורטו</span>
+          <span class="legend-item">סיור טעימות בפורטו</span>
         </div>
       </div>
 
@@ -1651,7 +1715,7 @@
             <img src="/tours/porto-tastings.jpg" alt="טעימות פורטו">
           </div>
           <div class="card-intro">
-            <h3 class="card-title">סיור הטעימות בפורטו</h3>
+            <h3 class="card-title">סיור טעימות בפורטו</h3>
             <p class="card-tagline">מסע טעימות לאורך הדורו: מפורטו לוילה נובה דה גאיה</p>
 
             <div class="card-description">
@@ -1727,7 +1791,7 @@
 
           <div class="combo-card" data-tour="combo-porto-classic-tastings" data-tour-name="שילוב: פורטו קלאסית + טעימות">
             <div class="combo-header">
-              <div class="combo-title">פורטו הקלאסית + סיור הטעימות</div>
+              <div class="combo-title">פורטו הקלאסית + סיור טעימות</div>
               <div class="combo-duration">⏱ סה"כ כ-7 שעות</div>
             </div>
             <div class="combo-plan">
@@ -1785,8 +1849,9 @@
     <div class="subsection">
       <div class="sub-head">
         <h3>טיולי יום מחוץ לעיר</h3>
+        <p class="sub-desc">יום שלם ברכב צמוד אל מחוץ לעיר, אל אתרים מרהיבים בסביבה.</p>
         <div class="sub-legend">
-          <span class="legend-item">עמק הדורו</span>
+          <span class="legend-item">עמק הדורו והסביבה</span>
         </div>
       </div>
 
