@@ -1,0 +1,207 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>פורטוגו — רפרנסים להירו</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@300;400;500;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#faf6ee; --surface:#fffdf8; --band:#f0e9da;
+    --forest:#0a3d22; --green:#0d8c3e; --deep:#0d6e34;
+    --terra:#c4602f; --gold:#bfa14f;
+    --text:#23281f; --sec:#5b5f54; --muted:#8a8d82; --border:#e3ddcf;
+    --serif:'Frank Ruhl Libre', serif; --sans:'Heebo', sans-serif;
+    --group:url('/hero-quote-lisbon.jpg');
+    --scenic:url('/hero-quote-2.png');
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--sans); background:#efe7d7; color:var(--text); direction:rtl; line-height:1.6; padding-bottom:80px;}
+  .intro{max-width:900px; margin:0 auto; padding:40px 24px 8px; text-align:center;}
+  .intro h2{font-family:var(--serif); font-size:30px; color:var(--forest); margin-bottom:8px;}
+  .intro p{color:var(--sec); font-size:16px;}
+
+  .card{max-width:1100px; margin:36px auto 0; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; box-shadow:0 6px 22px rgba(35,40,31,.07);}
+  .cap{padding:16px 26px; border-bottom:1px solid var(--border); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+  .cap .n{font-family:var(--serif); font-weight:700; font-size:20px; color:var(--forest);}
+  .cap .d{font-size:14px; color:var(--sec);}
+  .cap .ref{margin-inline-start:auto; font-size:12.5px; color:var(--muted); background:var(--band); padding:5px 12px; border-radius:100px;}
+
+  .eyebrow{font-size:13px; font-weight:700; letter-spacing:.05em;}
+  .greet{font-family:var(--serif); font-weight:700; line-height:1.1;}
+  .sub{line-height:1.55;}
+  bdi{unicode-bidi:isolate;}
+  .rule{height:2px; width:64px; background:var(--gold); border:none; margin:16px 0;}
+
+  /* ---------- 1. Cinematic scenic ---------- */
+  .h1x{position:relative; min-height:440px; color:#fff; text-align:center;
+    background:linear-gradient(180deg,rgba(8,30,18,.25),rgba(8,30,18,.55)),var(--scenic) center/cover no-repeat;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px;}
+  .h1x .eyebrow{color:#f0e3bf; margin-bottom:14px;}
+  .h1x .greet{font-size:clamp(34px,5vw,52px); text-shadow:0 2px 18px rgba(0,0,0,.4);}
+  .h1x .rule{margin:18px auto;}
+  .h1x .sub{font-size:18px; max-width:520px; opacity:.95;}
+  .h1x .meta{margin-top:22px; font-size:14px; letter-spacing:.03em; opacity:.9;}
+
+  /* ---------- 2. Printed brochure cover ---------- */
+  .h2x{background:var(--cream); padding:30px;}
+  .h2x .frame{position:relative; border:1px solid var(--gold); padding:14px;}
+  .h2x .photo{height:320px; background:var(--scenic) center 40%/cover no-repeat;}
+  .h2x .plate{position:absolute; inset-inline:40px; bottom:-2px; transform:translateY(40%);
+    background:var(--surface); border:1px solid var(--gold); padding:22px 28px; text-align:center;}
+  .h2x .eyebrow{color:var(--terra); margin-bottom:8px;}
+  .h2x .greet{font-size:clamp(26px,3.6vw,38px); color:var(--forest);}
+  .h2x .sub{color:var(--sec); font-size:16px; margin-top:8px;}
+  .h2x .spacer{height:90px;}
+
+  /* ---------- 3. Editorial asymmetric ---------- */
+  .h3x{display:grid; grid-template-columns:1.2fr .9fr; min-height:440px;}
+  .h3x .photo{background:var(--group) center 42%/cover no-repeat;}
+  .h3x .col{background:var(--forest); color:#fff; padding:clamp(28px,3.4vw,48px); display:flex; flex-direction:column; justify-content:center;}
+  .h3x .eyebrow{color:var(--gold); margin-bottom:14px;}
+  .h3x .greet{font-size:clamp(30px,4vw,46px);}
+  .h3x .sub{opacity:.9; font-size:17px; margin-top:14px;}
+  .h3x .meta{margin-top:24px; font-size:14px; opacity:.85; border-top:1px solid rgba(255,255,255,.2); padding-top:16px;}
+
+  /* ---------- 4. Postcard ---------- */
+  .h4x{background:#e9e0cf; padding:34px; display:flex; justify-content:center;}
+  .h4x .pc{position:relative; background:#fff; padding:14px; box-shadow:0 10px 30px rgba(35,40,31,.16); max-width:760px; width:100%; transform:rotate(-.6deg);}
+  .h4x .photo{height:300px; background:var(--group) center 42%/cover no-repeat;}
+  .h4x .stamp{position:absolute; top:24px; inset-inline-start:28px; width:78px; height:92px; background:var(--cream); border:2px dashed var(--terra); display:flex; align-items:center; justify-content:center; text-align:center; font-size:11px; font-weight:700; color:var(--terra); transform:rotate(4deg); padding:6px;}
+  .h4x .hand{font-family:'Caveat',cursive; font-size:40px; color:var(--terra); position:absolute; top:18px; inset-inline-end:34px; transform:rotate(-3deg);}
+  .h4x .cont{padding:16px 14px 6px;}
+  .h4x .greet{font-size:30px; color:var(--forest);}
+  .h4x .sub{color:var(--sec); font-size:16px; margin-top:6px;}
+  .h4x .meta{color:var(--muted); font-size:14px; margin-top:12px;}
+
+  /* ---------- 5. Side panel (refined) ---------- */
+  .h5x{display:grid; grid-template-columns:1fr 1.1fr; min-height:440px; background:var(--surface);}
+  .h5x .col{padding:clamp(30px,4vw,56px); display:flex; flex-direction:column; justify-content:center;}
+  .h5x .eyebrow{color:var(--deep); margin-bottom:12px;}
+  .h5x .greet{font-size:clamp(30px,4vw,46px); color:var(--forest);}
+  .h5x .sub{color:var(--sec); font-size:17px; margin-top:6px;}
+  .h5x .meta{display:flex; gap:10px; flex-wrap:wrap; margin-top:24px;}
+  .h5x .pill{font-size:14px; background:var(--band); border:1px solid var(--border); color:var(--sec); padding:9px 18px; border-radius:100px;}
+  .h5x .pill b{color:var(--deep);}
+  .h5x .photo{background:var(--group) center 42%/cover no-repeat;}
+
+  /* ---------- 6. Frosted card over photo ---------- */
+  .h6x{position:relative; min-height:460px; background:var(--group) center 38%/cover no-repeat; display:flex; align-items:flex-end; padding:34px;}
+  .h6x .glass{background:rgba(250,246,238,.92); border:1px solid rgba(255,255,255,.6); border-radius:16px; padding:26px 30px; max-width:460px; box-shadow:0 12px 32px rgba(0,0,0,.2);}
+  .h6x .eyebrow{color:var(--terra); margin-bottom:8px;}
+  .h6x .greet{font-size:clamp(26px,3.4vw,38px); color:var(--forest);}
+  .h6x .sub{color:var(--sec); font-size:16px; margin-top:6px;}
+  .h6x .meta{display:flex; gap:18px; flex-wrap:wrap; margin-top:16px; font-size:14px; color:var(--sec);}
+  .h6x .meta b{color:var(--deep);}
+
+  @media (max-width:760px){
+    .h3x,.h5x{grid-template-columns:1fr;}
+    .h3x .photo,.h5x .photo{min-height:240px; order:-1;}
+    .h1x{min-height:360px;}
+    .h2x .photo{height:220px;}
+    .h4x .photo{height:220px;}
+    .h6x{min-height:380px;}
+    .h6x .glass{max-width:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h2>רפרנסים להירו, פורטוגו</h2>
+  <p>6 שפות עיצוב שונות עם התמונות שלך. תגידי איזו אסתטיקה מדברת אלייך (אפשר גם לשלב), ואז נבנה את הזוכה בדף האמיתי.</p>
+</div>
+
+<!-- 1 -->
+<div class="card">
+  <div class="cap"><span class="n">1 · קולנועי וסצני</span><span class="d">תמונת נוף מלאה, כותרת גדולה במרכז, קו זהב דק.</span><span class="ref">רפרנס: Black Tomato / Aman</span></div>
+  <div class="h1x">
+    <div class="eyebrow">הצעת סיורים אישית</div>
+    <div class="greet">אולה, משפחת סימאי</div>
+    <hr class="rule">
+    <div class="sub">מסע פורטוגלי שתכננו במיוחד עבורכם, מליסבון ועד פורטו.</div>
+    <div class="meta">יוני <bdi>2026</bdi> · <bdi>6</bdi> משתתפים</div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="card">
+  <div class="cap"><span class="n">2 · כריכת ברושור מודפס</span><span class="d">תמונה במסגרת זהב, "שלט" כותרת שמרחף על התמונה.</span><span class="ref">רפרנס: ברושור נסיעות יוקרה מודפס</span></div>
+  <div class="h2x">
+    <div class="frame">
+      <div class="photo"></div>
+      <div class="plate">
+        <div class="eyebrow">הצעת סיורים אישית</div>
+        <div class="greet">אולה, משפחת סימאי</div>
+        <div class="sub">יוני <bdi>2026</bdi> · <bdi>6</bdi> משתתפים</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="card">
+  <div class="cap"><span class="n">3 · מגזין אסימטרי</span><span class="d">חצי תמונת קבוצה, חצי פאנל ירוק עם טיפוגרפיה גדולה.</span><span class="ref">רפרנס: Kinfolk / Cereal magazine</span></div>
+  <div class="h3x">
+    <div class="photo"></div>
+    <div class="col">
+      <div class="eyebrow">הצעת סיורים אישית</div>
+      <div class="greet">אולה,<br>משפחת סימאי</div>
+      <div class="sub">בחרנו עבורכם את הסיורים שהכי יתאימו לקבוצה.</div>
+      <div class="meta">מועד מבוקש: יוני <bdi>2026</bdi> &nbsp;·&nbsp; <bdi>6</bdi> משתתפים</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="card">
+  <div class="cap"><span class="n">4 · גלויה אישית</span><span class="d">תמונה כמו גלויה, בול ופתיח בכתב יד. חם ואישי.</span><span class="ref">רפרנס: "Postcard from..." </span></div>
+  <div class="h4x">
+    <div class="pc">
+      <div class="photo"></div>
+      <div class="stamp">PORTUGAL<br>2026</div>
+      <div class="hand">Olá!</div>
+      <div class="cont">
+        <div class="greet">אולה, משפחת סימאי</div>
+        <div class="sub">מסע פורטוגלי שחיכינו לתכנן עבורכם.</div>
+        <div class="meta">יוני <bdi>2026</bdi> · <bdi>6</bdi> משתתפים</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="card">
+  <div class="cap"><span class="n">5 · פאנל צד נקי</span><span class="d">טקסט בצד על רקע בהיר, תמונה נקייה לצידו.</span><span class="ref">רפרנס: Airbnb Luxe / Original Travel</span></div>
+  <div class="h5x">
+    <div class="col">
+      <div class="eyebrow">הצעת סיורים אישית</div>
+      <div class="greet">אולה, משפחת סימאי</div>
+      <div class="sub">בהצעה זו תוכלו להתרשם מהסיורים שאנו מציעים לתיאום פרטי.</div>
+      <div class="meta">
+        <span class="pill">מועד מבוקש: <b><bdi>יוני 2026</bdi></b></span>
+        <span class="pill">משתתפים: <b><bdi>6</bdi></b></span>
+      </div>
+    </div>
+    <div class="photo"></div>
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="card">
+  <div class="cap"><span class="n">6 · כרטיס "זכוכית" על התמונה</span><span class="d">התמונה מלאה, כרטיס קרם רך עם הברכה בפינה.</span><span class="ref">רפרנס: Apple / Booking premium</span></div>
+  <div class="h6x">
+    <div class="glass">
+      <div class="eyebrow">הצעת סיורים אישית</div>
+      <div class="greet">אולה, משפחת סימאי</div>
+      <div class="sub">מסע פורטוגלי שתכננו במיוחד עבורכם.</div>
+      <div class="meta"><span>מועד מבוקש: <b><bdi>יוני 2026</bdi></b></span><span><bdi>6</bdi> משתתפים</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
