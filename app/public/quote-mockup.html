@@ -424,6 +424,19 @@
     line-height: 1.6;
   }
 
+  /* Selectable options (e.g. culinary morning/afternoon) */
+  .opt-lead { font-size: 15px; color: var(--ink-soft); margin: 4px 0 14px; }
+  .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .opt-card {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .opt-card.selected { border-color: var(--green); box-shadow: 0 0 0 2px rgba(13,140,62,0.15); }
+  .opt-title { font-size: 17px; font-weight: 700; color: var(--forest); margin-bottom: 8px; }
+  .opt-desc { font-size: 15px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 16px; }
+
   /* Action: button + date */
   .card-action {
     border-top: 1px solid var(--border);
@@ -986,6 +999,7 @@
     .card-title { font-size: 23px; }
     .price-amount { font-size: 30px; }
     .price-coverage { grid-template-columns: 1fr; }
+    .opt-grid { grid-template-columns: 1fr; }
     .card-meta-strip { gap: 12px 14px; }
     .combos-block { padding: 24px 20px; }
     .combo-card { padding: 20px; }
@@ -1261,7 +1275,7 @@
         </div>
 
         <!-- CULINARY -->
-        <div class="card" data-tour="culinary" data-tour-name="קולינרי בליסבון">
+        <div class="card no-select" data-tour="culinary" data-tour-name="קולינרי בליסבון">
           <div class="card-top">
           <div class="card-img-wrap">
             <img src="/tours/culinary-lisbon.png" alt="סיור קולינרי">
@@ -1272,9 +1286,6 @@
 
             <div class="card-description">
               <p>המטבח הפורטוגלי טומן בחובו היסטוריה מרתקת של שילוב בין עמים ומדינות. בסיור הקולינרי שלנו נטעם מאכלים ומשקאות פורטוגליים ייחודיים למקום. לאורך המסלול נטייל בין הסימטאות היפות של ליסבון ונבקר במגוון מקומות בעלי אופי משתנה. חלק מהטעימות ינתנו בישיבה במקומות השונים, חלק על הדרך וחלק כמו המקומיים ממש בפינות השונות של העיר. מלבד הטעמים, המסלול כולל ביקור באתרים מעניינים, לרבות תצפית מרהיבה, חנות ספרים עתיקה ואיך לא, שוק האוכל המפורסם של ליסבון.</p>
-              <p>ניתן לבחור בין סיור בוקר לבין סיור צהריים, וכל אחד מהם מותאם בצורה מדויקת לשעת היום:</p>
-              <p><strong>סיור קולינרי בבוקר</strong> כולל מאפים פורטוגלים לצד קפה אמיתי, "פשטל דה בקלאו" בליווי משקה מקומי פופולארי, סרדינים בשילוב יין מקומי ומטעמים נוספים שיפתחו לכם את היום בטעם טוב.</p>
-              <p><strong>סיור קולינרי בצהריים</strong> מציע מנות חמות ומפתיעות: אמפדות עסיסיות, מנת בקלאו אותנטית בצלחת, גם כאן סרדינים בשילוב יין מקומי ועוד הפתעות משובחות שישלימו את החוויה.</p>
               <p>חקרנו את השטח היטב ויצרנו עבורכם מסלול שהוא כולו ביס אחד מושלם 😊</p>
               <div class="desc-note">
                 <span class="note-label">חשוב לדעת:</span>
@@ -1315,19 +1326,42 @@
               </div>
             </div>
 
-            <div class="card-action">
-              <button class="interest-btn" onclick="toggleInterest(this, 'culinary')">
-                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
-              </button>
-              <div class="date-wrap">
-                <div class="date-input-wrap">
-                  <div class="date-input-label">📅 באיזה תאריך תרצו לבצע את הסיור?</div>
-                  <div class="date-input-row">
-                    <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
-                    <div class="date-input-check">✓</div>
+            <div class="opt-lead">ניתן לבחור בין סיור בוקר לבין סיור צהריים, כל אחד מותאם לשעת היום. סמנו את מה שמעניין אתכם (אפשר גם את שניהם):</div>
+            <div class="opt-grid">
+              <div class="opt-card" data-tour="culinary-morning" data-tour-name="סיור קולינרי בבוקר">
+                <div class="opt-title">סיור קולינרי בבוקר</div>
+                <div class="opt-desc">מאפים פורטוגלים לצד קפה אמיתי, "פשטל דה בקלאו" בליווי משקה מקומי פופולארי, סרדינים בשילוב יין מקומי ומטעמים נוספים שיפתחו לכם את היום בטעם טוב.</div>
+                <button class="interest-btn" onclick="toggleInterest(this, 'culinary-morning')">
+                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+                </button>
+                <div class="date-wrap">
+                  <div class="date-input-wrap">
+                    <div class="date-input-label">📅 באיזה תאריך תרצו?</div>
+                    <div class="date-input-row">
+                      <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
+                      <div class="date-input-check">✓</div>
+                    </div>
+                    <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
+                    <div class="date-saved-msg">נרשם.</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות מולנו ונחזור אליכם לאישור. אפשרויות צמחוניות זמינות, אנא ציינו מראש.</div>
-                  <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
+                </div>
+              </div>
+              <div class="opt-card" data-tour="culinary-afternoon" data-tour-name="סיור קולינרי בצהריים">
+                <div class="opt-title">סיור קולינרי בצהריים</div>
+                <div class="opt-desc">מנות חמות ומפתיעות: אמפדות עסיסיות, מנת בקלאו אותנטית בצלחת, גם כאן סרדינים בשילוב יין מקומי ועוד הפתעות משובחות שישלימו את החוויה.</div>
+                <button class="interest-btn" onclick="toggleInterest(this, 'culinary-afternoon')">
+                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+                </button>
+                <div class="date-wrap">
+                  <div class="date-input-wrap">
+                    <div class="date-input-label">📅 באיזה תאריך תרצו?</div>
+                    <div class="date-input-row">
+                      <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
+                      <div class="date-input-check">✓</div>
+                    </div>
+                    <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות ונחזור אליכם לאישור.</div>
+                    <div class="date-saved-msg">נרשם.</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2157,7 +2191,7 @@
   });
 
   function toggleInterest(btn, tourId) {
-    const card = btn.closest('.card, .combo-card');
+    const card = btn.closest('.opt-card, .card, .combo-card');
     if (!card) return;
     const nowSelected = !card.classList.contains('selected');
     setCardState(tourId, nowSelected);
@@ -2182,8 +2216,8 @@
   }
 
   function updateSummary() {
-    const selectedCards = document.querySelectorAll('.card.selected, .combo-card.selected');
-    const allCards = document.querySelectorAll('.card[data-tour], .combo-card[data-tour]');
+    const selectedCards = document.querySelectorAll('.card.selected:not(.no-select), .combo-card.selected, .opt-card.selected');
+    const allCards = document.querySelectorAll('.card[data-tour]:not(.no-select), .combo-card[data-tour], .opt-card[data-tour]');
     const list = document.getElementById('summary-list');
     const empty = document.getElementById('summary-empty');
     const count = document.getElementById('summary-count');
