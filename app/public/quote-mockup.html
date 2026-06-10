@@ -300,6 +300,10 @@
   .card-description ol.desc-list li { margin-bottom: 9px; line-height: 1.7; }
   .card-description ol.desc-list li::marker { color: var(--green); font-weight: 700; }
   .card-description ol.desc-list b { color: var(--forest); font-weight: 700; }
+  .card-description .desc-note { margin-top: 16px; }
+  .card-description .desc-note .note-label { display: block; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
+  .card-description .desc-note ul { list-style: disc; margin: 0; padding-inline-start: 22px; }
+  .card-description .desc-note ul li { margin-bottom: 6px; line-height: 1.6; }
 
   /* Meta strip */
   .card-meta-strip {
@@ -381,6 +385,9 @@
   }
   .price-includes-simple .included-label {
     color: var(--green-dark); font-weight: 700;
+  }
+  .price-includes-simple .excluded-label {
+    color: var(--terra-mute); font-weight: 700;
   }
 
   /* Full coverage */
@@ -1180,11 +1187,24 @@
           </div>
           <div class="card-intro">
             <h3 class="card-title">סיור באזור בלם</h3>
-            <p class="card-tagline">מגדל ים, מנזר ופשטל מסורתי בעקבות מגלי הארצות</p>
+            <p class="card-tagline">מסע בעקבות מגלי הארצות בתור הזהב של פורטוגל</p>
 
             <div class="card-description">
-              <p>נצא לסיור רגלי בשכונת <strong>Belém</strong>, הידועה בהקשרה לתקופת עידן התגליות של פורטוגל. זהו אזור מקסים, המרוחק כששה קילומטרים ממרכז העיר, בו נמצא <strong>המגדל המפורסם של בלם</strong>, <strong>אנדרטת מגלי הארצות</strong> וכן <strong>מנזר ז'רונימוש</strong>.</p>
-              <p>במהלך הסיור נטייל בין האתרים המרכזיים של האזור ונטעם את הקינוח המסורתי <strong>Pastel de Nata</strong>, בתצורתו המקורית במאפיה המסורתית Pastel de Belém.</p>
+              <p>נצא לסיור רגלי בשכונת בלם (<bdi>Belém</bdi>), אחד האזורים היפים והחשובים בליסבון, שממנו יצאו הספנים הפורטוגלים אל הים הפתוח בתקופת עידן התגליות. האזור נמצא כשישה קילומטרים מערבה ממרכז העיר, ובו שלושה אתרים מרכזיים:</p>
+              <ol class="desc-list">
+                <li><b>מגדל בלם (<bdi>Torre de Belém</bdi>)</b> מצודה מהמאה ה-16 על שפת נהר הטז'ו, מסמליה המוכרים של ליסבון ואתר מורשת עולמית של אונסק"ו.</li>
+                <li><b>אנדרטת מגלי הארצות (<bdi>Padrão dos Descobrimentos</bdi>)</b> אנדרטה מרשימה בצורת חרטום של ספינה, עליה מוטמעות הדמויות המרכזיות שהובילו את התקופה שבה פורטוגל יצאה לגלות את העולם.</li>
+                <li><b>מנזר ז'רונימוש (<bdi>Mosteiro dos Jerónimos</bdi>)</b> מנזר מפואר בסגנון המנואלי, אחד המבנים היפים בפורטוגל, וגם הוא אתר מורשת עולמית.</li>
+              </ol>
+              <p>במהלך הסיור נטייל בין האתרים המפורסמים וכמה הפתעות נוספות באזור. נדבר על עידן התגליות ועל החותם שהוא השאיר על האזור ועל פורטוגל כולה. לסיום נטעם את הקינוח הפורטוגלי המפורסם, הפשטל דה נאטה (<bdi>Pastel de Nata</bdi>), בגרסתו המקורית במאפייה ההיסטורית <bdi>Pastéis de Belém</bdi>, בדיוק במקום שבו הוא נולד לפני כמעט 200 שנה 😊</p>
+              <p>זהו סיור מומלץ במיוחד למי שאוהב לשלב היסטוריה ואדריכלות מרשימה עם טעם מתוק, ולמי שרוצה להכיר את הצד הימי והמלכותי של ליסבון, מעבר למרכז ההיסטורי. תתכוננו לאזור שונה בתכלית מהמראות המפורסמים של מרכז ליסבון.</p>
+              <div class="desc-note">
+                <span class="note-label">חשוב לדעת:</span>
+                <ul>
+                  <li>בלם נמצאת מחוץ למרכז העיר ליסבון והסיור אינו כולל את התחבורה אליו ובחזרה (קל להגיע בתחבורה ציבורית, באובר או במונית).</li>
+                  <li>הסיור עצמו קליל וקצר יחסית באזור מישורי ומשתלב נהדר כהמשך לסיור של ליסבון הקלאסית.</li>
+                </ul>
+              </div>
             </div>
           </div>
           </div>
@@ -1203,7 +1223,8 @@
             </div>
 
             <div class="price-includes-simple">
-              <span class="included-label">המחיר כולל:</span> הדרכה בעברית וטעימה של פשטל דה בלם המסורתי. אינו כולל תחבורה לאזור בלם וחזרה ממנו.
+              <span class="included-label">המחיר כולל:</span> טעימה של המאפה המסורתי, פשטל דה בלם.<br>
+              <span class="excluded-label">המחיר אינו כולל:</span> תחבורה לאזור בלם וחזרה ממנו.
             </div>
 
             <div class="card-action">
