@@ -109,49 +109,58 @@
 
   /* ===== Table of contents ===== */
   .toc {
-    padding: 32px 0 36px;
+    padding: 40px 0 44px;
     border-bottom: 1px solid var(--border);
   }
-  .toc-head {
-    font-size: 14px; font-weight: 700;
-    color: var(--green-deep);
-    margin-bottom: 16px;
+  .toc-title-main {
+    font-size: clamp(24px, 4vw, 31px); font-weight: 800;
+    color: var(--forest); text-align: center; margin-bottom: 8px;
   }
-  .toc-list {
-    list-style: none; margin: 0; padding: 0;
-    display: grid; gap: 10px;
+  .toc-intro {
+    text-align: center; color: var(--ink-soft);
+    font-size: 16px; margin-bottom: 28px;
   }
-  .toc-list a {
-    display: flex; align-items: center; gap: 14px;
-    text-decoration: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 16px;
+  .toc-cities {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .toc-city {
+    display: block; text-decoration: none;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px;
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
-  .toc-list a:hover {
+  .toc-city:hover {
     border-color: var(--green);
-    box-shadow: 0 4px 14px rgba(35,40,31,0.06);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(35,40,31,0.07);
+    transform: translateY(-2px);
   }
-  .toc-num {
-    flex-shrink: 0;
-    width: 32px; height: 32px;
-    display: grid; place-items: center;
-    background: var(--green-soft); color: var(--green-dark);
-    border-radius: 50%;
-    font-size: 16px; font-weight: 700;
+  .toc-city-name {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 23px; font-weight: 800; color: var(--forest);
+    margin-bottom: 16px;
   }
-  .toc-text { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-  .toc-title { font-size: 17px; font-weight: 700; color: var(--forest); }
-  .toc-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
-  .toc-arrow {
-    flex-shrink: 0; color: var(--gold);
-    font-size: 20px; font-weight: 700;
-    transition: transform 0.2s;
+  .toc-city-name .arrow { color: var(--gold); font-size: 18px; }
+  .toc-cat { margin-bottom: 14px; }
+  .toc-cat:last-child { margin-bottom: 0; }
+  .toc-cat-label {
+    font-size: 13px; font-weight: 700; color: var(--green-deep);
+    margin-bottom: 7px;
   }
-  .toc-list a:hover .toc-arrow { transform: translateX(-4px); }
+  .toc-tours { display: flex; flex-wrap: wrap; gap: 6px; }
+  .toc-tour {
+    font-size: 13.5px; color: var(--ink-soft);
+    background: var(--band); border: 1px solid var(--border);
+    border-radius: 100px; padding: 4px 12px;
+  }
+  .toc-more {
+    display: flex; gap: 22px; justify-content: center;
+    flex-wrap: wrap; margin-top: 24px;
+  }
+  .toc-more a {
+    font-size: 14px; font-weight: 600;
+    color: var(--green-deep); text-decoration: none;
+  }
+  .toc-more a:hover { text-decoration: underline; }
 
   /* ===== City frame ===== */
   .city-frame {
@@ -959,6 +968,7 @@
     .hero-plate { margin: -44px 10px 0; padding: 22px 20px; }
     .hero-greet { font-size: 26px; }
     .hero-meta { font-size: 14px; }
+    .toc-cities { grid-template-columns: 1fr; }
     main { padding: 0 20px; }
     .city-head h2 { font-size: 38px; }
     .sub-head h3 { font-size: 22px; }
@@ -1006,7 +1016,7 @@
   </div>
   <div class="hero-plate">
     <div class="hero-greet">אולה, משפחת סימאי</div>
-    <div class="hero-tagline">הצעה לסיורים פרטיים עם פורטוגו</div>
+    <div class="hero-tagline">זוהי הצעתנו לסיורים פרטיים עבורכם</div>
     <div class="hero-meta">
       <span class="hero-stat">מועד מבוקש <b><bdi>יוני 2026</bdi></b></span>
       <span class="hero-stat">כמות משתתפים <b><bdi>6</bdi></b></span>
@@ -1044,40 +1054,50 @@
 </svg>
 
 <main>
-  <nav class="toc" aria-label="תוכן ההצעה">
-    <div class="toc-head">תוכן ההצעה, אפשר לקפוץ לכל חלק:</div>
-    <ol class="toc-list">
-      <li><a href="#lisbon">
-        <span class="toc-num">1</span>
-        <span class="toc-text">
-          <span class="toc-title">סיורים בסביבת ליסבון</span>
-          <span class="toc-sub">סיורים רגליים בתוך העיר · טיולי יום מחוץ לעיר</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-      <li><a href="#porto">
-        <span class="toc-num">2</span>
-        <span class="toc-text">
-          <span class="toc-title">סיורים בסביבת פורטו</span>
-          <span class="toc-sub">סיורים רגליים בתוך העיר · טיולי יום מחוץ לעיר</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-      <li><a href="#terms">
-        <span class="toc-num">3</span>
-        <span class="toc-text">
-          <span class="toc-title">תנאים והערות חשובות</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-      <li><a href="#form">
-        <span class="toc-num">4</span>
-        <span class="toc-text">
-          <span class="toc-title">בחירת הסיורים המבוקשים</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-    </ol>
+  <nav class="toc" aria-label="מה מחכה לכם בהצעה">
+    <div class="toc-title-main">מה מחכה לכם בהצעה?</div>
+    <div class="toc-intro">ריכזנו עבורכם את כל הסיורים שאנו מציעים, לפי עיר. אפשר לקפוץ ישר לכל חלק.</div>
+    <div class="toc-cities">
+      <a class="toc-city" href="#lisbon">
+        <div class="toc-city-name">ליסבון <span class="arrow" aria-hidden="true">←</span></div>
+        <div class="toc-cat">
+          <div class="toc-cat-label">סיורים רגליים בתוך העיר</div>
+          <div class="toc-tours">
+            <span class="toc-tour">ליסבון הקלאסית</span>
+            <span class="toc-tour">סיור באזור בלם</span>
+            <span class="toc-tour">סיור קולינרי</span>
+          </div>
+        </div>
+        <div class="toc-cat">
+          <div class="toc-cat-label">טיולי יום מחוץ לעיר</div>
+          <div class="toc-tours">
+            <span class="toc-tour">סינטרה והסביבה</span>
+            <span class="toc-tour">אראבידה והסביבה</span>
+            <span class="toc-tour">אובידוש והסביבה</span>
+          </div>
+        </div>
+      </a>
+      <a class="toc-city" href="#porto">
+        <div class="toc-city-name">פורטו <span class="arrow" aria-hidden="true">←</span></div>
+        <div class="toc-cat">
+          <div class="toc-cat-label">סיורים רגליים בתוך העיר</div>
+          <div class="toc-tours">
+            <span class="toc-tour">פורטו הקלאסית</span>
+            <span class="toc-tour">סיור טעימות בפורטו</span>
+          </div>
+        </div>
+        <div class="toc-cat">
+          <div class="toc-cat-label">טיולי יום מחוץ לעיר</div>
+          <div class="toc-tours">
+            <span class="toc-tour">עמק הדורו והסביבה</span>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="toc-more">
+      <a href="#terms">תנאים והערות חשובות</a>
+      <a href="#form">בחירת הסיורים המבוקשים</a>
+    </div>
   </nav>
 
   <!-- ============================================ -->
