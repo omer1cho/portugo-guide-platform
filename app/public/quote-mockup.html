@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --forest: #0a3d22;
@@ -71,40 +72,35 @@
   }
 
   /* ===== Hero ===== */
-  .hero {
-    position: relative; min-height: 480px;
+  .hero { background: var(--bg); padding: 28px clamp(16px, 4vw, 40px) 36px; }
+  .hero-frame {
+    max-width: 1100px; margin: 0 auto;
+    border: 1px solid var(--gold); padding: 14px;
+  }
+  .hero-photo {
+    height: 360px;
     background:
-      linear-gradient(180deg, rgba(10,61,34,0.72) 0%, rgba(10,61,34,0.42) 34%, rgba(10,61,34,0.12) 55%, rgba(10,61,34,0) 78%),
-      url('/hero-quote-lisbon.jpg') center 40%/cover no-repeat;
-    color: #fffdf8;
-    display: flex; align-items: flex-start; padding: 44px clamp(20px, 5vw, 32px) 56px;
+      linear-gradient(180deg, rgba(8,30,18,0.06), rgba(8,30,18,0.16)),
+      url('/hero-quote-2.png') center 42%/cover no-repeat;
   }
-  .hero-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
-  .hero h1 {
-    font-family: var(--serif);
-    font-size: clamp(30px, 5vw, 44px); font-weight: 700; line-height: 1.15;
-    margin-bottom: 18px;
-    text-shadow: 0 2px 14px rgba(10,61,34,0.35);
+  .hero-plate {
+    position: relative; z-index: 2;
+    max-width: 680px; margin: -64px auto 0;
+    background: var(--surface); border: 1px solid var(--gold);
+    padding: 28px 32px; text-align: center;
+    box-shadow: var(--shadow);
   }
-  .hero-subtitle {
-    font-size: 19px; font-weight: 400; opacity: 0.96;
-    max-width: 720px;
-    text-shadow: 0 1px 8px rgba(10,61,34,0.35);
-    line-height: 1.6;
-    margin-bottom: 6px;
+  .hero-eyebrow {
+    font-size: 14px; font-weight: 700; letter-spacing: .02em;
+    color: var(--terra); margin-bottom: 10px;
   }
-  .hero-subtitle:last-of-type { margin-bottom: 0; }
-  .hero-meta {
-    display: flex; gap: 12px; flex-wrap: wrap;
-    margin-top: 28px; font-size: 14px;
+  .hero-greet {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-weight: 700; line-height: 1.12;
+    font-size: clamp(28px, 4vw, 40px); color: var(--forest);
   }
-  .hero-meta-item {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
-    padding: 9px 18px; border-radius: 100px;
-  }
-  .hero-meta-item .label { opacity: 0.85; }
-  .hero-meta-item .value { font-weight: 700; }
+  .hero-meta { font-size: 15px; color: var(--ink-mute); margin-top: 12px; }
+  .hero-meta b { color: var(--green-deep); font-weight: 700; }
 
   /* ===== Main layout ===== */
   main { max-width: 920px; margin: 0 auto; padding: 0 32px; }
@@ -955,11 +951,12 @@
     header { padding: 12px 20px; }
     .logo-wrap img { height: 36px; }
     .logo-tag { display: none; }
-    .hero { height: 460px; padding: 32px 20px; }
-    .hero h1 { font-size: 32px; }
-    .hero-subtitle { font-size: 15px; }
-    .hero-meta { gap: 8px; }
-    .hero-meta-item { padding: 7px 14px; font-size: 12px; }
+    .hero { padding: 16px 14px 28px; }
+    .hero-frame { padding: 10px; }
+    .hero-photo { height: 220px; }
+    .hero-plate { margin: -44px 10px 0; padding: 22px 20px; }
+    .hero-greet { font-size: 26px; }
+    .hero-meta { font-size: 14px; }
     main { padding: 0 20px; }
     .city-head h2 { font-size: 38px; }
     .sub-head h3 { font-size: 22px; }
@@ -1002,14 +999,13 @@
 
 <!-- ===== HERO ===== -->
 <section class="hero">
-  <div class="hero-inner">
-    <h1>אולה, משפחת סימאי</h1>
-    <p class="hero-subtitle">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום באופן פרטי.</p>
-    <p class="hero-subtitle">המחירים מותאמים לקבוצה שלכם.</p>
-    <div class="hero-meta">
-      <div class="hero-meta-item"><span class="label">מועד מבוקש:</span><span class="value">יוני 2026</span></div>
-      <div class="hero-meta-item"><span class="label">מספר משתתפים:</span><span class="value">6</span></div>
-    </div>
+  <div class="hero-frame">
+    <div class="hero-photo"></div>
+  </div>
+  <div class="hero-plate">
+    <div class="hero-eyebrow">הצעה לסיורים פרטיים עם פורטוגו</div>
+    <div class="hero-greet">אולה, משפחת סימאי</div>
+    <div class="hero-meta">מועד מבוקש: <b><bdi>יוני 2026</bdi></b> · <b><bdi>6</bdi></b> משתתפים</div>
   </div>
 </section>
 
