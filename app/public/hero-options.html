@@ -1,0 +1,154 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>פורטוגו — אפשרויות הירו</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#faf6ee; --surface:#fffdf8; --band:#f0e9da;
+    --forest:#0a3d22; --green:#0d8c3e; --deep:#0d6e34;
+    --terra:#c4602f; --gold:#bfa14f;
+    --text:#23281f; --sec:#5b5f54; --muted:#8a8d82; --border:#e3ddcf;
+    --serif:'Frank Ruhl Libre', serif; --sans:'Heebo', sans-serif;
+    --photo:url('/hero-quote-lisbon.jpg');
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--sans); background:var(--cream); color:var(--text); direction:rtl; line-height:1.6;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  /* page header with logo (same as real page) */
+  .site{display:flex; align-items:center; gap:14px; padding:16px 32px; background:var(--cream); border-bottom:1px solid var(--border);}
+  .site img{height:44px; width:auto;}
+  .site .tag{color:var(--muted); font-size:14px;}
+
+  /* label band before each option */
+  .label{background:var(--forest); color:#fffdf8; padding:16px 32px; font-size:19px; font-weight:700; margin-top:46px;}
+  .label small{display:block; font-weight:400; opacity:.82; font-size:14px; margin-top:4px;}
+
+  .eyebrow{font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--gold); margin-bottom:14px;}
+  h1.greet{font-family:var(--serif); font-weight:700; font-size:clamp(30px,4.5vw,44px); line-height:1.12; margin-bottom:16px;}
+  .sub{font-size:18px; line-height:1.6; max-width:640px; margin-bottom:6px;}
+  .sub2{font-size:18px; line-height:1.6; max-width:640px;}
+
+  .meta{display:flex; gap:10px; flex-wrap:wrap; margin-top:24px;}
+  .pill{display:flex; align-items:center; gap:7px; font-size:14px; padding:9px 18px; border-radius:100px;}
+  .pill .v{font-weight:700;}
+  bdi{unicode-bidi:isolate;}
+
+  /* ===== Option A : photo breathes, greeting on cream below ===== */
+  .A-photo{height:380px; background:var(--photo) center 42%/cover no-repeat;}
+  .A-text{background:var(--cream); padding:40px clamp(20px,5vw,56px) 48px;}
+  .A-text .eyebrow{color:var(--deep);}
+  .A-text h1.greet{color:var(--forest);}
+  .A-text .sub,.A-text .sub2{color:var(--sec);}
+  .A-text .pill{background:var(--band); border:1px solid var(--border); color:var(--sec);}
+  .A-text .pill .v{color:var(--deep);}
+
+  /* ===== Option B : photo with text on top, neutral scrim, info strip at bottom ===== */
+  .B-hero{position:relative; min-height:460px; color:#fffdf8;
+    background:
+      linear-gradient(180deg, rgba(20,18,14,0.55) 0%, rgba(20,18,14,0.18) 32%, rgba(20,18,14,0) 56%),
+      var(--photo) center 38%/cover no-repeat;
+    display:flex; align-items:flex-start; padding:42px clamp(20px,5vw,56px);}
+  .B-hero .eyebrow{color:#f3e6c4;}
+  .B-hero h1.greet{text-shadow:0 2px 14px rgba(0,0,0,.35);}
+  .B-hero .sub,.B-hero .sub2{text-shadow:0 1px 10px rgba(0,0,0,.4); opacity:.97;}
+  .B-strip{background:var(--forest); color:#fffdf8; display:flex; gap:28px; flex-wrap:wrap; padding:16px clamp(20px,5vw,56px);}
+  .B-strip .item{font-size:15px;}
+  .B-strip .item .l{opacity:.78;}
+  .B-strip .item .v{font-weight:700;}
+
+  /* ===== Option C : split / magazine cover ===== */
+  .C{display:grid; grid-template-columns:1fr 1.05fr; min-height:480px;}
+  .C-panel{background:var(--forest); color:#fffdf8; padding:clamp(32px,4vw,56px); display:flex; flex-direction:column; justify-content:center;}
+  .C-panel .eyebrow{color:var(--gold);}
+  .C-panel .sub,.C-panel .sub2{opacity:.92;}
+  .C-panel .pill{background:rgba(255,255,255,.12); color:#fffdf8;}
+  .C-panel .pill .v{color:#fff;}
+  .C-photo{background:var(--photo) center 42%/cover no-repeat;}
+
+  @media (max-width:760px){
+    .A-photo{height:240px;}
+    .B-hero{min-height:380px;}
+    .C{grid-template-columns:1fr;}
+    .C-photo{min-height:260px; order:-1;}
+    .sub,.sub2{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="site wrap">
+  <img src="/logo.png" alt="פורטוגו">
+  <span class="tag">סיורים בעברית בפורטוגל</span>
+</div>
+
+<!-- OPTION A -->
+<div class="label wrap">כיוון א · התמונה נושמת, הברכה על רקע קרם מתחת
+  <small>הכי נקי ויוקרתי. התמונה היפה לא מתלכלכת, הטקסט ברור לגמרי, שום דבר לא על הפרצופים.</small>
+</div>
+<div class="wrap">
+  <section>
+    <div class="A-photo"></div>
+    <div class="A-text">
+      <div class="eyebrow">הצעת סיורים אישית</div>
+      <h1 class="greet">אולה, משפחת סימאי</h1>
+      <p class="sub">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום באופן פרטי.</p>
+      <p class="sub2">המחירים מותאמים לקבוצה שלכם.</p>
+      <div class="meta">
+        <div class="pill"><span class="l">מועד מבוקש:</span><span class="v"><bdi>יוני 2026</bdi></span></div>
+        <div class="pill"><span class="l">מספר משתתפים:</span><span class="v"><bdi>6</bdi></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- OPTION B -->
+<div class="label wrap">כיוון ב · טקסט מעל התמונה (מתוקן), פרטים ברצועה תחתונה
+  <small>הצללה עדינה ונייטרלית רק למעלה (השמיים נשארים כחולים), והפרטים ירדו לרצועה ירוקה דקה מתחת, לא על האנשים.</small>
+</div>
+<div class="wrap">
+  <section>
+    <div class="B-hero">
+      <div>
+        <div class="eyebrow">הצעת סיורים אישית</div>
+        <h1 class="greet">אולה, משפחת סימאי</h1>
+        <p class="sub">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום באופן פרטי.</p>
+        <p class="sub2">המחירים מותאמים לקבוצה שלכם.</p>
+      </div>
+    </div>
+    <div class="B-strip">
+      <div class="item"><span class="l">מועד מבוקש: </span><span class="v"><bdi>יוני 2026</bdi></span></div>
+      <div class="item"><span class="l">מספר משתתפים: </span><span class="v"><bdi>6</bdi></span></div>
+    </div>
+  </section>
+</div>
+
+<!-- OPTION C -->
+<div class="label wrap">כיוון ג · פיצול "כריכת מגזין", פאנל ירוק לצד התמונה
+  <small>הטקסט בפאנל ירוק אלגנטי בצד, התמונה נקייה לגמרי לצידו. בנייד זה מסתדר אחד מתחת לשני.</small>
+</div>
+<div class="wrap">
+  <section class="C">
+    <div class="C-panel">
+      <div class="eyebrow">הצעת סיורים אישית</div>
+      <h1 class="greet">אולה, משפחת סימאי</h1>
+      <p class="sub">בהצעה זו תוכלו להתרשם ממגוון הסיורים שאנו מציעים לתיאום באופן פרטי.</p>
+      <p class="sub2">המחירים מותאמים לקבוצה שלכם.</p>
+      <div class="meta">
+        <div class="pill"><span class="l">מועד מבוקש:</span><span class="v"><bdi>יוני 2026</bdi></span></div>
+        <div class="pill"><span class="l">משתתפים:</span><span class="v"><bdi>6</bdi></span></div>
+      </div>
+    </div>
+    <div class="C-photo"></div>
+  </section>
+</div>
+
+<div style="height:64px"></div>
+
+</body>
+</html>
