@@ -816,6 +816,7 @@
     font-weight: 600;
     color: var(--ink);
   }
+  .summary-item-extra { display: block; font-size: 13px; color: var(--terra-mute); font-weight: 500; margin-top: 3px; }
   .summary-item-date {
     font-size: 13px;
     color: var(--green-dark);
@@ -1716,7 +1717,7 @@
                     </label>
                     <div class="shuttle-count" style="display:none">
                       <label>עבור כמה אנשים?</label>
-                      <input type="number" min="1" max="50" class="shuttle-num" placeholder="מספר">
+                      <input type="number" min="1" max="50" class="shuttle-num" placeholder="מספר" oninput="updateSummary()">
                     </div>
                   </div>
                 </div>
@@ -2329,6 +2330,7 @@
     if (!box) return;
     const count = box.querySelector('.shuttle-count');
     if (count) count.style.display = cb.checked ? 'flex' : 'none';
+    updateSummary();
   }
 
   function updateSummary() {
@@ -2357,10 +2359,17 @@
         const dateVal = dateInput ? dateInput.value.trim() : '';
 
         const heVal = isoToHe(dateVal);
+        let extra = '';
+        const shuttleCb = card.querySelector('.shuttle-checkbox');
+        if (shuttleCb && shuttleCb.checked) {
+          const numEl = card.querySelector('.shuttle-num');
+          const n = numEl && numEl.value.trim() ? numEl.value.trim() : '';
+          extra = '<span class="summary-item-extra">+ שאטל בארמון הפנה' + (n ? ' (עבור ' + n + ' אנשים)' : '') + '</span>';
+        }
         const item = document.createElement('div');
         item.className = 'summary-item';
         item.innerHTML = `
-          <div class="summary-item-name">${name}</div>
+          <div class="summary-item-name">${name}${extra}</div>
           <span class="summary-date-field">
             <input class="summary-item-date-input" type="date" value="${dateVal.replace(/"/g, '&quot;')}" min="${TODAY_ISO}" title="תאריך מבוקש (אופציונלי)" onclick="if(this.showPicker)this.showPicker()" onchange="summaryDateChanged('${tourId}', this.value)">
             <span class="date-face"><span class="date-display ${heVal ? '' : 'empty'}">${heVal || 'בחרו תאריך'}</span><span class="date-cal-icon">📅</span></span>
