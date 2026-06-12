@@ -480,8 +480,13 @@
     transition: max-height 0.4s ease, margin-top 0.4s ease;
   }
   .card.selected .date-wrap, .combo-card.selected .date-wrap, .opt-pick.selected .date-wrap {
-    max-height: 320px;
+    max-height: 700px;
   }
+  .shuttle-opt { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .shuttle-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 15px; color: var(--ink); line-height: 1.5; }
+  .shuttle-check input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--green); flex-shrink: 0; }
+  .shuttle-count { margin-top: 10px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-soft); }
+  .shuttle-count input { width: 90px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 15px; }
   .date-input-wrap {
     background: var(--green-soft);
     border-radius: 10px;
@@ -1638,11 +1643,25 @@
           </div>
           <div class="card-intro">
             <h3 class="card-title">סינטרה והסביבה</h3>
-            <p class="card-tagline">מארמון פנה אגדי אל הנקודה המערבית באירופה</p>
+            <p class="card-tagline">סינטרה, קאבו דה רוקה וקשקאיש - טיול היום הפופולרי ביותר בסביבת ליסבון</p>
 
             <div class="card-description">
-              <p>ביום זה נצא לסיור במספר מקומות מחוץ לליסבון. <strong>Sintra</strong>, עיירה קסומה השוכנת כ-30 ק"מ מליסבון, ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה. <strong>Cabo da Roca</strong>, הנקודה המערבית ביותר באירופה. <strong>Cascais</strong>, עיירה שבעבר הייתה כפר דייגים קטן אך היום היא ידועה כעיירת נופש מפוארת.</p>
-              <p>נתחיל את היום עם איסוף מהמלון וניסע לנקודה הראשונה, סינטרה. נבקר בארמון הפנה המפורסם, האתר המבוקש ביותר, ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה ומאפים מקומיים מסורתיים. לאחר סינטרה נסע לעבר קאבו דה רוקה, ושם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו. לבסוף, נסע לעבר קשקאיש, שם תוכלו לאכול ארוחת צהריים, להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים, גם לרדת לבקר בחוף.</p>
+              <p>ביום זה נצא לטיול עם רכב צמוד למספר מקומות מיוחדים מחוץ לליסבון:</p>
+              <ol class="desc-list">
+                <li><b>סינטרה (<bdi>Sintra</bdi>)</b> עיירה קסומה השוכנת כ-30 ק"מ מליסבון. סינטרה ידועה בארמונות והמבנים המרשימים שלה מתקופות שונות, ביערות שהיא מציעה בכל גווני הירוק, וכן במספר מטעמים מקומיים. הביקור שם יגרום לכם להרגיש חלק מאגדה.</li>
+                <li><b>קאבו דה רוקה (<bdi>Cabo da Roca</bdi>)</b> הנקודה המערבית ביותר ביבשת אירופה.</li>
+                <li><b>קשקאיש (<bdi>Cascais</bdi>)</b> שהיתה פעם כפר דייגים קטן והיום היא עיירת נופש מפוארת, עם רחובות יפים, בתי קפה וחופים מקסימים.</li>
+              </ol>
+              <p>את היום נתחיל עם איסוף מהמלון ונסיעה לעבר סינטרה. נבקר בארמון הפנה המפורסם<sup>*</sup>, האתר המבוקש ביותר, ולאחר מכן נטייל בין רחובותיה הקסומים ונעצור להפסקת קפה, במהלכה תוכלו ליהנות מהמאפים המקומיים המסורתיים.</p>
+              <p>לאחר סינטרה נסע לעבר קאבו דה רוקה, הנקודה המערבית ביותר באירופה. שם נחווה את עוצמת האוקיינוס האטלנטי כשנבקר בצוקים המתנשאים לגובה של כ-140 מטרים מעליו.</p>
+              <p>לבסוף, נסע לעבר קשקאיש, עיירת הנופש המפורסמת, שם נאכל ארוחת צהריים, תוכלו להסתובב בין רחובותיה היפים ואם המזל יאיר לנו פנים, גם לרדת לבקר בחוף.</p>
+              <div class="desc-note">
+                <span class="note-label">חשוב לדעת:</span>
+                <ul>
+                  <li><sup>*</sup> הביקור בארמון הפנה מצריך טיפוס בעלייה של כ-10 דקות. במקרה של קשיי הליכה ניתן להשתמש בשאטל פנימי בעלות נוספת של 5€ לאדם. יצוין מראש כי השאטל לא מדלג על כל העלייה, חלק מהדרך עדיין יש לעלות ברגל. אם תרצו להשתמש בשירות השאטל, אנא ידעו אותנו מראש במעמד התיאום.</li>
+                  <li>בסיורים היומיים שלנו מוצעת הדרכה ממוקדת באתרים הרלוונטיים, בשילוב זמן להסתובב באופן חופשי ועצמאי בעצירות השונות.</li>
+                </ul>
+              </div>
             </div>
           </div>
           </div>
@@ -1664,17 +1683,15 @@
               <div class="coverage-block included">
                 <div class="coverage-label">✓ כלול במחיר</div>
                 <ul class="coverage-list">
-                  <li>רכב צמוד כל היום (איסוף והחזרה למלון)</li>
-                  <li>כרטיס כניסה לארמון הפנה</li>
-                  <li>הדרכה בעברית לכל אורך היום</li>
+                  <li>רכב צמוד לאורך כל היום, לרבות איסוף והחזרה</li>
+                  <li>כרטיס כניסה מלא לארמון הפנה, כולל החלק הפנימי של המוזיאון</li>
                 </ul>
               </div>
               <div class="coverage-block excluded">
                 <div class="coverage-label">✗ לא כלול</div>
                 <ul class="coverage-list">
-                  <li>ארוחת צהריים בקשקאיש</li>
-                  <li>שאטל פנימי בארמון הפנה (5€ לאדם, אופציונלי)</li>
-                  <li>קפה ומאפים בסינטרה (לבחירה במהלך ההפסקה)</li>
+                  <li>ארוחת הצהריים</li>
+                  <li>שאטל פנימי בארמון הפנה (5€ לאדם, אופציונלי לבחירה)</li>
                 </ul>
               </div>
             </div>
@@ -1690,8 +1707,18 @@
                     <input class="date-input" type="date" onclick="if(this.showPicker)this.showPicker()">
                     <div class="date-input-check">✓</div>
                   </div>
-                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור. הביקור בארמון הפנה כולל טיפוס של כ-10 דקות.</div>
+                  <div class="date-note">התאריך שתבחרו הוא בקשה, נבדוק זמינות של המדריכים והרכב ונחזור אליכם לאישור.</div>
                   <div class="date-saved-msg">נרשם. תוכלו להמשיך לסיור הבא או לדלג לטופס למטה.</div>
+                  <div class="shuttle-opt">
+                    <label class="shuttle-check">
+                      <input type="checkbox" class="shuttle-checkbox" onchange="toggleShuttle(this)">
+                      <span>נרצה שאטל פנימי בארמון הפנה (תוספת 5€ לאדם)</span>
+                    </label>
+                    <div class="shuttle-count" style="display:none">
+                      <label>עבור כמה אנשים?</label>
+                      <input type="number" min="1" max="50" class="shuttle-num" placeholder="מספר">
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2295,6 +2322,13 @@
   function removeTour(tourId) {
     setCardState(tourId, false);
     updateSummary();
+  }
+
+  function toggleShuttle(cb) {
+    const box = cb.closest('.shuttle-opt');
+    if (!box) return;
+    const count = box.querySelector('.shuttle-count');
+    if (count) count.style.display = cb.checked ? 'flex' : 'none';
   }
 
   function updateSummary() {
