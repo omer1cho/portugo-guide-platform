@@ -969,6 +969,17 @@
   .submit-btn:disabled {
     opacity: 0.5; cursor: not-allowed; transform: none;
   }
+  .submit-success {
+    margin-top: 16px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+    color: #fffdf8;
+  }
+  .submit-success-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+  .submit-success p { font-size: 16px; line-height: 1.7; opacity: 0.95; margin-bottom: 6px; }
 
   footer {
     text-align: center;
@@ -2259,7 +2270,7 @@
 
   <!-- ===== FORM ===== -->
   <section class="form-wrap" id="form">
-    <h2>מעולה! איך נמשיך?</h2>
+    <h2>מעולה! שנמשיך לתיאום?</h2>
     <p class="lead">אלו הסיורים שסימנתם. אפשר להוסיף, להסיר או לעדכן תאריכים כאן למטה. כשתסיימו, שלחו לנו את הבחירה ונחזור אליכם לבדיקת זמינות ולתיאום סופי.</p>
 
     <div class="form-availability-note">
@@ -2269,7 +2280,7 @@
     <!-- Dynamic summary -->
     <div class="selected-summary" id="selected-summary">
       <div class="summary-header">
-        <span>הסיורים שסימנתם</span>
+        <span>הסיורים שעניינו אתכם</span>
         <span class="summary-count" id="summary-count" style="display:none">0</span>
       </div>
       <div class="summary-empty" id="summary-empty">
@@ -2283,11 +2294,16 @@
     </div>
 
     <div class="form-section">
-      <div class="form-section-label">משהו חשוב שנדע עליכם?</div>
-      <textarea class="form-textarea" placeholder="קושי הליכה, צמחונות, ילדים, אלרגיות, בקשות מיוחדות..."></textarea>
+      <div class="form-section-label">רגע לפני שאתם שולחים, יש משהו חשוב שנדע עליכם?</div>
+      <textarea class="form-textarea" placeholder="חגיגות גדולות, קשיי הליכה, העדפות באוכל, בקשות מיוחדות..."></textarea>
     </div>
 
-    <button class="submit-btn" id="submit-btn" onclick="alert('זה רק mockup, בגרסה האמיתית זה ישלח מייל לעומר ורונה ויישמר במערכת')">שלחו לנו את הבחירה</button>
+    <button class="submit-btn" id="submit-btn" onclick="submitQuote()">שלחו לנו את הבחירות שלכם</button>
+    <div class="submit-success" id="submit-success" style="display:none">
+      <div class="submit-success-title">קיבלנו! 🌿</div>
+      <p>הבחירות שלכם הגיעו אלינו. נבדוק זמינות מול המדריכים והרכבים, ונחזור אליכם בהקדם עם אישור ותיאום סופי.</p>
+      <p>תודה, ונתראה בפורטוגל!</p>
+    </div>
   </section>
 
 </main>
@@ -2373,6 +2389,13 @@
   function removeTour(tourId) {
     setCardState(tourId, false);
     updateSummary();
+  }
+
+  function submitQuote() {
+    const btn = document.getElementById('submit-btn');
+    const ok = document.getElementById('submit-success');
+    if (btn) btn.style.display = 'none';
+    if (ok) { ok.style.display = 'block'; ok.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   }
 
   function toggleShuttle(cb) {
