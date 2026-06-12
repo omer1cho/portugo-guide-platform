@@ -25,6 +25,7 @@ import {
   publishWeek,
   republishWeek,
   unpublishWeek,
+  getChangedGuideIds,
   createManualShift,
   deleteShift,
   updateShift,
@@ -509,11 +510,13 @@ function ShiftsContent() {
   }
 
   /**
-   * שולח מייל אישי לכל מדריך שיש לו שיבוץ מפורסם בשבוע (best-effort).
-   * רץ אחרי פרסום/פרסום-מחדש. לא מפיל את הפעולה אם השליחה נכשלת.
+   * שולח מייל אישי למדריכים על פרסום השבוע (best-effort).
+   * onlyGuideIds: אם הועבר — המייל יישלח רק למדריכים האלה (מי שהשתנה).
+   * null/undefined = כל מי שיש לו שיבוץ מפורסם בשבוע (התנהגות מקורית).
    * מחזיר את מספר המיילים שנשלחו, או null אם הייתה שגיאה.
    */
-  async function notifyGuidesOfPublish(): Promise<number | null> {
+  async function notifyGuidesOfPublish(onlyGuideIds?: string[] | null): Promise<number | null> {
+    if (Array.isArray(onlyGuideIds) && onlyGuideIds.length === 0) return 0;
     try {
       const res = await fetch('/api/shifts/notify-publish', {
         method: 'POST',
@@ -522,6 +525,9 @@ function ShiftsContent() {
           weekStart: toIsoDate(weekStart),
           city: cityFilter,
           baseUrl: window.location.origin,
+          ...(Array.isArray(onlyGuideIds) && onlyGuideIds.length > 0
+            ? { onlyGuideIds }
+            : {}),
         }),
       });
       const json = await res.json();
@@ -532,12 +538,24 @@ function ShiftsContent() {
     }
   }
 
+  /** שמות מדריכים לפי מזהים — להודעות אישור ידידותיות */
+  function guideNamesByIds(ids: string[]): string {
+    const names = ids
+      .map((id) => guides.find((g) => g.id === id)?.name)
+      .filter(Boolean) as string[];
+    return names.join(', ');
+  }
+
   async function handlePublishWeek() {
     if (!confirm(`לפרסם ${totalDraftCount} שיבוצים לשבוע ${fmtWeekRange(weekStart)}?`)) return;
     setPublishing(true);
     try {
+      // לפני הפרסום (שמאפס את ה-baseline): מי באמת השתנה?
+      // בפרסום ראשון של שבוע כל הטיוטות נחשבות שינוי → כולם מקבלים מייל, כמו תמיד.
+      // בפרסום של טיוטות בודדות שנוספו אחר-כך → מייל רק למדריכים שלהן.
+      const changed = await getChangedGuideIds(weekStart, cityFilter).catch(() => null);
       const n = await publishWeek(weekStart, cityFilter);
-      const sent = await notifyGuidesOfPublish();
+      const sent = await notifyGuidesOfPublish(changed);
       const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה — אפשר לנסות "פרסמי מחדש")' : `\nנשלחו ${sent} מיילים למדריכים`;
       alert(`פורסמו ${n} שיבוצים${mailMsg}`);
       reload();
@@ -554,12 +572,29 @@ function ShiftsContent() {
    * לבאנר "הסידור פורסם" להופיע שוב למדריכים שכבר ראו.
    */
   async function handleRepublishWeek() {
-    if (!confirm(`לעדכן ${publishedCount} שיבוצים מפורסמים? המדריכים יקבלו את הבאנר שוב.`)) return;
     setPublishing(true);
     try {
+      // לפני העדכון (שמאפס את ה-baseline): מי השתנה מאז הפרסום הקודם?
+      const changed = await getChangedGuideIds(weekStart, cityFilter).catch(() => null);
+
+      // בחירת נמענים: רק מי שהשתנה. אם לא זוהו שינויים — שואלים אם לשלוח לכולם.
+      let recipients: string[] | null = changed;
+      if (changed && changed.length === 0) {
+        const sendAll = confirm(
+          'לא זוהו שינויים מאז הפרסום הקודם.\nלשלוח בכל זאת מייל לכל המדריכים המשובצים? (ביטול = בלי מיילים, רק רענון הבאנר)',
+        );
+        recipients = sendAll ? null : [];
+      } else {
+        const who = changed && changed.length > 0 ? guideNamesByIds(changed) : 'כל המדריכים המשובצים';
+        if (!confirm(`לעדכן ${publishedCount} שיבוצים מפורסמים?\nמייל יישלח רק למי שהשתנה אצלו משהו: ${who}`)) {
+          setPublishing(false);
+          return;
+        }
+      }
+
       const n = await republishWeek(weekStart, cityFilter);
-      const sent = await notifyGuidesOfPublish();
-      const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה)' : `\nנשלחו ${sent} מיילים למדריכים`;
+      const sent = await notifyGuidesOfPublish(recipients);
+      const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה)' : `\nנשלחו ${sent} מיילים`;
       alert(`עודכנו ${n} שיבוצים — הבאנר יחזור למדריכים${mailMsg}`);
       reload();
     } catch (e) {

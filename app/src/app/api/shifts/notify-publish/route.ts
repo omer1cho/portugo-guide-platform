@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
   const cityRaw = String(body.city || 'all').trim();
   const city: City = cityRaw === 'lisbon' || cityRaw === 'porto' ? cityRaw : 'all';
   const baseUrlRaw = String(body.baseUrl || '').trim();
+  // אופציונלי: שליחה רק למדריכים שהשתנו (פרסום מחדש אחרי תיקון נקודתי)
+  const onlyGuideIds: string[] | null = Array.isArray(body.onlyGuideIds)
+    ? (body.onlyGuideIds as unknown[]).filter((x): x is string => typeof x === 'string')
+    : null;
 
   if (!ISO_DATE.test(weekStart)) {
     return NextResponse.json({ ok: false, error: 'weekStart לא תקין' }, { status: 400 });
@@ -92,9 +96,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'שגיאה בטעינת שיבוצים' }, { status: 500 });
   }
 
-  const guideIds = Array.from(
+  let guideIds = Array.from(
     new Set((shiftRows || []).map((r) => (r as { guide_id: string | null }).guide_id).filter(Boolean) as string[]),
   );
+
+  // סינון לנמענים שביקש הלקוח — רק מי שגם משובץ בשבוע וגם ברשימת השינויים
+  if (onlyGuideIds) {
+    const allow = new Set(onlyGuideIds);
+    guideIds = guideIds.filter((id) => allow.has(id));
+  }
 
   if (guideIds.length === 0) {
     return NextResponse.json({ ok: true, sent: 0, note: 'אין מדריכים משובצים השבוע' });

@@ -214,6 +214,59 @@ export async function assignGuide(shiftId: string, guideId: string | null): Prom
   if (error) throw error;
 }
 
+/**
+ * מי המדריכים שהשיבוץ שלהם השתנה מאז הפרסום הקודם של השבוע?
+ * נקרא לפני publishWeek/republishWeek (שמאפסים את ה-baseline) כדי
+ * לשלוח מייל רק למי שבאמת נוגע בו העדכון:
+ *   • טיוטות שממתינות לפרסום (חדשות/שוחזרו) — תמיד נחשבות שינוי.
+ *   • שיבוץ מפורסם ש-updated_at שלו מאוחר מ-published_at ביותר מדקה
+ *     (מרווח ביטחון: הפרסום עצמו מעדכן את שניהם בהפרש שניות).
+ * מגבלה מודעת: מחיקת שיבוץ לא מזוהה (אין שורה להשוות) — במקרה כזה
+ * המדריך שנמחק לא יקבל מייל אוטומטית.
+ */
+export async function getChangedGuideIds(
+  weekStart: Date,
+  cityFilter: 'all' | 'lisbon' | 'porto' = 'all',
+): Promise<string[]> {
+  const start = toIsoDate(weekStart);
+  const end = toIsoDate(addDays(weekStart, 6));
+
+  let q = supabase
+    .from('shifts')
+    .select('guide_id, status, updated_at, published_at')
+    .gte('shift_date', start)
+    .lte('shift_date', end)
+    .not('guide_id', 'is', null);
+
+  if (cityFilter !== 'all') q = q.eq('city', cityFilter);
+
+  const { data, error } = await q;
+  if (error) throw error;
+
+  const MARGIN_MS = 60_000;
+  const ids = new Set<string>();
+  for (const row of (data || []) as Array<{
+    guide_id: string;
+    status: string;
+    updated_at: string | null;
+    published_at: string | null;
+  }>) {
+    if (row.status === 'draft') {
+      ids.add(row.guide_id);
+      continue;
+    }
+    if (row.status !== 'published') continue;
+    if (!row.published_at || !row.updated_at) {
+      ids.add(row.guide_id);
+      continue;
+    }
+    const upd = new Date(row.updated_at).getTime();
+    const pub = new Date(row.published_at).getTime();
+    if (upd > pub + MARGIN_MS) ids.add(row.guide_id);
+  }
+  return Array.from(ids);
+}
+
 /** מפרסם את כל ה-draft shifts בשבוע (status: draft → published) */
 export async function publishWeek(weekStart: Date, cityFilter: 'all' | 'lisbon' | 'porto' = 'all'): Promise<number> {
   const start = toIsoDate(weekStart);
