@@ -743,6 +743,20 @@
   .terms-intro { font-size: 14px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 24px; }
   .terms-section .terms-sub { font-size: 14px; font-weight: 700; color: var(--forest); margin: 14px 0 6px; }
 
+  /* ===== Moments strip ===== */
+  .moments { margin-top: 56px; }
+  .moments h3 {
+    font-family: var(--serif);
+    font-size: 26px; font-weight: 700; color: var(--forest);
+    text-align: center; margin-bottom: 6px;
+  }
+  .moments .moments-sub { text-align: center; color: var(--ink-soft); font-size: 15px; margin-bottom: 24px; }
+  .moments-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .moments-grid img {
+    width: 100%; height: 240px; object-fit: cover;
+    border-radius: 14px; border: 1px solid var(--border); display: block;
+  }
+
   /* ===== Form ===== */
   .form-wrap {
     background: linear-gradient(135deg, var(--green-deep) 0%, var(--forest) 100%);
@@ -2272,6 +2286,15 @@
   </section>
 
   <!-- ===== FORM ===== -->
+  <section class="moments">
+    <h3>רגעים מהסיורים שלנו</h3>
+    <p class="moments-sub">כמה מהאנשים שכבר טיילו איתנו בפורטוגל.</p>
+    <div class="moments-grid">
+      <img src="/hero-quote-lisbon.jpg" alt="קבוצה בסיור בליסבון" loading="lazy">
+      <img src="/moment-porto.jpg" alt="קבוצה בסיור בפורטו" loading="lazy">
+    </div>
+  </section>
+
   <section class="form-wrap" id="form">
     <h2>מעולה! שנמשיך לתיאום?</h2>
     <p class="lead">אלו הסיורים שסימנתם. אפשר להוסיף, להסיר או לעדכן תאריכים כאן למטה. כשתסיימו, שלחו לנו את הבחירה ונחזור אליכם לבדיקת זמינות ולתיאום סופי.</p>
