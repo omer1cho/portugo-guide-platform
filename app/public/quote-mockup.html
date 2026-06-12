@@ -912,6 +912,10 @@
     color: var(--green-dark);
     transform: translateY(-1px);
   }
+  .add-city-group { margin-bottom: 14px; }
+  .add-city-group:last-child { margin-bottom: 0; }
+  .add-city-label { font-size: 13px; font-weight: 700; opacity: 0.85; margin-bottom: 8px; }
+  .add-city-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .summary-add-chip .plus { font-weight: 800; font-size: 16px; }
 
   .form-input, .form-textarea {
@@ -2449,19 +2453,40 @@
       });
     }
 
-    // add-more chips (every tour not already selected)
+    // add-more chips (every tour not already selected), grouped by city
     addChips.innerHTML = '';
     let addable = 0;
-    allCards.forEach(card => {
-      if (card.classList.contains('selected')) return;
-      const tourId = card.dataset.tour;
-      const name = card.dataset.tourName || tourId;
-      const chip = document.createElement('button');
-      chip.className = 'summary-add-chip';
-      chip.innerHTML = `<span class="plus">+</span>${name}`;
-      chip.onclick = () => { setCardState(tourId, true); updateSummary(); };
-      addChips.appendChild(chip);
-      addable++;
+    const cityGroups = [
+      { sel: '#lisbon', label: 'סביבת ליסבון' },
+      { sel: '#porto', label: 'סביבת פורטו' }
+    ];
+    cityGroups.forEach(g => {
+      const chips = [];
+      allCards.forEach(card => {
+        if (card.classList.contains('selected')) return;
+        if (!card.closest(g.sel)) return;
+        const tourId = card.dataset.tour;
+        const name = card.dataset.tourName || tourId;
+        const chip = document.createElement('button');
+        chip.className = 'summary-add-chip';
+        chip.innerHTML = `<span class="plus">+</span>${name}`;
+        chip.onclick = () => { setCardState(tourId, true); updateSummary(); };
+        chips.push(chip);
+        addable++;
+      });
+      if (chips.length) {
+        const grp = document.createElement('div');
+        grp.className = 'add-city-group';
+        const lab = document.createElement('div');
+        lab.className = 'add-city-label';
+        lab.textContent = g.label;
+        const wrap = document.createElement('div');
+        wrap.className = 'add-city-chips';
+        chips.forEach(c => wrap.appendChild(c));
+        grp.appendChild(lab);
+        grp.appendChild(wrap);
+        addChips.appendChild(grp);
+      }
     });
     addWrap.style.display = addable > 0 ? 'block' : 'none';
   }
