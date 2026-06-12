@@ -479,7 +479,7 @@
     max-height: 0; overflow: hidden;
     transition: max-height 0.4s ease, margin-top 0.4s ease;
   }
-  .card.selected .date-wrap, .combo-card.selected .date-wrap {
+  .card.selected .date-wrap, .combo-card.selected .date-wrap, .opt-pick.selected .date-wrap {
     max-height: 320px;
   }
   .date-input-wrap {
@@ -1331,8 +1331,8 @@
               <div class="opt-choose-lead">איזו גרסה מעניינת אתכם? אפשר לבחור אחת או את שתיהן:</div>
               <div class="opt-versions">
                 <div class="opt-pick" data-tour="culinary-morning" data-tour-name="סיור קולינרי בבוקר">
-                  <button class="interest-btn" data-label="גרסת בוקר" onclick="toggleInterest(this, 'culinary-morning')">
-                    <span class="check-icon"></span><span class="btn-label">גרסת בוקר</span>
+                  <button class="interest-btn" data-off="מעניין אותנו קולינרי בוקר" data-on="✓ נבחר, קולינרי בוקר" onclick="toggleInterest(this, 'culinary-morning')">
+                    <span class="check-icon"></span><span class="btn-label">מעניין אותנו קולינרי בוקר</span>
                   </button>
                   <div class="date-wrap">
                     <div class="date-input-wrap">
@@ -1346,8 +1346,8 @@
                   </div>
                 </div>
                 <div class="opt-pick" data-tour="culinary-afternoon" data-tour-name="סיור קולינרי בצהריים">
-                  <button class="interest-btn" data-label="גרסת צהריים" onclick="toggleInterest(this, 'culinary-afternoon')">
-                    <span class="check-icon"></span><span class="btn-label">גרסת צהריים</span>
+                  <button class="interest-btn" data-off="מעניין אותנו קולינרי צהריים" data-on="✓ נבחר, קולינרי צהריים" onclick="toggleInterest(this, 'culinary-afternoon')">
+                    <span class="check-icon"></span><span class="btn-label">מעניין אותנו קולינרי צהריים</span>
                   </button>
                   <div class="date-wrap">
                     <div class="date-input-wrap">
@@ -1436,7 +1436,7 @@
             <div class="opt-versions">
 
               <div class="opt-pick combo-version" data-tour="combo-culinary-classic-morning" data-tour-name="שילוב: קולינרי בבוקר + קלאסית">
-                <div class="opt-title">גרסת בוקר: קולינרי ואז קלאסית</div>
+                <div class="opt-title">גרסת בוקר: קולינרי ואז ליסבון הקלאסית</div>
                 <div class="combo-plan">
                   <div class="combo-plan-step">
                     <div class="step-num">1</div>
@@ -1460,7 +1460,7 @@
                     </div>
                   </div>
                 </div>
-                <button class="interest-btn" data-label="גרסת בוקר" onclick="toggleInterest(this, 'combo-culinary-classic-morning')">
+                <button class="interest-btn" data-off="גרסת בוקר" data-on="✓ נבחרה גרסת בוקר" onclick="toggleInterest(this, 'combo-culinary-classic-morning')">
                   <span class="check-icon"></span><span class="btn-label">גרסת בוקר</span>
                 </button>
                 <div class="date-wrap">
@@ -1476,7 +1476,7 @@
               </div>
 
               <div class="opt-pick combo-version" data-tour="combo-culinary-classic-afternoon" data-tour-name="שילוב: קלאסית + קולינרי בצהריים">
-                <div class="opt-title">גרסת צהריים: קלאסית ואז קולינרי</div>
+                <div class="opt-title">גרסת צהריים: ליסבון הקלאסית ואז קולינרי</div>
                 <div class="combo-plan">
                   <div class="combo-plan-step">
                     <div class="step-num">1</div>
@@ -1500,7 +1500,7 @@
                     </div>
                   </div>
                 </div>
-                <button class="interest-btn" data-label="גרסת צהריים" onclick="toggleInterest(this, 'combo-culinary-classic-afternoon')">
+                <button class="interest-btn" data-off="גרסת צהריים" data-on="✓ נבחרה גרסת צהריים" onclick="toggleInterest(this, 'combo-culinary-classic-afternoon')">
                   <span class="check-icon"></span><span class="btn-label">גרסת צהריים</span>
                 </button>
                 <div class="date-wrap">
@@ -2244,8 +2244,9 @@
       btn.classList.toggle('selected', selected);
       const label = btn.querySelector('.btn-label');
       if (label) {
-        const base = btn.getAttribute('data-label');
-        if (base) label.textContent = selected ? '✓ ' + base : base;
+        const off = btn.getAttribute('data-off');
+        const on = btn.getAttribute('data-on');
+        if (off || on) label.textContent = selected ? (on || 'נבחר ✓') : (off || 'מעניין אותנו');
         else label.textContent = selected ? 'נבחר ✓' : 'מעניין אותנו';
       }
     }
