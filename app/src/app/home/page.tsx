@@ -185,6 +185,8 @@ function HomeContent() {
   const [receiptError, setReceiptError] = useState('');
   // פירוט שכר פר-סיור — נטען עם שאר הסיכום, מוצג בדרופדאון "פירוט סיורים"
   const [perTourBreakdown, setPerTourBreakdown] = useState<PerTourSalary[]>([]);
+  // פעילויות בתשלום (הכשרות, הברזה, חיצונית) — מוצגות באותו פירוט לצד הסיורים
+  const [breakdownActivities, setBreakdownActivities] = useState<SalaryActivity[]>([]);
   const [showTourBreakdown, setShowTourBreakdown] = useState(false);
   // ברכות יומיות — אירועי לוח (חגים/שעון) + ימי הולדת של היום
   const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
@@ -334,6 +336,8 @@ function HomeContent() {
       setPerTourBreakdown(
         calculatePerTourBreakdown(salaryTours, guide?.classic_transfer_per_person ?? 10),
       );
+      // פעילויות בתשלום לאותו פירוט (אשל ידני הוא דגל, לא שורת שכר)
+      setBreakdownActivities(salaryActivities.filter((a) => a.activity_type !== 'eshel'));
 
       const expensesTotal = (expRes.data || []).reduce((s, e: { amount: number }) => s + (e.amount || 0), 0);
       let transfersTotal = 0;
@@ -1054,8 +1058,8 @@ function HomeContent() {
                   )}
                 </div>
 
-                {/* פירוט שכר פר-סיור — דרופדאון מתקפל. מציג רק אם יש סיורים */}
-                {perTourBreakdown.length > 0 && (
+                {/* פירוט שכר פר-סיור — דרופדאון מתקפל. מציג רק אם יש סיורים או פעילויות */}
+                {(perTourBreakdown.length > 0 || breakdownActivities.length > 0) && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <button
                       onClick={() => setShowTourBreakdown(!showTourBreakdown)}
@@ -1067,9 +1071,61 @@ function HomeContent() {
                     </button>
                     {showTourBreakdown && (
                       <ul className="space-y-1.5 text-sm pt-2">
-                        {[...perTourBreakdown]
-                          .sort((a, b) => a.tour_date.localeCompare(b.tour_date))
-                          .map((t, idx) => {
+                        {/* סיורים + פעילויות בתשלום, ממוזגים בסדר כרונולוגי.
+                            פעילות נופלת בסוף היום שלה (כמו ב"הסיורים שלי") */}
+                        {[
+                          ...perTourBreakdown.map((t) => ({
+                            kind: 'tour' as const,
+                            sortKey: `${t.tour_date}_0`,
+                            t,
+                            a: null,
+                          })),
+                          ...breakdownActivities.map((a) => ({
+                            kind: 'activity' as const,
+                            sortKey: `${a.activity_date}_1`,
+                            t: null,
+                            a,
+                          })),
+                        ]
+                          .sort((x, y) => x.sortKey.localeCompare(y.sortKey))
+                          .map((row, idx) => {
+                            if (row.kind === 'activity') {
+                              const a = row.a!;
+                              const dateLabel = new Date(a.activity_date).toLocaleDateString('he-IL', {
+                                day: '2-digit',
+                                month: '2-digit',
+                              });
+                              const label =
+                                a.activity_type === 'training'
+                                  ? 'הכשרה (כתלמיד.ה)'
+                                  : a.activity_type === 'training_lead'
+                                    ? 'הכשרה (העברתי)'
+                                    : a.activity_type === 'habraza'
+                                      ? 'הברזה בכיכר'
+                                      : a.notes || 'פעילות מיוחדת';
+                              return (
+                                <li
+                                  key={`act-${idx}`}
+                                  className="flex justify-between items-start gap-2"
+                                >
+                                  <span className="text-xs text-gray-500 font-mono shrink-0 w-12 pt-0.5">
+                                    {dateLabel}
+                                  </span>
+                                  <span className="flex-1 min-w-0">
+                                    <div className="text-gray-700 truncate">{label}</div>
+                                    {a.activity_type !== 'external' && a.notes && (
+                                      <div className="text-[11px] text-gray-500 leading-snug truncate">
+                                        {a.notes}
+                                      </div>
+                                    )}
+                                  </span>
+                                  <span className="font-semibold text-green-800 shrink-0 pt-0.5">
+                                    {(a.amount || 0).toLocaleString('he-IL', { maximumFractionDigits: 0 })}€
+                                  </span>
+                                </li>
+                              );
+                            }
+                            const t = row.t!;
                             const dt = new Date(t.tour_date);
                             const dateLabel = dt.toLocaleDateString('he-IL', {
                               day: '2-digit',

@@ -273,9 +273,13 @@ function MyToursContent() {
                         <div className="text-sm text-gray-600">{formatDate(a.activity_date)}</div>
                         {a.notes && <div className="text-xs text-gray-600 mt-1">{a.notes}</div>}
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-purple-900">{a.amount}€</div>
-                      </div>
+                      {/* בהכשרות לא מציגים סכום כאן — הרשימה מציגה כסף שנאסף,
+                          ושכר ההכשרה מופיע בסיכום החודשי. מבלבל אחרת. */}
+                      {a.activity_type !== 'training' && a.activity_type !== 'training_lead' && (
+                        <div className="text-right">
+                          <div className="font-bold text-purple-900">{a.amount}€</div>
+                        </div>
+                      )}
                     </div>
                     {editable && (
                       <div className="flex gap-2 pt-2 border-t border-purple-200">

@@ -272,8 +272,8 @@ function lookupTier(table: Tier[], people: number): number {
   return table[table.length - 1][1];
 }
 
-/** Private salary from notes sub-type(s); sums multiple keywords. */
-export function calcPrivateSalary(people: number, notes: string = ''): number {
+/** מנקה את ההערות ומחזיר את טבלאות המשנה שזוהו בהן (קלאסי, בלם...). */
+function matchPrivateTables(notes: string = ''): Tier[][] {
   const ignoreWords = ['פרטי', 'ישולם', 'לאביב', 'ליניב', 'לתום', 'למאיה', 'למני', 'לדותן', 'לעומר'];
   let cleaned = (notes || '').trim();
   for (const w of ignoreWords) {
@@ -286,6 +286,20 @@ export function calcPrivateSalary(people: number, notes: string = ''): number {
       matched.push(table);
     }
   }
+  return matched;
+}
+
+/**
+ * כמה תתי-סיורים מוזכרים בהערות של סיור פרטי. שילוב (קלאסי+בלם וכו')
+ * נספר כ-2+ פריטי עבודה ביום → יום מלא → אשל.
+ */
+export function countPrivateSubTours(notes: string = ''): number {
+  return Math.max(1, matchPrivateTables(notes).length);
+}
+
+/** Private salary from notes sub-type(s); sums multiple keywords. */
+export function calcPrivateSalary(people: number, notes: string = ''): number {
+  const matched = matchPrivateTables(notes);
 
   if (matched.length >= 2) {
     return matched.reduce((sum, t) => sum + lookupTier(t, people), 0);
@@ -390,7 +404,11 @@ export function calculateMonthlySalary(
   const workItemsByDate: Record<string, number> = {};
 
   for (const [date, dayTours] of Object.entries(toursByDate)) {
-    workItemsByDate[date] = dayTours.length;
+    // פרטי משולב (קלאסי+בלם וכו') = כמה תתי-סיורים בשורה אחת → נספר לפי מספרם
+    workItemsByDate[date] = dayTours.reduce(
+      (sum, t) => sum + (t.category === 'private' ? countPrivateSubTours(t.notes || '') : 1),
+      0,
+    );
     const hasFullDay = dayTours.some(
       (t) =>
         FULL_DAY_TOURS.has(t.tour_type) ||
