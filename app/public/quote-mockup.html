@@ -381,15 +381,12 @@
     font-size: 13px; color: var(--ink-mute); font-weight: 600; margin-bottom: 12px;
   }
   .pf-row {
-    display: flex; justify-content: space-between; align-items: center;
     padding: 9px 0; border-bottom: 1px solid var(--band);
   }
   .pf-row:last-of-type { border-bottom: none; }
-  .pf-role { font-size: 16px; color: var(--ink); }
-  .pf-count { color: var(--ink-mute); }
-  .pf-amt { font-size: 17px; font-weight: 700; color: var(--ink); white-space: nowrap; }
-  .pf-unit { font-size: 13px; font-weight: 600; color: var(--ink-mute); }
-  .pf-free { font-size: 15px; font-weight: 700; color: var(--green-deep); }
+  .pf-amt { font-size: 18px; font-weight: 700; color: var(--ink); }
+  .pf-unit { font-size: 15px; font-weight: 400; color: var(--ink-soft); }
+  .pf-free { font-size: 16px; font-weight: 700; color: var(--green-deep); }
   .pf-total {
     display: flex; justify-content: space-between; align-items: baseline;
     margin-top: 14px; padding-top: 16px; border-top: 2px solid var(--border);
@@ -1084,6 +1081,7 @@
     .hero-plate { margin: -44px 10px 0; padding: 22px 20px; }
     .hero-greet { font-size: 26px; }
     .hero-meta { font-size: 14px; }
+    .hero-breakdown { display: block; }
     main { padding: 0 20px; }
     .city-head h2 { font-size: 38px; }
     .sub-head h3 { font-size: 22px; }
@@ -1137,7 +1135,7 @@
     <div class="hero-tagline">זוהי הצעתנו לסיורים פרטיים עבורכם</div>
     <div class="hero-meta">
       <span class="hero-stat">מועד מבוקש <b><bdi>יוני 2026</bdi></b></span>
-      <span class="hero-stat">כמות משתתפים <b><bdi>11, מתוכם: 8 מבוגרים, 2 ילדים בגילאי 7 ו-9 ופעוט</bdi></b></span>
+      <span class="hero-stat">כמות משתתפים <b><bdi>11,</bdi></b><span class="hero-breakdown"> מתוכם: 8 מבוגרים, 2 ילדים בגילאי 7 ו-9 ופעוט</span></span>
     </div>
   </div>
 </section>
@@ -1271,9 +1269,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">40€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">20€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">360€</span></div>
             </div>
 
@@ -1336,9 +1334,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">25€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">13€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">25€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">13€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">226€</span></div>
             </div>
 
@@ -1413,9 +1411,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">72€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">40€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-amt">20€ <span class="pf-unit">לפעוט</span></span></div>
+              <div class="pf-row"><span class="pf-amt">72€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">676€</span></div>
             </div>
 
@@ -1514,9 +1512,9 @@
             <div class="combo-note">⚠ המעבר בין מרכז העיר לאזור בלם נעשה באופן עצמאי (תחבורה ציבורית, אובר או מונית).</div>
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">65€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">33€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">65€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">33€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">586€</span></div>
             </div>
             <div class="combo-single-action">
@@ -1568,9 +1566,9 @@
             <div class="combo-flip-note">💡 מעדיפים להתחיל עם הסיור הקולינרי בבוקר? בגרסת בוקר הסדר מתהפך: מתחילים בסיור הקולינרי וממשיכים לליסבון הקלאסית.</div>
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">112€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">60€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-amt">20€ <span class="pf-unit">לפעוט</span></span></div>
+              <div class="pf-row"><span class="pf-amt">112€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">60€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">1,036€</span></div>
             </div>
             <div class="opt-choose-lead opt-choose-center">איזו גרסה מתאימה לכם?</div>
@@ -1643,9 +1641,9 @@
             <div class="combo-note">⚠ המעבר בין מרכז העיר לאזור בלם נעשה באופן עצמאי (תחבורה ציבורית, אובר או מונית).</div>
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">97€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">53€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-amt">20€ <span class="pf-unit">לפעוט</span></span></div>
+              <div class="pf-row"><span class="pf-amt">97€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">53€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">902€</span></div>
             </div>
             <div class="opt-choose-lead opt-choose-center">איזו גרסה מתאימה לכם?</div>
@@ -1744,9 +1742,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">105€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">53€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">105€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">53€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">946€</span></div>
             </div>
 
@@ -1837,9 +1835,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">105€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">53€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">105€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">53€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">946€</span></div>
             </div>
 
@@ -1920,9 +1918,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">120€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">60€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">120€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">60€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">1,080€</span></div>
             </div>
 
@@ -2022,9 +2020,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">40€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">20€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">360€</span></div>
             </div>
 
@@ -2084,9 +2082,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">72€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">40€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-amt">20€ <span class="pf-unit">לפעוט</span></span></div>
+              <div class="pf-row"><span class="pf-amt">72€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">676€</span></div>
             </div>
 
@@ -2163,9 +2161,9 @@
             </div>
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">112€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">60€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-amt">20€ <span class="pf-unit">לפעוט</span></span></div>
+              <div class="pf-row"><span class="pf-amt">112€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">60€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">1,036€</span></div>
             </div>
             <div class="combo-single-action">
@@ -2243,9 +2241,9 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-role">מבוגר <span class="pf-count">× 8</span></span><span class="pf-amt">130€ <span class="pf-unit">לאדם</span></span></div>
-              <div class="pf-row"><span class="pf-role">ילד, גיל 7-12 <span class="pf-count">× 2</span></span><span class="pf-amt">65€ <span class="pf-unit">לילד</span></span></div>
-              <div class="pf-row"><span class="pf-role">פעוט, עד גיל 6 <span class="pf-count">× 1</span></span><span class="pf-free">ללא עלות</span></div>
+              <div class="pf-row"><span class="pf-amt">130€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">65€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
               <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">1,170€</span></div>
             </div>
 
