@@ -231,7 +231,7 @@ function MyToursContent() {
                           {t.notes && <div className="text-xs text-gray-500 mt-1">{t.notes}</div>}
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-green-800">{price}€</div>
+                          <div className="font-bold text-green-800">{price.toLocaleString('he-IL')}€</div>
                           <div className="text-sm text-gray-600">{people} אנשים</div>
                           {tip > 0 && <div className="text-xs text-gray-500">טיפ: {tip}€</div>}
                         </div>

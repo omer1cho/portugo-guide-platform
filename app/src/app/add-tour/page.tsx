@@ -729,7 +729,7 @@ function AddTourContent() {
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">פירוט תת-קבוצות</h3>
                 <span className="text-sm text-gray-500">
-                  {totalPeople} אנשים · {totalPrice}€
+                  {totalPeople} אנשים · {totalPrice.toLocaleString('he-IL')}€
                 </span>
               </div>
 
@@ -1273,9 +1273,9 @@ function AddTourContent() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">💰 גבייה:</span>
                   <span className="font-semibold">
-                    <span className="text-amber-800">{totalPrice}€</span>
+                    <span className="text-amber-800">{totalPrice.toLocaleString('he-IL')}€</span>
                     <span className="text-gray-500 mx-1">במקום</span>
-                    <span className="text-green-700">{expectedPrice}€</span>
+                    <span className="text-green-700">{expectedPrice.toLocaleString('he-IL')}€</span>
                   </span>
                 </div>
               )}

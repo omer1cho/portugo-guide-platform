@@ -526,7 +526,7 @@ function CloseMonthContent() {
                   <>
                     <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
                       <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
-                      <span className="font-bold text-green-900">{salary.cash_to_withdraw}€</span>
+                      <span className="font-bold text-green-900">{salary.cash_to_withdraw.toLocaleString('he-IL')}€</span>
                     </div>
                     <div className="text-[11px] text-green-800 leading-tight pr-1">
                       {salary.non_classic_tips > 0 && hasVatComponent
@@ -588,7 +588,9 @@ function CloseMonthContent() {
 
                       if (needsSalaryWithdraw) {
                         const takeIsWhole = Math.abs(takeFromBox - Math.round(takeFromBox)) < 0.005;
-                        const takeDisplay = takeIsWhole ? Math.round(takeFromBox).toString() : takeFromBox.toFixed(2);
+                        const takeDisplay = takeIsWhole
+                          ? Math.round(takeFromBox).toLocaleString('he-IL')
+                          : takeFromBox.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         steps.push(
                           <span>
                             קח.י לעצמך{' '}
@@ -602,9 +604,9 @@ function CloseMonthContent() {
                                 {!hasVatComponent && wasRoundedUp && (
                                   <>(שכר בפועל {totalSalaryRaw.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</>
                                 )}
-                                {wasRoundedUp && <>, מעוגל ל-{totalSalary}€</>}
+                                {wasRoundedUp && <>, מעוגל ל-{totalSalary.toLocaleString('he-IL')}€</>}
                                 {takeFromBox < totalSalary - 0.01 && (
-                                  <>, סה&quot;כ {totalSalary}€ — היתרה תשלים פורטוגו</>
+                                  <>, סה&quot;כ {totalSalary.toLocaleString('he-IL')}€ — היתרה תשלים פורטוגו</>
                                 )}
                                 )
                               </span>

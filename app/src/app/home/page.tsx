@@ -1196,7 +1196,7 @@ function HomeContent() {
                         <div className="flex justify-between items-center pt-2 mt-1 border-t border-green-300">
                           <span className="font-semibold text-green-900 text-sm">סה&quot;כ למשוך מהקופה</span>
                           <span className="font-bold text-green-900">
-                            {summary.salary.cash_to_withdraw}€
+                            {summary.salary.cash_to_withdraw.toLocaleString('he-IL')}€
                           </span>
                         </div>
                         <div className="text-[11px] text-green-800 leading-tight pr-1">

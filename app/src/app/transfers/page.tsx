@@ -330,7 +330,7 @@ function TransfersContent() {
                     <div className="text-xs text-gray-500 mt-1">לא היה הפקדה</div>
                   ) : null}
                 </div>
-                <div className="font-bold text-green-800">{t.amount}€</div>
+                <div className="font-bold text-green-800">{t.amount.toLocaleString('he-IL')}€</div>
               </div>
             ))}
           </div>
