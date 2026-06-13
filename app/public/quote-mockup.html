@@ -333,21 +333,21 @@
   /* Map link */
   .map-link {
     color: var(--ink);
-    text-decoration: none;
     font-weight: 600;
-    border-bottom: 1px dashed var(--gold);
-    transition: all 0.2s;
-    display: inline-flex; align-items: center; gap: 4px;
+    text-decoration: underline dashed var(--gold);
+    text-underline-offset: 4px;
+    transition: color 0.2s, text-decoration-color 0.2s;
   }
   .map-link:hover {
     color: var(--green-deep);
-    border-bottom-color: var(--green-deep);
+    text-decoration-color: var(--green-deep);
   }
   .map-link::after {
-    content: '↗';
+    content: ' ↗';
     font-size: 0.9em;
     color: var(--gold);
     font-weight: 700;
+    white-space: nowrap;
   }
 
   /* Price - one quiet grouped line, never split to opposite edges */
@@ -1037,7 +1037,8 @@
     .price-amount { font-size: 30px; }
     .price-coverage { grid-template-columns: 1fr; }
     .opt-versions { grid-template-columns: 1fr; }
-    .card-meta-strip { gap: 12px 14px; }
+    .card-meta-strip { gap: 12px 14px; flex-direction: column; align-items: flex-start; }
+    .card-meta-strip .meta-item { align-items: flex-start; }
     .combos-block { padding: 24px 20px; }
     .combo-card { padding: 20px; }
     .combo-bottom { flex-direction: column; align-items: stretch; }
