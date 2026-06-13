@@ -442,7 +442,9 @@
     color: var(--ink-soft);
     line-height: 1.55;
   }
-  .opt-choose-lead.opt-choose-center { text-align: center; font-weight: 700; color: var(--ink); font-size: 17px; margin-top: 6px; margin-bottom: 16px; }
+  .opt-choose-lead.opt-choose-center { text-align: center; font-weight: 700; color: var(--ink); font-size: 17px; margin-top: 22px; margin-bottom: 16px; }
+  .combo-single-action { margin-top: 14px; }
+  .combo-single-action .interest-btn { width: 100%; }
   .combo-price-shared { margin-top: 16px; text-align: center; }
   .combo-price-shared .amt { display: block; font-weight: 800; color: var(--terra); font-size: 22px; margin-bottom: 3px; }
   .combo-price-shared .price-sub { font-size: 14px; color: var(--ink-soft); }
@@ -1454,16 +1456,11 @@
               </div>
             </div>
             <div class="combo-note">⚠ המעבר בין מרכז העיר לאזור בלם נעשה באופן עצמאי (תחבורה ציבורית, אובר או מונית).</div>
-            <div class="combo-bottom">
-              <div class="combo-price-inline">
-                <div class="combo-price-main">75€ לאדם</div>
-                <div class="combo-price-detail">בקבוצה פרטית של 6 · סה"כ <strong>450€</strong></div>
-              </div>
-              <div class="combo-btn-wrap">
-                <button class="interest-btn" onclick="toggleInterest(this, 'combo-classic-belem')">
-                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
-                </button>
-              </div>
+            <div class="combo-price-shared"><span class="amt">75€ לאדם</span><span class="price-sub">בקבוצה פרטית של 6 · סה"כ <strong>450€</strong></span></div>
+            <div class="combo-single-action">
+              <button class="interest-btn" onclick="toggleInterest(this, 'combo-classic-belem')">
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+              </button>
             </div>
             <div class="date-wrap">
               <div class="date-input-wrap">
@@ -2073,16 +2070,11 @@
                 </div>
               </div>
             </div>
-            <div class="combo-bottom">
-              <div class="combo-price-inline">
-                <div class="combo-price-main">125€ לאדם</div>
-                <div class="combo-price-detail">בקבוצה פרטית של 6 · סה"כ <strong>750€</strong></div>
-              </div>
-              <div class="combo-btn-wrap">
-                <button class="interest-btn" onclick="toggleInterest(this, 'combo-porto-classic-tastings')">
-                  <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
-                </button>
-              </div>
+            <div class="combo-price-shared"><span class="amt">125€ לאדם</span><span class="price-sub">בקבוצה פרטית של 6 · סה"כ <strong>750€</strong></span></div>
+            <div class="combo-single-action">
+              <button class="interest-btn" onclick="toggleInterest(this, 'combo-porto-classic-tastings')">
+                <span class="check-icon"></span><span class="btn-label">מעניין אותנו</span>
+              </button>
             </div>
             <div class="date-wrap">
               <div class="date-input-wrap">
