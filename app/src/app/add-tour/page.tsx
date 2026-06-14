@@ -47,6 +47,28 @@ function emptyBooking(): Booking {
   };
 }
 
+/**
+ * מנקה קלט עשרוני שמדריך מקליד בנייד:
+ * - פסיק → נקודה (הרבה מקלידים 12,50 ולא 12.50)
+ * - מסיר כל תו שאינו ספרה/נקודה
+ * - משאיר נקודה עשרונית אחת בלבד
+ * מחזיר מחרוזת (כדי לאפשר הקלדה חלקה של "12." באמצע ההקלדה).
+ */
+function sanitizeDecimal(raw: string): string {
+  let s = (raw || '').replace(',', '.').replace(/[^\d.]/g, '');
+  const dot = s.indexOf('.');
+  if (dot !== -1) s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, '');
+  return s;
+}
+
+/** ממיר ערך שדה (מחרוזת/מספר) למספר בטוח לחישוב. תומך בפסיק עשרוני. */
+function toNum(v: string | number | null | undefined): number {
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
 function todayISO(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -132,7 +154,7 @@ function AddTourContent() {
   const [trainingLeadKind, setTrainingLeadKind] = useState<TrainingLeadKind | ''>('');
   const [trainingLeadTour, setTrainingLeadTour] = useState<TrainingLeadTour | ''>('');
   const [externalDescription, setExternalDescription] = useState('');
-  const [externalAmount, setExternalAmount] = useState<number>(0);
+  const [externalAmount, setExternalAmount] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -403,7 +425,7 @@ function AddTourContent() {
             setSaving(false);
             return;
           }
-          if (!externalAmount || externalAmount <= 0) {
+          if (toNum(externalAmount) <= 0) {
             setError('נשאר להזין סכום ב"אחר"');
             setSaving(false);
             return;
@@ -412,7 +434,7 @@ function AddTourContent() {
             guide_id: guideId,
             activity_date: date,
             activity_type: 'external',
-            amount: externalAmount,
+            amount: toNum(externalAmount),
             notes: externalDescription + (notes ? ' · ' + notes : ''),
           });
         }
@@ -446,14 +468,14 @@ function AddTourContent() {
           setSaving(false);
           return;
         }
-        if (bookings.length === 0 || bookings.every((b) => b.people === 0)) {
+        if (bookings.length === 0 || bookings.every((b) => toNum(b.people) === 0)) {
           setError('נשאר להוסיף לפחות תת-קבוצה אחת עם משתתפים');
           setSaving(false);
           return;
         }
 
         // Customer type + source — required for every booking with people
-        const activeBookings = bookings.filter((b) => b.people > 0);
+        const activeBookings = bookings.filter((b) => toNum(b.people) > 0);
         const missingCustomerType = activeBookings.findIndex((b) => !b.customer_type || !b.customer_type.trim());
         if (missingCustomerType !== -1) {
           setError(`נשאר לבחור סוג לקוח בתת-קבוצה ${missingCustomerType + 1}`);
@@ -511,20 +533,27 @@ function AddTourContent() {
           tourId = tour.id;
         }
 
-        // Insert bookings
+        // Insert bookings.
+        // אנשים: בקלאסי מעגלים לחצי הקרוב (משתתף שפרש = חצי), אחרת למעלה לשלם.
         const bookingRows = bookings
-          .filter((b) => b.people > 0)
-          .map((b) => ({
-            tour_id: tourId,
-            people: b.people,
-            kids: b.kids || 0,
-            price: b.price || 0,
-            tip: b.tip || 0,
-            change_given: b.change_given || 0,
-            customer_type: b.customer_type,
-            source: b.source,
-            notes: b.notes,
-          }));
+          .filter((b) => toNum(b.people) > 0)
+          .map((b) => {
+            const peopleRaw = toNum(b.people);
+            const people = tourCategory === 'classic'
+              ? Math.round(peopleRaw * 2) / 2
+              : Math.ceil(peopleRaw);
+            return {
+              tour_id: tourId,
+              people,
+              kids: toNum(b.kids),
+              price: toNum(b.price),
+              tip: toNum(b.tip),
+              change_given: toNum(b.change_given),
+              customer_type: b.customer_type,
+              source: b.source,
+              notes: b.notes,
+            };
+          });
         const { error: bkErr } = await supabase.from('bookings').insert(bookingRows);
         if (bkErr) throw bkErr;
 
@@ -573,8 +602,8 @@ function AddTourContent() {
     }
   };
 
-  const totalPeople = bookings.reduce((s, b) => s + (b.people || 0), 0);
-  const totalPrice = bookings.reduce((s, b) => s + (b.price || 0), 0);
+  const totalPeople = bookings.reduce((s, b) => s + toNum(b.people), 0);
+  const totalPrice = bookings.reduce((s, b) => s + toNum(b.price), 0);
 
   // Mismatch detection (only flag when user actually filled the expected totals)
   // אנשים יכולים להיות עשרוניים בקלאסי — משתמשים ב-parseFloat
@@ -698,12 +727,10 @@ function AddTourContent() {
                 <div>
                   <label className="block text-sm font-semibold mb-1">👥 סה״כ משתתפים</label>
                   <input
-                    type="number"
-                    min="0"
-                    step={tourType && tourCategory === 'classic' ? '0.5' : '1'}
-                    inputMode={tourType && tourCategory === 'classic' ? 'decimal' : 'numeric'}
+                    type="text"
+                    inputMode="decimal"
                     value={totalPeopleExpected}
-                    onChange={(e) => setTotalPeopleExpected(e.target.value)}
+                    onChange={(e) => setTotalPeopleExpected(sanitizeDecimal(e.target.value))}
                     placeholder="לדוגמה: 10"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                   />
@@ -711,12 +738,10 @@ function AddTourContent() {
                 <div>
                   <label className="block text-sm font-semibold mb-1">💰 סה״כ גבייה (€)</label>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
                     inputMode="decimal"
                     value={totalPriceExpected}
-                    onChange={(e) => setTotalPriceExpected(e.target.value)}
+                    onChange={(e) => setTotalPriceExpected(sanitizeDecimal(e.target.value))}
                     placeholder="לדוגמה: 250"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                   />
@@ -756,19 +781,12 @@ function AddTourContent() {
                         )}
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        // חצאים מותרים רק כשנבחר סיור קלאסי. אחרת — שלמים בלבד.
-                        step={tourType && tourCategory === 'classic' ? '0.5' : '1'}
+                        type="text"
+                        inputMode="decimal"
+                        // חצאים מותרים בקלאסי (משתתף שפרש = חצי). העיגול לחצי/שלם
+                        // נעשה בשמירה (roundPeople), כדי לא לשבש הקלדה של "2." באמצע.
                         value={b.people || ''}
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value) || 0;
-                          // בקלאסי — מעגלים לחצי הקרוב; באחרים — מעגלים למעלה לשלם
-                          const rounded = tourType && tourCategory === 'classic'
-                            ? Math.round(v * 2) / 2
-                            : Math.ceil(v);
-                          updateBooking(idx, 'people', rounded);
-                        }}
+                        onChange={(e) => updateBooking(idx, 'people', sanitizeDecimal(e.target.value))}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                       />
                     </div>
@@ -793,11 +811,10 @@ function AddTourContent() {
                         סך ששולם (€)
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         value={b.price || ''}
-                        onChange={(e) => updateBooking(idx, 'price', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => updateBooking(idx, 'price', sanitizeDecimal(e.target.value))}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                       />
                     </div>
@@ -805,11 +822,10 @@ function AddTourContent() {
                       <div>
                         <label className="block text-xs text-gray-600 mb-1">קיבלת טיפ? (€)</label>
                         <input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
                           value={b.tip || ''}
-                          onChange={(e) => updateBooking(idx, 'tip', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateBooking(idx, 'tip', sanitizeDecimal(e.target.value))}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                         />
                       </div>
@@ -819,11 +835,10 @@ function AddTourContent() {
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">נתת עודף? (€)</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={b.change_given || ''}
-                      onChange={(e) => updateBooking(idx, 'change_given', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => updateBooking(idx, 'change_given', sanitizeDecimal(e.target.value))}
                       placeholder="0"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                     />
@@ -1195,12 +1210,10 @@ function AddTourContent() {
                       <div>
                         <label className="block text-sm font-semibold mb-1">סכום (€)</label>
                         <input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                          type="text"
                           inputMode="decimal"
-                          value={externalAmount || ''}
-                          onChange={(e) => setExternalAmount(parseFloat(e.target.value) || 0)}
+                          value={externalAmount}
+                          onChange={(e) => setExternalAmount(sanitizeDecimal(e.target.value))}
                           placeholder="כמה?"
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
                         />
