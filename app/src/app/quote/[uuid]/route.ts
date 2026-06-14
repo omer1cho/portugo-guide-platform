@@ -385,11 +385,26 @@ export async function GET(
   });
 
   // 4) הסתרת אלמנטים קבועים שאינם משקפים את ההצעה הספציפית:
-  //    תמונות דקורטיביות (טיולי יום וכו'), תוכן-עניינים קבוע, ורשימות צ'יפים של כל הסיורים.
-  //    (לעתיד: לבנות תוכן-עניינים דינמי שמפרט רק את הסיורים שבהצעה.)
-  document.querySelectorAll('.tour-photo, .toc, .sub-legend').forEach(function(el){
-    el.style.display = 'none';
-  });
+  //    תוכן-עניינים קבוע ורשימות צ'יפים של כל הסיורים. (לעתיד: תוכן-עניינים דינמי.)
+  document.querySelectorAll('.toc, .sub-legend').forEach(function(el){ el.style.display = 'none'; });
+
+  // 5) תמונות דקורטיביות — מותנות בקטגוריה שלהן:
+  //    ליסבון = עם הסיורים הרגליים בליסבון · סינטרה = אחרי טיולי יום בליסבון · פורטו = אחרי סיורי פורטו
+  (function(){
+    function visByTour(dt){ var c=document.querySelector('[data-tour="'+dt+'"]'); return !!c && c.style.display!=='none'; }
+    function visByName(dn){ var f=false; document.querySelectorAll('[data-tour-name]').forEach(function(c){ if(c.getAttribute('data-tour-name')===dn && c.style.display!=='none') f=true; }); return f; }
+    var lisbonWalk = visByTour('classic-lisbon')||visByTour('belem')||visByTour('culinary')||visByTour('combo-classic-belem')||visByName('שילוב: קולינרי + קלאסית');
+    var lisbonDay = visByTour('sintra')||visByTour('arrabida')||visByTour('obidos');
+    var porto = visByTour('porto-classic')||visByTour('tastings')||visByTour('douro')||visByTour('combo-porto-classic-tastings');
+    document.querySelectorAll('.tour-photo').forEach(function(p){
+      var img=p.querySelector('img'); var src=img?(img.getAttribute('src')||''):'';
+      var keep=false;
+      if(/hero-quote-lisbon/.test(src)) keep=lisbonWalk;
+      else if(/moment-sintra/.test(src)) keep=lisbonDay;
+      else if(/moment-porto/.test(src)) keep=porto;
+      if(!keep) p.style.display='none';
+    });
+  })();
 })();
 </script>
 `;
