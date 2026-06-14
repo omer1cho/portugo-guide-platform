@@ -32,6 +32,7 @@ export type LineItem = {
   unitPrice: number;   // €/אדם (כולל תוספת רכב אם רלוונטי)
   subtotal: number;    // unitPrice × count
   free: boolean;
+  ageText?: string;    // לשורות ילד: "גיל 5" / "גילאי 7-9" (כדי להבדיל בין קטגוריות מחיר)
 };
 
 export type ScenarioResult = {
@@ -173,39 +174,38 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
 
   const adultUnit = adultBase + carPerPerson;
 
-  // קיבוץ שורות לפי (תווית + מחיר)
-  const map = new Map<string, LineItem>();
-  const add = (label: LineItem['label'], unit: number, free: boolean) => {
+  // קיבוץ שורות לפי (תווית + מחיר), עם מעקב גילאים לשורות ילד (להבחנה בין קטגוריות)
+  type Grp = { label: LineItem['label']; unit: number; count: number; ages: number[] };
+  const groups = new Map<string, Grp>();
+  const addPerson = (label: LineItem['label'], unit: number, age?: number) => {
     const key = `${label}|${unit}`;
-    const existing = map.get(key);
-    if (existing) {
-      existing.count += 1;
-      existing.subtotal += unit;
-    } else {
-      map.set(key, { label, count: 1, unitPrice: unit, subtotal: unit, free });
-    }
+    let g = groups.get(key);
+    if (!g) { g = { label, unit, count: 0, ages: [] }; groups.set(key, g); }
+    g.count += 1;
+    if (age !== undefined) g.ages.push(age);
   };
 
-  if (comp.adults > 0) {
-    map.set(`מבוגר|${adultUnit}`, {
-      label: 'מבוגר',
-      count: comp.adults,
-      unitPrice: adultUnit,
-      subtotal: comp.adults * adultUnit,
-      free: false,
-    });
-  }
+  for (let i = 0; i < comp.adults; i++) addPerson('מבוגר', adultUnit);
 
   for (const age of comp.childrenAges) {
     const tourPart = childTourPrice(tour, age, adultBase);
-    const paysCar = age >= 7; // ילד 7+ משלם חלק רכב מלא; פעוט עד 6 לא
+    const paysCar = age >= 7; // ילד 7+ משלם חלק רכב מלא; פעוט/3-6 לא
     const unit = tourPart + (paysCar ? carPerPerson : 0);
     // תווית: פעוט = עד גיל שנתיים, ילד = 3-12, מבוגר = 13+ (המחיר עצמו לפי מדרגות הגיל בטבלאות).
-    const label: LineItem['label'] = age >= 13 ? 'מבוגר' : age >= 3 ? 'ילד' : 'פעוט';
-    add(label, unit, unit === 0);
+    if (age >= 13) { addPerson('מבוגר', unit); continue; }
+    const label: LineItem['label'] = age >= 3 ? 'ילד' : 'פעוט';
+    addPerson(label, unit, label === 'ילד' ? age : undefined);
   }
 
-  const lines = Array.from(map.values());
+  const lines: LineItem[] = Array.from(groups.values()).map((g) => {
+    let ageText: string | undefined;
+    if (g.label === 'ילד' && g.ages.length) {
+      const mn = Math.min(...g.ages);
+      const mx = Math.max(...g.ages);
+      ageText = mn === mx ? `גיל ${mn}` : `גילאי ${mn}-${mx}`;
+    }
+    return { label: g.label, count: g.count, unitPrice: g.unit, subtotal: g.unit * g.count, free: g.unit === 0, ageText };
+  });
   const total = lines.reduce((s, l) => s + l.subtotal, 0);
   return { categorySize: size, bodies, lines, carPerPerson, total, warning: tour.warning };
 }

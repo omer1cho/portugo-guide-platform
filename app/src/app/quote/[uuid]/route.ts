@@ -63,20 +63,25 @@ function mapToCardSelector(tour: QuoteTourSel): { dataTour?: string; dataTourNam
   return {};
 }
 
-async function fetchQuote(id: string): Promise<QuoteRow | null> {
+async function fetchQuote(idOrSlug: string): Promise<QuoteRow | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) return null;
   const supabase = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data, error } = await supabase
-    .from('quotes')
-    .select('id, customer_name, selection, expires_at')
-    .eq('id', id)
-    .single();
-  if (error || !data) return null;
-  return data as QuoteRow;
+  const cols = 'id, customer_name, selection, expires_at';
+
+  // 1) חיפוש לפי קוד קצר (slug). אם העמודה לא קיימת — שגיאה תיתפס ונמשיך ל-id.
+  const bySlug = await supabase.from('quotes').select(cols).eq('slug', idOrSlug).maybeSingle();
+  if (bySlug.data) return bySlug.data as QuoteRow;
+
+  // 2) תאימות לאחור: לינקים ישנים עם uuid מלא
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(idOrSlug)) {
+    const byId = await supabase.from('quotes').select(cols).eq('id', idOrSlug).maybeSingle();
+    if (byId.data) return byId.data as QuoteRow;
+  }
+  return null;
 }
 
 function htmlEscape(s: string): string {
@@ -105,8 +110,8 @@ function simplePage(title: string, body: string): Response {
 
 // ─── בניית HTML של בלוק מחיר (אותם class-ים כמו במוקאפ) ───
 
-function lineRow(label: 'מבוגר' | 'ילד' | 'פעוט', free: boolean, unit: number): string {
-  const unitWord = `ל${label}`;
+function lineRow(label: 'מבוגר' | 'ילד' | 'פעוט', free: boolean, unit: number, ageText?: string): string {
+  const unitWord = `ל${label}${ageText ? ` ${ageText}` : ''}`;
   if (free) {
     return `<div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">${unitWord}</span></div>`;
   }
@@ -115,7 +120,7 @@ function lineRow(label: 'מבוגר' | 'ילד' | 'פעוט', free: boolean, uni
 
 /** בלוק מחיר לעמודה יחידה (.price-family). */
 function priceFamilyHtml(col: DisplayColumn): string {
-  const rows = col.result.lines.map((l) => lineRow(l.label, l.free, l.unitPrice)).join('\n              ');
+  const rows = col.result.lines.map((l) => lineRow(l.label, l.free, l.unitPrice, l.ageText)).join('\n              ');
   const total = `<div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">${eur(col.result.total)}</span></div>`;
   return `<div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
@@ -142,7 +147,7 @@ function priceRangeHtml(cols: DisplayColumn[], rawCols: QuoteColumn[]): string {
         ? `<span class="price-range-sub">${htmlEscape(col.subLabel)}</span>`
         : '';
       const rows = col.result.lines
-        .map((l) => lineRow(l.label, l.free, l.unitPrice))
+        .map((l) => lineRow(l.label, l.free, l.unitPrice, l.ageText))
         .join('\n                ');
       const total = col.showTotal
         ? `\n                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">${eur(col.result.total)}</span></div>`
@@ -340,6 +345,17 @@ export async function GET(
     });
     card.querySelectorAll('.coverage-list li').forEach(function(li){
       if (/רכב/.test(li.textContent)) li.style.display='none';
+    });
+    // אם נשארה תיבת "כלול"/"לא כלול" ריקה אחרי ההסרה — להסתיר אותה
+    card.querySelectorAll('.coverage-block').forEach(function(b){
+      var anyLi=false;
+      b.querySelectorAll('.coverage-list li').forEach(function(li){ if(li.style.display!=='none') anyLi=true; });
+      if(!anyLi) b.style.display='none';
+    });
+    card.querySelectorAll('.price-coverage').forEach(function(pc){
+      var anyBlock=false;
+      pc.querySelectorAll('.coverage-block').forEach(function(b){ if(b.style.display!=='none') anyBlock=true; });
+      if(!anyBlock) pc.style.display='none';
     });
   }
   noCarStrip.forEach(function(dt){

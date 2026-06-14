@@ -21,18 +21,19 @@ const C = {
 };
 
 function lineText(l: LineItem): React.ReactNode {
+  const unitLabel = `ל${l.label}${l.ageText ? ` ${l.ageText}` : ''}`;
   if (l.free) {
     return (
       <>
         <span style={{ fontSize: 17, fontWeight: 700, color: C.greenDeep }}>ללא עלות</span>{' '}
-        <span style={{ fontSize: 15, color: C.inkSoft }}>ל{l.label}</span>
+        <span style={{ fontSize: 15, color: C.inkSoft }}>{unitLabel}</span>
       </>
     );
   }
   return (
     <>
       <span style={{ fontSize: 20, fontWeight: 700, color: C.terra }}>{eur(l.unitPrice)}</span>{' '}
-      <span style={{ fontSize: 15, color: C.inkSoft }}>ל{l.label}</span>
+      <span style={{ fontSize: 15, color: C.inkSoft }}>{unitLabel}</span>
     </>
   );
 }

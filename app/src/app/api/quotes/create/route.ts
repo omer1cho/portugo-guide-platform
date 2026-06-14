@@ -47,22 +47,29 @@ export async function POST(req: NextRequest) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: inserted, error } = await supabase
-    .from('quotes')
-    .insert({
-      created_by: createdBy,
-      customer_name: customerName,
-      selection,
-      language: 'he',
-      status: 'sent',
-    })
-    .select('id')
-    .single();
+  const row = {
+    created_by: createdBy,
+    customer_name: customerName,
+    selection,
+    language: 'he',
+    status: 'sent',
+  };
 
-  if (error) {
-    console.error('[quotes/create] insert failed:', error);
-    return NextResponse.json({ ok: false, error: 'שגיאה בשמירה, נסו שוב' }, { status: 500 });
+  // מנסים לקבל גם slug (קוד קצר ללינק). אם עמודת slug עוד לא קיימת — נופלים חזרה ל-id בלבד.
+  let id: string;
+  let slug: string | null = null;
+  const withSlug = await supabase.from('quotes').insert(row).select('id, slug').single();
+  if (!withSlug.error) {
+    id = withSlug.data.id;
+    slug = (withSlug.data as { slug?: string | null }).slug ?? null;
+  } else {
+    const idOnly = await supabase.from('quotes').insert(row).select('id').single();
+    if (idOnly.error) {
+      console.error('[quotes/create] insert failed:', idOnly.error);
+      return NextResponse.json({ ok: false, error: 'שגיאה בשמירה, נסו שוב' }, { status: 500 });
+    }
+    id = idOnly.data.id;
   }
 
-  return NextResponse.json({ ok: true, id: inserted.id });
+  return NextResponse.json({ ok: true, id, slug });
 }

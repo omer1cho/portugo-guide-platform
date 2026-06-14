@@ -126,7 +126,7 @@ export default function NewQuotePage() {
       });
       const data = await res.json();
       if (!data.ok) { setErr(data.error || 'שגיאה בשמירה'); setSaving(false); return; }
-      setLink(`${window.location.origin}/quote/${data.id}`);
+      setLink(`${window.location.origin}/quote/${data.slug || data.id}`);
     } catch {
       setErr('שגיאה בשמירה, נסו שוב');
     }
