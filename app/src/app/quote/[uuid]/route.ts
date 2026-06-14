@@ -383,6 +383,13 @@ export async function GET(
   document.querySelectorAll('.city-frame').forEach(function(c){
     if (!hasVisibleCard(c)) c.style.display = 'none';
   });
+
+  // 4) הסתרת אלמנטים קבועים שאינם משקפים את ההצעה הספציפית:
+  //    תמונות דקורטיביות (טיולי יום וכו'), תוכן-עניינים קבוע, ורשימות צ'יפים של כל הסיורים.
+  //    (לעתיד: לבנות תוכן-עניינים דינמי שמפרט רק את הסיורים שבהצעה.)
+  document.querySelectorAll('.tour-photo, .toc, .sub-legend').forEach(function(el){
+    el.style.display = 'none';
+  });
 })();
 </script>
 `;
