@@ -9,20 +9,21 @@ export function eur(n: number): string {
   return `${n.toLocaleString('en-US')}€`;
 }
 
-/** "8 מבוגרים, 2 ילדים ופעוט" — לפי הרכב מדויק (13+ נספרים כמבוגרים). */
+/** "8 מבוגרים, 2 ילדים בגילאי 7 ו-9 ופעוט" — פעוט=עד 2, ילד=3-12 (מציינים גיל), 13+ כמבוגר. */
 export function compositionLabel(adults: number, childrenAges: number[]): string {
   const adultsTotal = adults + childrenAges.filter((a) => a >= 13).length;
-  const kids = childrenAges.filter((a) => a >= 7 && a <= 12).length;
-  const toddlers = childrenAges.filter((a) => a < 7).length;
+  const kids = childrenAges.filter((a) => a >= 3 && a <= 12).sort((x, y) => x - y);
+  const toddlers = childrenAges.filter((a) => a < 3).length;
+  const joinAges = (ages: number[]): string =>
+    ages.length === 1 ? `${ages[0]}` : `${ages.slice(0, -1).join(', ')} ו-${ages[ages.length - 1]}`;
   const parts: string[] = [];
-  if (adultsTotal > 0) parts.push(`${adultsTotal} מבוגרים`);
-  if (kids > 0) parts.push(kids === 1 ? 'ילד אחד' : `${kids} ילדים`);
-  if (toddlers > 0) parts.push(toddlers === 1 ? 'ופעוט' : `ו-${toddlers} פעוטות`);
-  if (parts.length <= 1) return parts.join('');
-  // אם השורה האחרונה כבר מתחילה ב-ו' (פעוטות) — לא להוסיף עוד "ו"
-  const last = parts[parts.length - 1];
-  const head = parts.slice(0, -1).join(', ');
-  return last.startsWith('ו') ? `${head} ${last}` : `${head} ו${last}`;
+  if (adultsTotal > 0) parts.push(adultsTotal === 1 ? 'מבוגר אחד' : `${adultsTotal} מבוגרים`);
+  if (kids.length === 1) parts.push(`ילד בן ${kids[0]}`);
+  else if (kids.length > 1) parts.push(`${kids.length} ילדים בגילאי ${joinAges(kids)}`);
+  let s = parts.join(', ');
+  if (toddlers === 1) s += s ? ' ופעוט' : 'פעוט';
+  else if (toddlers > 1) s += s ? ` ו-${toddlers} פעוטות` : `${toddlers} פעוטות`;
+  return s;
 }
 
 export type DisplayColumn = {

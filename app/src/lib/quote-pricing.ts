@@ -200,7 +200,8 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
     const tourPart = childTourPrice(tour, age, adultBase);
     const paysCar = age >= 7; // ילד 7+ משלם חלק רכב מלא; פעוט עד 6 לא
     const unit = tourPart + (paysCar ? carPerPerson : 0);
-    const label: LineItem['label'] = age >= 13 ? 'מבוגר' : age >= 7 ? 'ילד' : 'פעוט';
+    // תווית: פעוט = עד גיל שנתיים, ילד = 3-12, מבוגר = 13+ (המחיר עצמו לפי מדרגות הגיל בטבלאות).
+    const label: LineItem['label'] = age >= 13 ? 'מבוגר' : age >= 3 ? 'ילד' : 'פעוט';
     add(label, unit, unit === 0);
   }
 
