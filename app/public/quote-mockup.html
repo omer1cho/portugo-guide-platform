@@ -407,6 +407,7 @@
     border-bottom: 1px solid var(--band);
   }
   .price-range-head b { color: var(--terra); }
+  .price-range-head .price-range-sub { display: block; font-size: 12px; font-weight: 400; color: var(--ink-mute); margin-top: 3px; }
   .price-range-col .pf-row { border-bottom: none; padding: 8px 0 2px; text-align: center; }
   .price-range-col .pf-total { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--band); justify-content: center; }
 
@@ -2056,12 +2057,22 @@
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
-            <div class="price-family">
-              <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">למבוגר</span></div>
-              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לילד</span></div>
-              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
-              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">360€</span></div>
+            <div class="price-family-cap">המחיר לפי מספר המשתתפים</div>
+            <div class="price-range">
+              <div class="price-range-col">
+                <div class="price-range-head">בקבוצה של <b><bdi>11</bdi></b> משתתפים<span class="price-range-sub">8 מבוגרים, 2 ילדים ופעוט</span></div>
+                <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">למבוגר</span></div>
+                <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לילד</span></div>
+                <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
+                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">360€</span></div>
+              </div>
+              <div class="price-range-col">
+                <div class="price-range-head">בקבוצה של <b><bdi>15</bdi></b> משתתפים<span class="price-range-sub">12 מבוגרים, 2 ילדים ופעוט</span></div>
+                <div class="pf-row"><span class="pf-amt">35€</span> <span class="pf-unit">למבוגר</span></div>
+                <div class="pf-row"><span class="pf-amt">18€</span> <span class="pf-unit">לילד</span></div>
+                <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
+                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">456€</span></div>
+              </div>
             </div>
 
             <div class="card-action">
