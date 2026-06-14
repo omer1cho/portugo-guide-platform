@@ -669,10 +669,6 @@
     font-size: 13.5px; color: var(--terra-mute);
     margin-bottom: 14px; line-height: 1.5;
   }
-  .combo-card .desc-note { margin: 0 0 16px; }
-  .combo-card .desc-note .note-label { display: block; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
-  .combo-card .desc-note ul { list-style: disc; margin: 0; padding-inline-start: 22px; }
-  .combo-card .desc-note ul li { margin-bottom: 6px; line-height: 1.6; }
 
   /* Combo day plan - meeting points + break */
   .combo-plan {
@@ -1141,7 +1137,7 @@
     <div class="hero-tagline">זוהי הצעתנו לסיורים פרטיים עבורכם</div>
     <div class="hero-meta">
       <span class="hero-stat">מועד מבוקש <b><bdi>יוני 2026</bdi></b></span>
-      <span class="hero-stat">כמות משתתפים <b><bdi>11</bdi></b>&rlm;,<span class="hero-breakdown"> מתוכם: 8 מבוגרים, 2 ילדים בגילאי 7 ו-9 ופעוט</span></span>
+      <span class="hero-stat">קבוצה של <b><bdi>11</bdi></b> משתתפים,<span class="hero-breakdown"> מתוכם: 8 מבוגרים, 2 ילדים בגילאי 7 ו-9 ופעוט</span></span>
     </div>
   </div>
 </section>
@@ -1261,6 +1257,12 @@
               <p>במהלך הסיור נעבור בנקודות תצפית סודיות, נבקר במונומנטים המרכזיים אך נטייל גם ברחובות הצרים והמיוחדים שהתייר הממוצע אינו מכיר. בין היתר נרחיב על ההיסטוריה של פורטוגל, על ההקשר היהודי ועל אופי השכונות המיוחדות. כמו כן, נכיר את סמלי העיר השונים, ותוכלו לטעום את הליקר המפורסם <bdi>Ginjinha</bdi>.</p>
               <p>זהו <span class="hl">סיור מומלץ במיוחד למי שמגיע לליסבון בפעם הראשונה</span> ורוצה לקבל תמונה רחבה, מסודרת וחיה של העיר בתוך כמה שעות; להבין איפה כל דבר נמצא, מה הסיפור של המקום, ואיך להמשיך ליהנות מהעיר גם בהמשך הביקור.</p>
               <p>ודאי שמעתם שליסבון היא עיר הררית ולכן באופן טבעי המסלול כולל עליות וירידות, אבל הוא בנוי בצורה האידיאלית ביותר להיכרות רחבה אך לא מעמיסה עם העיר. המסלול הוא ייחודי בכך ש<span class="hl">במשך שלוש שעות בלבד</span> הוא מאפשר לכם להכיר את העיר לעומקה ולהתאהב 😊</p>
+              <div class="desc-note">
+                <span class="note-label">חשוב לדעת:</span>
+                <ul>
+                  <li>חשוב להכיר שבסיור עם רכב צמוד ישנה מגבלה להגיע לכל האזורים, ובעיקר לשכונת אלפמה. לכן ככל שאין מגבלות הליכה, נמליץ שלא להיעזר ברכב לאורך רוב הסיור.</li>
+                </ul>
+              </div>
             </div>
           </div>
           </div>
@@ -1275,10 +1277,19 @@
 
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">למבוגר</span></div>
-              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">72€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">52€</span> <span class="pf-unit">לילד</span></div>
               <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
-              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">360€</span></div>
+              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">680€</span></div>
+            </div>
+
+            <div class="price-coverage" style="grid-template-columns: 1fr;">
+              <div class="coverage-block included">
+                <div class="coverage-label">✓ כלול במחיר</div>
+                <ul class="coverage-list">
+                  <li>רכב צמוד לכ-3 שעות, לרבות איסוף והחזרה.</li>
+                </ul>
+              </div>
             </div>
 
             <div class="card-action">
@@ -1515,26 +1526,13 @@
                 </div>
               </div>
             </div>
-            <div class="desc-note">
-              <span class="note-label">חשוב לדעת:</span>
-              <ul>
-                <li>חשוב להכיר שבסיור עם רכב צמוד ישנה מגבלה להגיע לכל האזורים, ובעיקר לשכונת אלפמה. לכן ככל שאין מגבלות הליכה, נמליץ שלא להיעזר ברכב לאורך רוב הסיור.</li>
-              </ul>
-            </div>
+            <div class="combo-note">⚠ המעבר בין מרכז העיר לאזור בלם נעשה באופן עצמאי (תחבורה ציבורית, אובר או מונית).</div>
             <div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-amt">103€</span> <span class="pf-unit">למבוגר</span></div>
-              <div class="pf-row"><span class="pf-amt">71€</span> <span class="pf-unit">לילד</span></div>
+              <div class="pf-row"><span class="pf-amt">65€</span> <span class="pf-unit">למבוגר</span></div>
+              <div class="pf-row"><span class="pf-amt">33€</span> <span class="pf-unit">לילד</span></div>
               <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
-              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">966€</span></div>
-            </div>
-            <div class="price-coverage" style="grid-template-columns: 1fr;">
-              <div class="coverage-block included">
-                <div class="coverage-label">✓ כלול במחיר</div>
-                <ul class="coverage-list">
-                  <li>רכב צמוד לכ-7 שעות, לרבות איסוף והחזרה.</li>
-                </ul>
-              </div>
+              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">586€</span></div>
             </div>
             <div class="combo-single-action">
               <button class="interest-btn" onclick="toggleInterest(this, 'combo-classic-belem')">
