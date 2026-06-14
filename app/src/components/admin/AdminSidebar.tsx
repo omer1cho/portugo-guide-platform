@@ -37,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/consultations', label: 'פניות ייעוץ', icon: '🌸' },
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
   { href: '/admin/pricing-validation', label: 'רווחיות סיורים', icon: '💰' },
+  { href: '/admin/quotes/new', label: 'הצעות מחיר', icon: '🧾' },
 ];
 
 export default function AdminSidebar({
