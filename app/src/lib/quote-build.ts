@@ -22,7 +22,7 @@ export function compositionLabel(adults: number, childrenAges: number[]): string
   // אם השורה האחרונה כבר מתחילה ב-ו' (פעוטות) — לא להוסיף עוד "ו"
   const last = parts[parts.length - 1];
   const head = parts.slice(0, -1).join(', ');
-  return last.startsWith('ו') ? `${head}${last}` : `${head} ו${last}`;
+  return last.startsWith('ו') ? `${head} ${last}` : `${head} ו${last}`;
 }
 
 export type DisplayColumn = {

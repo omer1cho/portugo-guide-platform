@@ -257,8 +257,21 @@ export async function GET(
     }
   }
 
+  // כרטיסי עיר (קלאסי/בלם) שנבחרו בלי רכב — להסיר מהם את תוכן הרכב
+  // (אייקון "סיור עם רכב צמוד" + הערת אלפמה + שורת "כלול: רכב צמוד"),
+  // כדי שכל הצעה תציג רק את מה שרלוונטי לה.
+  const noCarStrip = new Set<string>();
+  for (const tour of sel.tours) {
+    const isCity = !tour.comboSlug && (tour.tourSlug === 'classic-private' || tour.tourSlug === 'belem-private');
+    if (isCity && !tour.car) {
+      const t = mapToCardSelector(tour);
+      if (t.dataTour) noCarStrip.add(t.dataTour);
+    }
+  }
+
   // הזרקת JS שמסתיר כרטיסים שלא נבחרו ומחליף את בלוקי המחיר ב-DOM.
   // גישת DOM (script) נבחרה כי היא עמידה למבנה הכרטיסים (כולל combo עם opt-pick).
+  const noCarArr = JSON.stringify(Array.from(noCarStrip));
   const dataTourArr = JSON.stringify(Array.from(shownDataTours));
   const dataTourNameArr = JSON.stringify(Array.from(shownDataTourNames));
   const priceByDataTourJson = JSON.stringify(priceByDataTour);
@@ -271,6 +284,7 @@ export async function GET(
   var shownNames = ${dataTourNameArr};
   var priceByTour = ${priceByDataTourJson};
   var priceByName = ${priceByDataTourNameJson};
+  var noCarStrip = ${noCarArr};
 
   function isShownCard(card){
     var dt = card.getAttribute('data-tour');
@@ -305,6 +319,32 @@ export async function GET(
     cards.forEach(function(card){
       if (card.getAttribute('data-tour-name') === dn) replacePrice(card, priceByName[dn]);
     });
+  });
+
+  // 2.5) הסרת תוכן רכב מכרטיסי עיר שנבחרו בלי רכב
+  function stripCar(card){
+    var carIcon = card.querySelector('.card-meta-strip use[href="#icon-bus"]');
+    if (carIcon){
+      carIcon.setAttribute('href','#icon-walking');
+      var mi = carIcon.closest ? carIcon.closest('.meta-item') : null;
+      var strong = mi && mi.querySelector('strong');
+      if (strong) strong.textContent = 'סיור רגלי';
+    }
+    card.querySelectorAll('.desc-note li').forEach(function(li){
+      if (/רכב/.test(li.textContent)) li.style.display='none';
+    });
+    card.querySelectorAll('.desc-note').forEach(function(dn){
+      var anyVisible=false;
+      dn.querySelectorAll('li').forEach(function(li){ if(li.style.display!=='none') anyVisible=true; });
+      if (!anyVisible) dn.style.display='none';
+    });
+    card.querySelectorAll('.coverage-list li').forEach(function(li){
+      if (/רכב/.test(li.textContent)) li.style.display='none';
+    });
+  }
+  noCarStrip.forEach(function(dt){
+    var card = document.querySelector('[data-tour="' + dt + '"]');
+    if (card) stripCar(card);
   });
 
   // 3) הסתרת מעטפות-אזור / כותרות-משנה / מפרידים שנותרו ריקים
