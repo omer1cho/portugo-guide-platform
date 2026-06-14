@@ -10,7 +10,8 @@ export type QuoteColumn =
 
 /** בחירת סיור בהצעה. */
 export type QuoteTourSel = {
-  tourSlug: string;
+  tourSlug: string;                // לתמחור (מהטבלאות; קולינרי=טעימות, סינטרה=אראבידה חולקים טבלה)
+  card?: string;                   // data-tour של הכרטיס במוקאפ להצגה (מבחין קולינרי↔טעימות, סינטרה↔אראבידה, ליסבון↔פורטו קלאסית)
   variant?: 'regular' | 'short';   // קלאסי בלבד
   comboSlug?: string;              // אם זו הצעת שילוב
   car?: 'half' | 'full' | null;    // רכב צמוד (קלאסי/בלם)

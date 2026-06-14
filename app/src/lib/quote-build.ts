@@ -68,13 +68,28 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
   });
 }
 
+/** שמות תצוגה לפי כרטיס (מבחין קולינרי↔טעימות, סינטרה↔אראבידה, ליסבון↔פורטו). */
+const CARD_NAMES: Record<string, string> = {
+  'classic-lisbon': 'ליסבון הקלאסית',
+  'porto-classic': 'פורטו הקלאסית',
+  'belem': 'בלם',
+  'culinary': 'קולינרי',
+  'porto-tastings': 'טעימות פורטו',
+  'sintra': 'סינטרה',
+  'arrabida': 'אראבידה',
+  'obidos': 'אובידוש',
+  'douro': 'דורו',
+};
+
 /** שם תצוגה לסיור (כולל שילוב). */
 export function tourDisplayName(tour: QuoteTourSel): string {
-  const t = getPrivateTour(tour.tourSlug);
-  if (!t) return tour.tourSlug;
   if (tour.comboSlug) {
-    const combo = t.combos?.find((c) => c.slug === tour.comboSlug);
+    const t = getPrivateTour(tour.tourSlug);
+    const combo = t?.combos?.find((c) => c.slug === tour.comboSlug);
     if (combo) return combo.name.replace(/^שילוב [א-ד]:?\s*/, '').replace(/^שילוב [א-ד]-מקוצר:?\s*/, '');
   }
+  if (tour.card && CARD_NAMES[tour.card]) return CARD_NAMES[tour.card];
+  const t = getPrivateTour(tour.tourSlug);
+  if (!t) return tour.tourSlug;
   return t.name.replace(/\s*\(.*\)\s*/, '').trim();
 }

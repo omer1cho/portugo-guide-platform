@@ -57,9 +57,11 @@ function mapToCardSelector(tour: QuoteTourSel): { dataTour?: string; dataTourNam
     // TODO mapping: comboSlug ללא כרטיס תואם במוקאפ
     return {};
   }
+  // כרטיס מפורש (מבחין קולינרי↔טעימות, סינטרה↔אראבידה, ליסבון↔פורטו קלאסית)
+  if (tour.card) return { dataTour: tour.card };
+  // תאימות לאחור: הצעות ישנות בלי שדה card
   const dt = TOUR_SLUG_TO_DATA_TOUR[tour.tourSlug];
   if (dt) return { dataTour: dt };
-  // TODO city/mapping: slug ללא כרטיס תואם במוקאפ
   return {};
 }
 
@@ -269,11 +271,11 @@ export async function GET(
   // כדי שכל הצעה תציג רק את מה שרלוונטי לה.
   const noCarStrip = new Set<string>();
   for (const tour of sel.tours) {
-    const isCity = !tour.comboSlug && (tour.tourSlug === 'classic-private' || tour.tourSlug === 'belem-private');
-    if (isCity && !tour.car) {
-      const t = mapToCardSelector(tour);
-      if (t.dataTour) noCarStrip.add(t.dataTour);
-    }
+    if (tour.comboSlug) continue;
+    const card = tour.card || mapToCardSelector(tour).dataTour;
+    // רק לכרטיסים שיש בהם תוכן רכב מובנה במוקאפ (קלאסי ליסבון + בלם)
+    const hasCarContent = card === 'classic-lisbon' || card === 'belem';
+    if (hasCarContent && !tour.car) noCarStrip.add(card!);
   }
 
   // הזרקת JS שמסתיר כרטיסים שלא נבחרו ומחליף את בלוקי המחיר ב-DOM.

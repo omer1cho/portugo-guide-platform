@@ -26,19 +26,25 @@ const C = {
 type Item = { key: string; label: string; sel: QuoteTourSel; canCar?: boolean };
 
 const ITEMS: Item[] = [
-  { key: 'classic-private', label: 'קלאסי פרטי', sel: { tourSlug: 'classic-private', variant: 'regular' }, canCar: true },
-  { key: 'belem-private', label: 'בלם פרטי', sel: { tourSlug: 'belem-private' }, canCar: true },
-  { key: 'culinary-tastings-private', label: 'קולינרי / טעימות פרטי', sel: { tourSlug: 'culinary-tastings-private' } },
-  { key: 'sintra-arrabida-private', label: 'סינטרה / אראבידה פרטי', sel: { tourSlug: 'sintra-arrabida-private' } },
-  { key: 'obidos-private', label: 'אובידוש פרטי', sel: { tourSlug: 'obidos-private' } },
-  { key: 'douro-private', label: 'דורו פרטי', sel: { tourSlug: 'douro-private' } },
+  // ליסבון
+  { key: 'classic-lisbon', label: 'ליסבון הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'classic-lisbon' }, canCar: true },
+  { key: 'belem', label: 'בלם', sel: { tourSlug: 'belem-private', card: 'belem' }, canCar: true },
+  { key: 'culinary', label: 'קולינרי (ליסבון)', sel: { tourSlug: 'culinary-tastings-private', card: 'culinary' } },
+  { key: 'sintra', label: 'סינטרה', sel: { tourSlug: 'sintra-arrabida-private', card: 'sintra' } },
+  { key: 'arrabida', label: 'אראבידה', sel: { tourSlug: 'sintra-arrabida-private', card: 'arrabida' } },
+  { key: 'obidos', label: 'אובידוש', sel: { tourSlug: 'obidos-private', card: 'obidos' } },
+  // פורטו
+  { key: 'porto-classic', label: 'פורטו הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'porto-classic' } },
+  { key: 'porto-tastings', label: 'טעימות (פורטו)', sel: { tourSlug: 'culinary-tastings-private', card: 'porto-tastings' } },
+  { key: 'douro', label: 'דורו (פורטו)', sel: { tourSlug: 'douro-private', card: 'douro' } },
+  // שילובים
   { key: 'combo-classic-belem', label: 'שילוב: קלאסי + בלם', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-belem' } },
   { key: 'combo-classic-culinary', label: 'שילוב: קלאסי + קולינרי', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-culinary' } },
-  { key: 'combo-classic-tastings', label: 'שילוב: קלאסי + טעימות', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-tastings' } },
+  { key: 'combo-classic-tastings', label: 'שילוב: פורטו קלאסית + טעימות', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-tastings' } },
 ];
 
 // סיורים שאינם תואמים לרכב צמוד (קולינרי/טעימות) — מושבתים כשנבחר "הצעה עם רכב"
-const CAR_INCOMPATIBLE = new Set(['culinary-tastings-private', 'combo-classic-culinary', 'combo-classic-tastings']);
+const CAR_INCOMPATIBLE = new Set(['culinary', 'porto-tastings', 'combo-classic-culinary', 'combo-classic-tastings']);
 
 type Comp = { adults: number; ages: number[] };
 type Band = { min: number; max: number };
