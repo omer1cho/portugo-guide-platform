@@ -37,6 +37,9 @@ const ITEMS: Item[] = [
   { key: 'combo-classic-tastings', label: 'שילוב: קלאסי + טעימות', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-tastings' } },
 ];
 
+// סיורים שאינם תואמים לרכב צמוד (קולינרי/טעימות) — מושבתים כשנבחר "הצעה עם רכב"
+const CAR_INCOMPATIBLE = new Set(['culinary-tastings-private', 'combo-classic-culinary', 'combo-classic-tastings']);
+
 type Comp = { adults: number; ages: number[] };
 type Band = { min: number; max: number };
 type Mode = 'one' | 'two' | 'band';
@@ -57,7 +60,7 @@ export default function NewQuotePage() {
   const [bandA, setBandA] = useState<Band>({ min: 8, max: 11 });
   const [bandB, setBandB] = useState<Band>({ min: 12, max: 15 });
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  const [carKeys, setCarKeys] = useState<Set<string>>(new Set());
+  const [withCar, setWithCar] = useState(false);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -81,9 +84,9 @@ export default function NewQuotePage() {
     () =>
       ITEMS.filter((it) => selectedKeys.has(it.key)).map((it) => ({
         ...it.sel,
-        car: it.canCar && carKeys.has(it.key) ? 'half' : null,
+        car: withCar && it.canCar ? 'half' : null,
       })),
-    [selectedKeys, carKeys],
+    [selectedKeys, withCar],
   );
 
   function toggleSel(key: string) {
@@ -94,16 +97,22 @@ export default function NewQuotePage() {
       return n;
     });
   }
-  function toggleCar(key: string) {
-    setCarKeys((s) => {
-      const n = new Set(s);
-      if (n.has(key)) n.delete(key);
-      else n.add(key);
-      return n;
+  function toggleWithCar() {
+    setWithCar((v) => {
+      const next = !v;
+      if (next) {
+        // בהצעה עם רכב — קולינרי/טעימות אינם זמינים, מנקים אותם אם נבחרו
+        setSelectedKeys((s) => {
+          const n = new Set(s);
+          CAR_INCOMPATIBLE.forEach((k) => n.delete(k));
+          return n;
+        });
+      }
+      return next;
     });
   }
   function selectAll() {
-    setSelectedKeys(new Set(ITEMS.map((it) => it.key)));
+    setSelectedKeys(new Set(ITEMS.filter((it) => !(withCar && CAR_INCOMPATIBLE.has(it.key))).map((it) => it.key)));
   }
   function clearAll() {
     setSelectedKeys(new Set());
@@ -194,6 +203,20 @@ export default function NewQuotePage() {
             )}
           </div>
 
+          {/* רכב צמוד — אלמנט נפרד */}
+          <div style={cardStyle}>
+            <label style={labelStyle}>רכב צמוד</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15 }}>
+              <input type="checkbox" checked={withCar} onChange={toggleWithCar} />
+              ההצעה כוללת רכב צמוד (לסיורי העיר: קלאסי / בלם)
+            </label>
+            {withCar && (
+              <div style={{ fontSize: 13, color: C.inkSoft, marginTop: 8, background: C.band, borderRadius: 8, padding: '8px 10px' }}>
+                בהצעה עם רכב, הקלאסי והבלם מוצגים עם רכב צמוד, וקולינרי / טעימות אינם זמינים.
+              </div>
+            )}
+          </div>
+
           {/* סיורים */}
           <div style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -206,18 +229,19 @@ export default function NewQuotePage() {
             <div style={{ display: 'grid', gap: 6 }}>
               {ITEMS.map((it) => {
                 const on = selectedKeys.has(it.key);
+                const disabled = withCar && CAR_INCOMPATIBLE.has(it.key);
                 return (
-                  <div key={it.key} style={{ border: `1px solid ${on ? C.terra : C.border}`, borderRadius: 8, padding: '8px 10px', background: on ? '#fff7f2' : '#fff' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15 }}>
-                      <input type="checkbox" checked={on} onChange={() => toggleSel(it.key)} />
-                      {it.label}
+                  <div key={it.key} style={{ border: `1px solid ${on ? C.terra : C.border}`, borderRadius: 8, padding: '8px 10px', background: disabled ? '#f4f4f2' : on ? '#fff7f2' : '#fff', opacity: disabled ? 0.55 : 1 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 15 }}>
+                      <input type="checkbox" checked={on} disabled={disabled} onChange={() => toggleSel(it.key)} />
+                      <span>{it.label}</span>
+                      {withCar && it.canCar && (
+                        <span style={{ fontSize: 12, color: C.terra, marginInlineStart: 'auto', fontWeight: 600 }}>🚐 עם רכב</span>
+                      )}
+                      {disabled && (
+                        <span style={{ fontSize: 11, color: C.inkMute, marginInlineStart: 'auto' }}>לא זמין עם רכב</span>
+                      )}
                     </label>
-                    {on && it.canCar && (
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: C.inkSoft, marginTop: 6, marginInlineStart: 24 }}>
-                        <input type="checkbox" checked={carKeys.has(it.key)} onChange={() => toggleCar(it.key)} />
-                        עם רכב צמוד
-                      </label>
-                    )}
                   </div>
                 );
               })}

@@ -202,7 +202,7 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
     if (g.label === 'ילד' && g.ages.length) {
       const mn = Math.min(...g.ages);
       const mx = Math.max(...g.ages);
-      ageText = mn === mx ? `גיל ${mn}` : `גילאי ${mn}-${mx}`;
+      ageText = mn === mx ? `בגיל ${mn}` : `בגילאי ${mn}-${mx}`;
     }
     return { label: g.label, count: g.count, unitPrice: g.unit, subtotal: g.unit * g.count, free: g.unit === 0, ageText };
   });

@@ -20,8 +20,13 @@ const C = {
   bg: '#faf6ee',
 };
 
+function displayLabel(label: LineItem['label']): string {
+  // 13+ נספרים כאדם מלא אך אינם "מבוגר" → "אדם". "ילד/ה" ניטרלי מגדרית.
+  return label === 'מבוגר' ? 'אדם' : label === 'ילד' ? 'ילד/ה' : 'פעוט';
+}
+
 function lineText(l: LineItem): React.ReactNode {
-  const unitLabel = `ל${l.label}${l.ageText ? ` ${l.ageText}` : ''}`;
+  const unitLabel = `ל${displayLabel(l.label)}${l.ageText ? ` ${l.ageText}` : ''}`;
   if (l.free) {
     return (
       <>

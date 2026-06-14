@@ -111,7 +111,9 @@ function simplePage(title: string, body: string): Response {
 // ─── בניית HTML של בלוק מחיר (אותם class-ים כמו במוקאפ) ───
 
 function lineRow(label: 'מבוגר' | 'ילד' | 'פעוט', free: boolean, unit: number, ageText?: string): string {
-  const unitWord = `ל${label}${ageText ? ` ${ageText}` : ''}`;
+  // 13+ נספרים כאדם מלא אך אינם "מבוגר" → "אדם". "ילד/ה" ניטרלי מגדרית.
+  const dl = label === 'מבוגר' ? 'אדם' : label === 'ילד' ? 'ילד/ה' : 'פעוט';
+  const unitWord = `ל${dl}${ageText ? ` ${ageText}` : ''}`;
   if (free) {
     return `<div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">${unitWord}</span></div>`;
   }
