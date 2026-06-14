@@ -408,6 +408,7 @@
   }
   .price-range-head b { color: var(--terra); }
   .price-range-col .pf-row { border-bottom: none; padding: 8px 0 2px; text-align: center; }
+  .price-range-col .pf-total { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--band); justify-content: center; }
 
   /* Simple includes */
   .price-includes-simple {
@@ -1864,12 +1865,18 @@
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
-            <div class="price-family">
-              <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-amt">105€</span> <span class="pf-unit">למבוגר</span></div>
-              <div class="pf-row"><span class="pf-amt">53€</span> <span class="pf-unit">לילד</span></div>
-              <div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">לפעוט</span></div>
-              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">946€</span></div>
+            <div class="price-family-cap">המחיר לפי מספר המשתתפים</div>
+            <div class="price-range">
+              <div class="price-range-col">
+                <div class="price-range-head">בקבוצה של <b><bdi>8</bdi></b> משתתפים</div>
+                <div class="pf-row"><span class="pf-amt">115€</span> <span class="pf-unit">לאדם</span></div>
+                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">920€</span></div>
+              </div>
+              <div class="price-range-col">
+                <div class="price-range-head">בקבוצה של <b><bdi>12</bdi></b> משתתפים</div>
+                <div class="pf-row"><span class="pf-amt">105€</span> <span class="pf-unit">לאדם</span></div>
+                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">1,260€</span></div>
+              </div>
             </div>
 
             <div class="price-coverage">
