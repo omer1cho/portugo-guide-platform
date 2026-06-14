@@ -102,7 +102,7 @@ function TransfersContent() {
   const handleSave = async () => {
     if (!guideId) return;
     setFormError('');
-    const amt = parseFloat(amount);
+    const amt = parseFloat(amount.replace(',', '.'));
     if (!amt || amt <= 0) {
       setFormError('נשאר להזין סכום 🙂');
       return;
@@ -224,10 +224,18 @@ function TransfersContent() {
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1">סכום (€)</label>
+              {/* type=text + inputMode=decimal: מקבל גם נקודה וגם פסיק כמפריד
+                  עשרוני (מדריכים מקלידים 12,50). type=number זרק את הפסיק. */}
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9.,]*"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+                  const parts = cleaned.split('.');
+                  setAmount(parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned);
+                }}
                 placeholder="50"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg"
               />
