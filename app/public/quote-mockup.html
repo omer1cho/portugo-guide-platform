@@ -395,6 +395,21 @@
   .pf-total-label { font-size: 17px; font-weight: 700; color: var(--ink); }
   .pf-total-amt { font-size: 24px; font-weight: 800; color: var(--ink); line-height: 1; }
 
+  /* Price range (two scenarios side by side, e.g. "10 or 16 participants") */
+  .price-range { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
+  .price-range-col {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; background: var(--bg);
+  }
+  .price-range-head {
+    font-size: 14px; font-weight: 700; color: var(--ink);
+    text-align: center; padding-bottom: 10px; margin-bottom: 4px;
+    border-bottom: 1px solid var(--band);
+  }
+  .price-range-head b { color: var(--terra); }
+  .price-range-col .pf-row { border-bottom: none; padding: 6px 0; }
+  .price-range-col .pf-total { margin-top: 6px; padding-top: 10px; border-top-width: 1px; }
+
   /* Simple includes */
   .price-includes-simple {
     background: var(--green-soft);
@@ -1095,6 +1110,7 @@
     .price-amount { font-size: 30px; }
     .pf-total-amt { font-size: 22px; }
     .price-coverage { grid-template-columns: 1fr; }
+    .price-range { grid-template-columns: 1fr; }
     .opt-versions { grid-template-columns: 1fr; }
     .card-meta-strip { gap: 12px 14px; flex-direction: column; align-items: flex-start; }
     .card-meta-strip .meta-item { align-items: flex-start; }
@@ -1421,12 +1437,18 @@
               <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
             </div>
 
-            <div class="price-family">
-              <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
-              <div class="pf-row"><span class="pf-amt">72€</span> <span class="pf-unit">למבוגר</span></div>
-              <div class="pf-row"><span class="pf-amt">40€</span> <span class="pf-unit">לילד</span></div>
-              <div class="pf-row"><span class="pf-amt">20€</span> <span class="pf-unit">לפעוט</span></div>
-              <div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">676€</span></div>
+            <div class="price-family-cap">המחיר לפי מספר המשתתפים</div>
+            <div class="price-range">
+              <div class="price-range-col">
+                <div class="price-range-head">אם תהיו <b><bdi>10</bdi></b> משתתפים</div>
+                <div class="pf-row"><span class="pf-amt">72€</span> <span class="pf-unit">לאדם</span></div>
+                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">720€</span></div>
+              </div>
+              <div class="price-range-col">
+                <div class="price-range-head">אם תהיו <b><bdi>16</bdi></b> משתתפים</div>
+                <div class="pf-row"><span class="pf-amt">67€</span> <span class="pf-unit">לאדם</span></div>
+                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">1,072€</span></div>
+              </div>
             </div>
 
             <div class="price-coverage">
