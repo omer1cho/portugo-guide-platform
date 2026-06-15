@@ -141,7 +141,10 @@ export default function NewQuotePage() {
       });
       const data = await res.json();
       if (!data.ok) { setErr(data.error || 'שגיאה בשמירה'); setSaving(false); return; }
-      setLink(`${window.location.origin}/quote/${data.slug || data.id}`);
+      // הלינק ללקוח נבנה מהדומיין המקצועי (proposal.portugo.co.il) אם הוגדר ב-Vercel,
+      // אחרת נופל אוטומטית לכתובת הנוכחית — כך שלעולם לא נוצר לינק שבור.
+      const quoteBase = (process.env.NEXT_PUBLIC_QUOTE_BASE_URL || '').replace(/\/+$/, '') || window.location.origin;
+      setLink(`${quoteBase}/quote/${data.slug || data.id}`);
     } catch {
       setErr('שגיאה בשמירה, נסו שוב');
     }
