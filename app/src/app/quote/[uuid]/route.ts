@@ -443,9 +443,58 @@ export async function GET(
     if (!hasVisibleCard(c)) c.style.display = 'none';
   });
 
-  // 4) הסתרת אלמנטים קבועים שאינם משקפים את ההצעה הספציפית:
-  //    תוכן-עניינים קבוע ורשימות צ'יפים של כל הסיורים. (לעתיד: תוכן-עניינים דינמי.)
-  document.querySelectorAll('.toc, .sub-legend').forEach(function(el){ el.style.display = 'none'; });
+  // 4) רשימת הצ'יפים הקבועה (sub-legend) — מוסתרת (לא משקפת את ההצעה הספציפית).
+  document.querySelectorAll('.sub-legend').forEach(function(el){ el.style.display = 'none'; });
+
+  // 4b) תוכן עניינים דינמי — בונים מחדש את "מה מחכה לכם בהצעה?" כך שיכלול
+  //     רק את הערים והסיורים שנכללים בהצעה הספציפית (מקובץ לפי עיר, מחולק
+  //     לסיורים רגליים / טיולי יום), ואז מציגים אותו.
+  (function buildTOC(){
+    var toc = document.querySelector('.toc');
+    var list = toc ? toc.querySelector('.toc-list') : null;
+    if (!toc || !list) return;
+    var DAY_TRIPS = { sintra:1, arrabida:1, obidos:1, douro:1 };
+    function cardName(c){
+      var t = c.querySelector('.card-title') || c.querySelector('.combo-title');
+      if (t && t.textContent.trim()) return t.textContent.trim();
+      return (c.getAttribute('data-tour-name') || '').trim();
+    }
+    function partsIn(sectionId){
+      var sec = document.getElementById(sectionId);
+      if (!sec || sec.style.display === 'none') return null;
+      var walk = [], day = [];
+      sec.querySelectorAll('.card, .combo-card').forEach(function(c){
+        if (c.style.display === 'none') return;
+        var n = cardName(c); if (!n) return;
+        var dt = c.getAttribute('data-tour') || '';
+        var arr = DAY_TRIPS[dt] ? day : walk;
+        if (arr.indexOf(n) === -1) arr.push(n);
+      });
+      if (!walk.length && !day.length) return null;
+      return { walk: walk, day: day };
+    }
+    function subHtml(p){
+      var s = '';
+      if (p.walk.length) s += '<b>סיורים רגליים בעיר:</b> ' + p.walk.join(' · ');
+      if (p.day.length) s += (s ? '<br>' : '') + '<b>טיולי יום מחוץ לעיר:</b> ' + p.day.join(' · ');
+      return s;
+    }
+    var items = [];
+    var lis = partsIn('lisbon');
+    if (lis) items.push({ href:'#lisbon', title:'סיורים בסביבת ליסבון', sub: subHtml(lis) });
+    var por = partsIn('porto');
+    if (por) items.push({ href:'#porto', title:'סיורים בסביבת פורטו', sub: subHtml(por) });
+    items.push({ href:'#terms', title:'תנאים והערות חשובות', sub:'' });
+    items.push({ href:'#form', title:'בחירת הסיורים המבוקשים', sub:'' });
+    list.innerHTML = items.map(function(it, i){
+      var sub = it.sub ? '<span class="toc-sub">' + it.sub + '</span>' : '';
+      return '<li><a href="' + it.href + '">' +
+        '<span class="toc-num">' + (i+1) + '</span>' +
+        '<span class="toc-text"><span class="toc-title">' + it.title + '</span>' + sub + '</span>' +
+        '<span class="toc-arrow" aria-hidden="true">←</span></a></li>';
+    }).join('');
+    toc.style.display = '';
+  })();
 
   // 5) תמונות דקורטיביות — מותנות בקטגוריה שלהן:
   //    ליסבון = עם הסיורים הרגליים בליסבון · סינטרה = אחרי טיולי יום בליסבון · פורטו = אחרי סיורי פורטו
