@@ -45,6 +45,7 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
         comboSlug: tour.comboSlug,
         car: tour.car,
         city,
+        adultPriceOverride: tour.priceOverride,
         composition: { adults: col.minSize, childrenAges: [] },
       });
       return {
@@ -61,6 +62,7 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
       comboSlug: tour.comboSlug,
       car: tour.car,
       city,
+      adultPriceOverride: tour.priceOverride,
       composition: { adults: col.adults, childrenAges: col.childrenAges },
     });
     return {

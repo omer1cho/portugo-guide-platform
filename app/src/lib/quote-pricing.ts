@@ -51,6 +51,9 @@ export type ScenarioInput = {
   comboSlug?: string;             // אם זו הצעת שילוב
   car?: 'half' | 'full' | null;   // רכב צמוד (רק קלאסי/בלם)
   city?: 'lisbon' | 'porto';      // קובע איזו טבלת רכב (ליסבון=פרדאוטו / פורטו=ז'ורז')
+  /** מחיר מיוחד ידני לאדם (€). דורס את המחיר מהטבלה ומבטל תוספת רכב נפרדת —
+   *  זהו המחיר הסופי למבוגר. ילדים/פעוטות מחושבים ממנו לפי הכללים הרגילים. */
+  adultPriceOverride?: number;
   composition: Composition;
 };
 
@@ -156,16 +159,24 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
   if (size > maxParticipants) {
     return { ...empty, categorySize: size, bodies, error: `מעל המקסימום (${maxParticipants} משתתפים)` };
   }
-  if (adultBase == null) {
+
+  // מחיר מיוחד ידני (אופציונלי): דורס את מחיר המבוגר מהטבלה. זהו המחיר הסופי לאדם,
+  // ולכן גם מבטל תוספת רכב נפרדת. ילדים/פעוטות מחושבים ממנו לפי הכללים הרגילים
+  // (חצי לילד 7-12 בסיורי עיר, מחיר קבוע בקולינרי/טעימות, חינם לפעוט/עד 6 בעיר).
+  const override = input.adultPriceOverride;
+  const hasOverride = override != null && override >= 0;
+  if (hasOverride) {
+    adultBase = Math.round(override);
+  } else if (adultBase == null) {
     return { ...empty, categorySize: size, bodies, error: 'אין מחיר למספר המשתתפים הזה' };
   }
 
-  // תוספת רכב (רק אם נבחר ויש לסיור טבלת רכב)
+  // תוספת רכב (רק אם נבחר, אין מחיר מיוחד, ויש לסיור טבלת רכב)
   // פורטו משתמש בטבלת ז'ורז' (carAddonsPorto), ליסבון בטבלת פרדאוטו (carAddons).
   let carPerPerson = 0;
   const carTables =
     input.city === 'porto' && tour.carAddonsPorto?.length ? tour.carAddonsPorto : tour.carAddons;
-  if (input.car && carTables?.length) {
+  if (!hasOverride && input.car && carTables?.length) {
     const carTable =
       carTables.find((t) =>
         input.car === 'full' ? t.label.includes('יום מלא') : t.label.includes('חצי'),

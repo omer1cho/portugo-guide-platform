@@ -5,7 +5,8 @@
  * ממלאים פרטים → תצוגה מקדימה חיה של המחירים → שמירה → לינק ללקוח.
  * (מוגן ע"י admin/layout שבודק is_admin.)
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import PriceBlock from '@/components/quote/PriceBlock';
 import { buildColumns, tourDisplayName } from '@/lib/quote-build';
 import type { QuoteColumn, QuoteTourSel, QuoteSelection } from '@/lib/quote-types';
@@ -67,11 +68,69 @@ export default function NewQuotePage() {
   const [bandB, setBandB] = useState<Band>({ min: 12, max: 15 });
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [withCar, setWithCar] = useState(false);
+  const [overrides, setOverrides] = useState<Record<string, string>>({}); // key → מחיר מיוחד לאדם (טקסט)
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);   // מצב עריכה של הצעה קיימת
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  // ─── מצב עריכה: אם יש ?edit=<id> בכתובת, טוענים את ההצעה וממלאים מחדש ───
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('edit');
+    if (!id) return;
+    setEditId(id);
+    (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) { setErr('צריך להתחבר מחדש'); return; }
+      try {
+        const res = await fetch(`/api/quotes/get?id=${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (!data.ok) { setErr(data.error || 'שגיאה בטעינת ההצעה'); return; }
+        prefillFromSelection(data.quote.selection as QuoteSelection);
+      } catch {
+        setErr('שגיאה בטעינת ההצעה');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function prefillFromSelection(sel: QuoteSelection) {
+    setCustomerName(sel.customerName || '');
+    setNotes(sel.notes || '');
+    // עמודות → מצב כמות
+    const cols = sel.columns || [];
+    if (cols.length && cols.every((c) => c.type === 'band')) {
+      setMode('band');
+      const b = cols.filter((c): c is Extract<QuoteColumn, { type: 'band' }> => c.type === 'band');
+      if (b[0]) setBandA({ min: b[0].minSize, max: b[0].maxSize });
+      if (b[1]) setBandB({ min: b[1].minSize, max: b[1].maxSize });
+    } else {
+      const e = cols.filter((c): c is Extract<QuoteColumn, { type: 'exact' }> => c.type === 'exact');
+      setMode(e.length >= 2 ? 'two' : 'one');
+      if (e[0]) setCompA({ adults: e[0].adults, ages: e[0].childrenAges });
+      if (e[1]) setCompB({ adults: e[1].adults, ages: e[1].childrenAges });
+    }
+    // סיורים → מפתחות נבחרים + רכב + מחירים מיוחדים
+    const keys = new Set<string>();
+    const ov: Record<string, string> = {};
+    let anyCar = false;
+    for (const t of sel.tours || []) {
+      const item = ITEMS.find((it) =>
+        t.comboSlug ? it.sel.comboSlug === t.comboSlug : it.sel.card === t.card,
+      );
+      if (!item) continue;
+      keys.add(item.key);
+      if (t.car) anyCar = true;
+      if (t.priceOverride != null) ov[item.key] = String(t.priceOverride);
+    }
+    setSelectedKeys(keys);
+    setWithCar(anyCar);
+    setOverrides(ov);
+  }
 
   const columns: QuoteColumn[] = useMemo(() => {
     if (mode === 'one') return [{ type: 'exact', adults: compA.adults, childrenAges: compA.ages }];
@@ -88,11 +147,16 @@ export default function NewQuotePage() {
 
   const selectedTours: QuoteTourSel[] = useMemo(
     () =>
-      ITEMS.filter((it) => selectedKeys.has(it.key)).map((it) => ({
-        ...it.sel,
-        car: withCar && it.canCar ? 'half' : null,
-      })),
-    [selectedKeys, withCar],
+      ITEMS.filter((it) => selectedKeys.has(it.key)).map((it) => {
+        const raw = overrides[it.key];
+        const ov = raw != null && raw.trim() !== '' ? Number(raw) : undefined;
+        return {
+          ...it.sel,
+          car: withCar && it.canCar ? 'half' : null,
+          priceOverride: ov != null && !Number.isNaN(ov) ? ov : undefined,
+        };
+      }),
+    [selectedKeys, withCar, overrides],
   );
 
   function toggleSel(key: string) {
@@ -124,27 +188,48 @@ export default function NewQuotePage() {
     setSelectedKeys(new Set());
   }
 
+  function quoteLink(slugOrId: string): string {
+    // הלינק ללקוח נבנה מהדומיין המקצועי (proposal.portugo.co.il) אם הוגדר ב-Vercel,
+    // אחרת נופל אוטומטית לכתובת הנוכחית — כך שלעולם לא נוצר לינק שבור.
+    const base = (process.env.NEXT_PUBLIC_QUOTE_BASE_URL || '').replace(/\/+$/, '') || window.location.origin;
+    return `${base}/quote/${slugOrId}`;
+  }
+
   async function save() {
     setErr(null);
     setLink(null);
+    setSavedMsg(null);
     if (!customerName.trim()) { setErr('צריך למלא שם מקבל'); return; }
     if (selectedTours.length === 0) { setErr('צריך לבחור לפחות סיור אחד'); return; }
     setSaving(true);
     const selection: QuoteSelection = { customerName: customerName.trim(), columns, tours: selectedTours, notes: notes.trim() || undefined };
-    let createdBy = '';
-    try { createdBy = localStorage.getItem('portugo_guide_name') || ''; } catch {}
     try {
-      const res = await fetch('/api/quotes/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerName: customerName.trim(), selection, createdBy }),
-      });
-      const data = await res.json();
-      if (!data.ok) { setErr(data.error || 'שגיאה בשמירה'); setSaving(false); return; }
-      // הלינק ללקוח נבנה מהדומיין המקצועי (proposal.portugo.co.il) אם הוגדר ב-Vercel,
-      // אחרת נופל אוטומטית לכתובת הנוכחית — כך שלעולם לא נוצר לינק שבור.
-      const quoteBase = (process.env.NEXT_PUBLIC_QUOTE_BASE_URL || '').replace(/\/+$/, '') || window.location.origin;
-      setLink(`${quoteBase}/quote/${data.slug || data.id}`);
+      if (editId) {
+        // עדכון הצעה קיימת (אותו לינק)
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        const res = await fetch('/api/quotes/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
+          body: JSON.stringify({ id: editId, customerName: customerName.trim(), selection }),
+        });
+        const data = await res.json();
+        if (!data.ok) { setErr(data.error || 'שגיאה בשמירה'); setSaving(false); return; }
+        setSavedMsg('ההצעה עודכנה. הלינק שכבר נשלח ללקוח מציג עכשיו את הגרסה המעודכנת.');
+        setLink(quoteLink(editId));
+      } else {
+        // יצירת הצעה חדשה
+        let createdBy = '';
+        try { createdBy = localStorage.getItem('portugo_guide_name') || ''; } catch {}
+        const res = await fetch('/api/quotes/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customerName: customerName.trim(), selection, createdBy }),
+        });
+        const data = await res.json();
+        if (!data.ok) { setErr(data.error || 'שגיאה בשמירה'); setSaving(false); return; }
+        setLink(quoteLink(data.slug || data.id));
+      }
     } catch {
       setErr('שגיאה בשמירה, נסו שוב');
     }
@@ -161,9 +246,11 @@ export default function NewQuotePage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', color: C.ink, fontFamily: 'Assistant, system-ui, sans-serif' }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, color: C.forest, marginBottom: 4 }}>הצעת מחיר חדשה</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 800, color: C.forest, marginBottom: 4 }}>{editId ? 'עריכת הצעת מחיר' : 'הצעת מחיר חדשה'}</h1>
       <p style={{ color: C.inkSoft, marginTop: 0, marginBottom: 20 }}>
-        ממלאים את הפרטים, רואים תצוגה מקדימה חיה, ויוצרים לינק לשליחה ללקוח.
+        {editId
+          ? 'עורכים את הפרטים ושומרים. הלינק נשאר אותו לינק, כך שמה שכבר נשלח ללקוח יתעדכן.'
+          : 'ממלאים את הפרטים, רואים תצוגה מקדימה חיה, ויוצרים לינק לשליחה ללקוח.'}
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,420px) 1fr', gap: 24, alignItems: 'start' }}>
@@ -251,6 +338,19 @@ export default function NewQuotePage() {
                         <span style={{ fontSize: 11, color: C.inkMute, marginInlineStart: 'auto' }}>לא זמין עם רכב</span>
                       )}
                     </label>
+                    {on && !disabled && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
+                        <span style={{ fontSize: 13, color: C.inkSoft }}>מחיר מיוחד לאדם:</span>
+                        <input
+                          type="number" min={0} inputMode="numeric"
+                          placeholder="רגיל"
+                          value={overrides[it.key] ?? ''}
+                          onChange={(e) => setOverrides((o) => ({ ...o, [it.key]: e.target.value }))}
+                          style={{ ...inputStyle, width: 90, padding: '5px 8px', fontSize: 14 }}
+                        />
+                        <span style={{ fontSize: 13, color: C.inkMute }}>€ (ריק = מחיר הטבלה)</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -274,12 +374,13 @@ export default function NewQuotePage() {
               background: C.greenDeep, color: '#fff', fontSize: 16, fontWeight: 700, opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? 'שומר...' : 'צור לינק להצעה'}
+            {saving ? 'שומר...' : editId ? 'שמור שינויים' : 'צור לינק להצעה'}
           </button>
           {err && <div style={{ color: C.terra, marginTop: 10, fontSize: 14 }}>⚠ {err}</div>}
+          {savedMsg && <div style={{ color: C.greenDeep, marginTop: 10, fontSize: 14, fontWeight: 600 }}>✓ {savedMsg}</div>}
           {link && (
             <div style={{ marginTop: 14, padding: 14, background: '#eef7f0', border: `1px solid #cfe3d4`, borderRadius: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.greenDeep, marginBottom: 8 }}>✓ ההצעה נוצרה! הלינק ללקוח:</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.greenDeep, marginBottom: 8 }}>{editId ? 'הלינק ללקוח (ללא שינוי):' : '✓ ההצעה נוצרה! הלינק ללקוח:'}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input readOnly value={link} style={{ ...inputStyle, flex: 1, fontSize: 13 }} />
                 <button onClick={copyLink} style={miniBtn(C.terra, true)}>{copied ? 'הועתק ✓' : 'העתק'}</button>

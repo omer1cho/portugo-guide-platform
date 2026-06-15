@@ -15,6 +15,7 @@ export type QuoteTourSel = {
   variant?: 'regular' | 'short';   // קלאסי בלבד
   comboSlug?: string;              // אם זו הצעת שילוב
   car?: 'half' | 'full' | null;    // רכב צמוד (קלאסי/בלם)
+  priceOverride?: number;          // מחיר מיוחד ידני לאדם (€) — דורס את מחיר הטבלה לסיור הזה
 };
 
 /** כל ההצעה (נשמר ב-selection jsonb). */

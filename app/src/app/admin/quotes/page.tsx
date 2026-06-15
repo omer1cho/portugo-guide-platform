@@ -78,6 +78,25 @@ export default function QuotesHistoryPage() {
 
   const respondedCount = rows.filter((r) => r.status === 'responded').length;
 
+  async function deleteQuote(id: string, name: string) {
+    if (!window.confirm(`למחוק את ההצעה של "${name}"? אי אפשר לשחזר.`)) return;
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    try {
+      const res = await fetch('/api/quotes/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!data.ok) { alert(data.error || 'שגיאה במחיקה'); return; }
+      setRows((rs) => rs.filter((r) => r.id !== id));
+      setOpenId(null);
+    } catch {
+      alert('שגיאה במחיקה, נסו שוב');
+    }
+  }
+
   return (
     <div>
       <header style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
@@ -151,7 +170,7 @@ export default function QuotesHistoryPage() {
                     {isOpen && (
                       <tr>
                         <td colSpan={5} style={{ padding: '0 16px 18px', background: ADMIN_COLORS.green25 }}>
-                          <QuoteDetail item={r} isoToHe={isoToHe} formatDate={formatDate} />
+                          <QuoteDetail item={r} isoToHe={isoToHe} formatDate={formatDate} onDelete={deleteQuote} />
                         </td>
                       </tr>
                     )}
@@ -166,7 +185,7 @@ export default function QuotesHistoryPage() {
   );
 }
 
-function QuoteDetail({ item, isoToHe, formatDate }: { item: QuoteListItem; isoToHe: (s?: string) => string; formatDate: (s: string | null) => string }) {
+function QuoteDetail({ item, isoToHe, formatDate, onDelete }: { item: QuoteListItem; isoToHe: (s?: string) => string; formatDate: (s: string | null) => string; onDelete: (id: string, name: string) => void }) {
   const link = `/quote/${item.slug || item.id}`;
   const resp = item.response;
   return (
@@ -194,9 +213,20 @@ function QuoteDetail({ item, isoToHe, formatDate }: { item: QuoteListItem; isoTo
       ) : (
         <div style={{ color: ADMIN_COLORS.gray500, fontSize: 14, marginBottom: 10 }}>ההצעה נשלחה. הלקוח עדיין לא הגיב.</div>
       )}
-      <a href={link} target="_blank" rel="noopener" style={{ color: '#c4602f', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-        פתיחת עמוד ההצעה ←
-      </a>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+        <a href={link} target="_blank" rel="noopener" style={{ color: '#c4602f', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+          פתיחת עמוד ההצעה ←
+        </a>
+        <Link href={`/admin/quotes/new?edit=${item.id}`} style={{ color: ADMIN_COLORS.green700, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+          ✏️ ערוך הצעה
+        </Link>
+        <button
+          onClick={() => onDelete(item.id, item.customer_name)}
+          style={{ background: 'none', border: 'none', color: ADMIN_COLORS.red, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+        >
+          🗑️ מחק הצעה
+        </button>
+      </div>
     </div>
   );
 }
