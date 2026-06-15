@@ -24,7 +24,7 @@ const C = {
   greenDeep: '#0d6e34',
 };
 
-type Item = { key: string; label: string; sel: QuoteTourSel; canCar?: boolean };
+type Item = { key: string; label: string; sel: QuoteTourSel; canCar?: boolean; carType?: 'half' | 'full' };
 
 const ITEMS: Item[] = [
   // ליסבון
@@ -39,7 +39,7 @@ const ITEMS: Item[] = [
   { key: 'porto-tastings', label: 'טעימות (פורטו)', sel: { tourSlug: 'culinary-tastings-private', card: 'porto-tastings' } },
   { key: 'douro', label: 'דורו (פורטו)', sel: { tourSlug: 'douro-private', card: 'douro' } },
   // שילובים
-  { key: 'combo-classic-belem', label: 'שילוב: קלאסי + בלם', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-belem' } },
+  { key: 'combo-classic-belem', label: 'שילוב: קלאסי + בלם (יום מלא)', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-belem' }, canCar: true, carType: 'full' },
   { key: 'combo-classic-culinary', label: 'שילוב: קלאסי + קולינרי', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-culinary' } },
   { key: 'combo-classic-tastings', label: 'שילוב: פורטו קלאסית + טעימות', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-tastings' } },
 ];
@@ -152,7 +152,7 @@ export default function NewQuotePage() {
         const ov = raw != null && raw.trim() !== '' ? Number(raw) : undefined;
         return {
           ...it.sel,
-          car: withCar && it.canCar ? 'half' : null,
+          car: withCar && it.canCar ? (it.carType || 'half') : null,
           priceOverride: ov != null && !Number.isNaN(ov) ? ov : undefined,
         };
       }),

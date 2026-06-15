@@ -270,11 +270,19 @@ export async function GET(
   // (אייקון "סיור עם רכב צמוד" + הערת אלפמה + שורת "כלול: רכב צמוד"),
   // כדי שכל הצעה תציג רק את מה שרלוונטי לה.
   const noCarStrip = new Set<string>();
-  // כרטיסים שנבחרו עם רכב — מורידים מהם את שורת "נקודת המפגש", כי בסיור עם רכב
-  // האיסוף הוא מבית המלון (אין נקודת מפגש קבועה). אישור עומר 15.6.26.
+  // כרטיסים בודדים שנבחרו עם רכב — שורת "נקודת המפגש" הופכת ל"איסוף מהמלון"
+  // (בסיור עם רכב האיסוף מבית המלון, כמו בטיולי היום). אישור עומר 15.6.26.
   const carCards = new Set<string>();
+  // כרטיסי שילוב שנבחרו עם רכב (יום מלא) — מסירים מהם נקודות מפגש + הערת מעבר עצמאי.
+  const carComboCards = new Set<string>();
   for (const tour of sel.tours) {
-    if (tour.comboSlug) continue;
+    if (tour.comboSlug) {
+      if (tour.car) {
+        const dt = COMBO_SLUG_TO_DATA_TOUR[tour.comboSlug];
+        if (dt) carComboCards.add(dt);
+      }
+      continue;
+    }
     const card = tour.card || mapToCardSelector(tour).dataTour;
     // רק לכרטיסים שיש בהם תוכן רכב מובנה במוקאפ (קלאסי ליסבון + בלם + פורטו הקלאסית)
     const hasCarContent = card === 'classic-lisbon' || card === 'belem' || card === 'porto-classic';
@@ -286,6 +294,7 @@ export async function GET(
   // גישת DOM (script) נבחרה כי היא עמידה למבנה הכרטיסים (כולל combo עם opt-pick).
   const noCarArr = JSON.stringify(Array.from(noCarStrip));
   const carCardsArr = JSON.stringify(Array.from(carCards));
+  const carComboArr = JSON.stringify(Array.from(carComboCards));
   const dataTourArr = JSON.stringify(Array.from(shownDataTours));
   const dataTourNameArr = JSON.stringify(Array.from(shownDataTourNames));
   const priceByDataTourJson = JSON.stringify(priceByDataTour);
@@ -300,6 +309,7 @@ export async function GET(
   var priceByName = ${priceByDataTourNameJson};
   var noCarStrip = ${noCarArr};
   var carCards = ${carCardsArr};
+  var carComboCards = ${carComboArr};
 
   function isShownCard(card){
     var dt = card.getAttribute('data-tour');
@@ -373,15 +383,27 @@ export async function GET(
     if (card) stripCar(card);
   });
 
-  // 2.6) בסיורים עם רכב — הסרת שורת "נקודת המפגש" (האיסוף מבית המלון).
+  // 2.6) בסיורים בודדים עם רכב — שורת "נקודת המפגש" הופכת ל"איסוף מהמלון".
   carCards.forEach(function(dt){
     var card = document.querySelector('[data-tour="' + dt + '"]');
     if (!card) return;
     var pin = card.querySelector('.card-meta-strip use[href="#icon-pin"]');
     if (pin) {
       var mi = pin.closest ? pin.closest('.meta-item') : null;
-      if (mi) mi.style.display = 'none';
+      var span = mi ? mi.querySelector('span') : null;
+      if (span) span.textContent = 'איסוף מהמלון';
     }
+  });
+
+  // 2.7) ביום משולב עם רכב — נקודות המפגש בתוכנית הופכות ל"איסוף מהמלון",
+  //      והערת "מעבר עצמאי" (שסותרת רכב צמוד) מוסרת.
+  carComboCards.forEach(function(dt){
+    var card = document.querySelector('[data-tour="' + dt + '"]');
+    if (!card) return;
+    card.querySelectorAll('.combo-plan .step-detail').forEach(function(sd){
+      if (/נקודת מפגש/.test(sd.textContent)) { sd.textContent = 'איסוף מהמלון'; }
+    });
+    card.querySelectorAll('.combo-note').forEach(function(n){ n.style.display = 'none'; });
   });
 
   // 3) הסתרת מעטפות-אזור / כותרות-משנה / מפרידים שנותרו ריקים
