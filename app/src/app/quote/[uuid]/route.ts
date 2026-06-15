@@ -270,17 +270,22 @@ export async function GET(
   // (אייקון "סיור עם רכב צמוד" + הערת אלפמה + שורת "כלול: רכב צמוד"),
   // כדי שכל הצעה תציג רק את מה שרלוונטי לה.
   const noCarStrip = new Set<string>();
+  // כרטיסים שנבחרו עם רכב — מורידים מהם את שורת "נקודת המפגש", כי בסיור עם רכב
+  // האיסוף הוא מבית המלון (אין נקודת מפגש קבועה). אישור עומר 15.6.26.
+  const carCards = new Set<string>();
   for (const tour of sel.tours) {
     if (tour.comboSlug) continue;
     const card = tour.card || mapToCardSelector(tour).dataTour;
     // רק לכרטיסים שיש בהם תוכן רכב מובנה במוקאפ (קלאסי ליסבון + בלם + פורטו הקלאסית)
     const hasCarContent = card === 'classic-lisbon' || card === 'belem' || card === 'porto-classic';
     if (hasCarContent && !tour.car) noCarStrip.add(card!);
+    if (card && tour.car) carCards.add(card);
   }
 
   // הזרקת JS שמסתיר כרטיסים שלא נבחרו ומחליף את בלוקי המחיר ב-DOM.
   // גישת DOM (script) נבחרה כי היא עמידה למבנה הכרטיסים (כולל combo עם opt-pick).
   const noCarArr = JSON.stringify(Array.from(noCarStrip));
+  const carCardsArr = JSON.stringify(Array.from(carCards));
   const dataTourArr = JSON.stringify(Array.from(shownDataTours));
   const dataTourNameArr = JSON.stringify(Array.from(shownDataTourNames));
   const priceByDataTourJson = JSON.stringify(priceByDataTour);
@@ -294,6 +299,7 @@ export async function GET(
   var priceByTour = ${priceByDataTourJson};
   var priceByName = ${priceByDataTourNameJson};
   var noCarStrip = ${noCarArr};
+  var carCards = ${carCardsArr};
 
   function isShownCard(card){
     var dt = card.getAttribute('data-tour');
@@ -365,6 +371,17 @@ export async function GET(
   noCarStrip.forEach(function(dt){
     var card = document.querySelector('[data-tour="' + dt + '"]');
     if (card) stripCar(card);
+  });
+
+  // 2.6) בסיורים עם רכב — הסרת שורת "נקודת המפגש" (האיסוף מבית המלון).
+  carCards.forEach(function(dt){
+    var card = document.querySelector('[data-tour="' + dt + '"]');
+    if (!card) return;
+    var pin = card.querySelector('.card-meta-strip use[href="#icon-pin"]');
+    if (pin) {
+      var mi = pin.closest ? pin.closest('.meta-item') : null;
+      if (mi) mi.style.display = 'none';
+    }
   });
 
   // 3) הסתרת מעטפות-אזור / כותרות-משנה / מפרידים שנותרו ריקים
