@@ -409,6 +409,43 @@ export async function GET(
       if(!keep) p.style.display='none';
     });
   })();
+
+  // 6) חיווט שליחת תגובת הלקוח: דריסת submitQuote כך שתשלח באמת ל-API
+  //    (במוקאפ הסטטי submitQuote רק מציג הודעת תודה ולא שולח כלום).
+  var QUOTE_REF = ${JSON.stringify(uuid)};
+  window.submitQuote = function(){
+    var btn = document.getElementById('submit-btn');
+    var ok = document.getElementById('submit-success');
+    var sel = document.querySelectorAll('.card.selected:not(.no-select), .combo-card.selected:not(.no-select), .opt-pick.selected');
+    var tours = [];
+    sel.forEach(function(el){
+      var name = el.getAttribute('data-tour-name') || el.getAttribute('data-tour') || '';
+      var card = el.getAttribute('data-tour') || '';
+      var holder = el.closest('.card,.combo-card') || el;
+      var di = el.querySelector('.date-input') || (holder ? holder.querySelector('.date-input') : null);
+      var date = di && di.value ? di.value : undefined;
+      if (name) tours.push({ card: card, name: name, date: date });
+    });
+    var ta = document.querySelector('.form-textarea');
+    var notes = ta && ta.value ? ta.value.trim() : undefined;
+    if (btn) { btn.disabled = true; btn.textContent = 'שולח...'; }
+    fetch('/api/quotes/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idOrSlug: QUOTE_REF, response: { tours: tours, notes: notes } })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.ok) {
+        if (btn) btn.style.display = 'none';
+        if (ok) { ok.style.display = 'block'; ok.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'שלחו לנו את הבחירות שלכם'; }
+        alert((d && d.error) || 'משהו השתבש, נסו שוב בעוד רגע.');
+      }
+    }).catch(function(){
+      if (btn) { btn.disabled = false; btn.textContent = 'שלחו לנו את הבחירות שלכם'; }
+      alert('משהו השתבש, נסו שוב בעוד רגע.');
+    });
+  };
 })();
 </script>
 `;

@@ -24,3 +24,20 @@ export type QuoteSelection = {
   tours: QuoteTourSel[];
   notes?: string;
 };
+
+/** סיור בודד בתגובת הלקוח (מה שסימן + התאריך שבחר). */
+export type QuoteResponseTour = {
+  card: string;          // data-tour של הכרטיס במוקאפ
+  name: string;          // שם הסיור לתצוגה (data-tour-name)
+  date?: string;         // תאריך מבוקש (ISO yyyy-mm-dd), אם בחר
+};
+
+/** תגובת הלקוח להצעה (נשמר בעמודת response jsonb). */
+export type QuoteResponse = {
+  tours: QuoteResponseTour[];
+  notes?: string;        // טקסט חופשי מהלקוח
+  submittedAt: string;   // ISO — מתי הלקוח שלח
+};
+
+/** סטטוס הצעה. */
+export type QuoteStatus = 'sent' | 'responded';
