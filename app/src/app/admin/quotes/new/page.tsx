@@ -61,6 +61,7 @@ const cardStyle: React.CSSProperties = {
 
 export default function NewQuotePage() {
   const [customerName, setCustomerName] = useState('');
+  const [requestedDate, setRequestedDate] = useState('');
   const [mode, setMode] = useState<Mode>('one');
   const [compA, setCompA] = useState<Comp>({ adults: 2, ages: [] });
   const [compB, setCompB] = useState<Comp>({ adults: 4, ages: [] });
@@ -100,6 +101,7 @@ export default function NewQuotePage() {
 
   function prefillFromSelection(sel: QuoteSelection) {
     setCustomerName(sel.customerName || '');
+    setRequestedDate(sel.requestedDate || '');
     setNotes(sel.notes || '');
     // עמודות → מצב כמות
     const cols = sel.columns || [];
@@ -202,7 +204,7 @@ export default function NewQuotePage() {
     if (!customerName.trim()) { setErr('צריך למלא שם מקבל'); return; }
     if (selectedTours.length === 0) { setErr('צריך לבחור לפחות סיור אחד'); return; }
     setSaving(true);
-    const selection: QuoteSelection = { customerName: customerName.trim(), columns, tours: selectedTours, notes: notes.trim() || undefined };
+    const selection: QuoteSelection = { customerName: customerName.trim(), columns, tours: selectedTours, notes: notes.trim() || undefined, requestedDate: requestedDate.trim() || undefined };
     try {
       if (editId) {
         // עדכון הצעה קיימת (אותו לינק)
@@ -264,6 +266,14 @@ export default function NewQuotePage() {
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
             />
+            <label style={{ ...labelStyle, marginTop: 14 }}>מועד מבוקש</label>
+            <input
+              style={{ ...inputStyle, width: '100%' }}
+              placeholder="למשל: יוני 2026 / השבוע השני של אוגוסט"
+              value={requestedDate}
+              onChange={(e) => setRequestedDate(e.target.value)}
+            />
+            <div style={{ fontSize: 12, color: C.inkMute, marginTop: 4 }}>מופיע בראש ההצעה. אפשר להשאיר ריק.</div>
           </div>
 
           {/* הרכב / כמות */}

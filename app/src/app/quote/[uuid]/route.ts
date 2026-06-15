@@ -231,6 +231,17 @@ export async function GET(
     html = html.split('משפחת סימאי').join(name);
   }
 
+  // ─── טרנספורם 1.5: מועד מבוקש בהירו (אם הוזן; אחרת מסתירים את השורה) ───
+  const reqDate = (sel.requestedDate || '').trim();
+  if (reqDate) {
+    html = html.replace('<bdi>יוני 2026</bdi>', `<bdi>${htmlEscape(reqDate)}</bdi>`);
+  } else {
+    html = html.replace(
+      /<span class="hero-stat">מועד מבוקש <b><bdi>יוני 2026<\/bdi><\/b><\/span>\s*/,
+      '',
+    );
+  }
+
   // ─── טרנספורם 2: שורת ההרכב בהירו (לפי העמודה הראשונה) ───
   const firstCol = sel.columns[0];
   if (firstCol) {

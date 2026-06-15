@@ -24,6 +24,7 @@ export type QuoteSelection = {
   columns: QuoteColumn[];   // 1 או 2
   tours: QuoteTourSel[];
   notes?: string;
+  requestedDate?: string;   // מועד מבוקש (טקסט חופשי) — מוצג בהירו, למשל "יוני 2026"
 };
 
 /** סיור בודד בתגובת הלקוח (מה שסימן + התאריך שבחר). */
