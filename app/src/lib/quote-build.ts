@@ -35,6 +35,8 @@ export type DisplayColumn = {
 
 /** בונה את עמודות התצוגה לסיור נתון לפי העמודות שהוגדרו בהצעה. */
 export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): DisplayColumn[] {
+  // טבלת הרכב של פורטו שונה מליסבון — נקבע לפי כרטיס פורטו הקלאסית.
+  const city: 'lisbon' | 'porto' = tour.card === 'porto-classic' ? 'porto' : 'lisbon';
   return columns.map((col) => {
     if (col.type === 'band') {
       const result = computeScenario({
@@ -42,6 +44,7 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
         variant: tour.variant,
         comboSlug: tour.comboSlug,
         car: tour.car,
+        city,
         composition: { adults: col.minSize, childrenAges: [] },
       });
       return {
@@ -57,6 +60,7 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
       variant: tour.variant,
       comboSlug: tour.comboSlug,
       car: tour.car,
+      city,
       composition: { adults: col.adults, childrenAges: col.childrenAges },
     });
     return {

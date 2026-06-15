@@ -34,7 +34,7 @@ const ITEMS: Item[] = [
   { key: 'arrabida', label: 'אראבידה', sel: { tourSlug: 'sintra-arrabida-private', card: 'arrabida' } },
   { key: 'obidos', label: 'אובידוש', sel: { tourSlug: 'obidos-private', card: 'obidos' } },
   // פורטו
-  { key: 'porto-classic', label: 'פורטו הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'porto-classic' } },
+  { key: 'porto-classic', label: 'פורטו הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'porto-classic' }, canCar: true },
   { key: 'porto-tastings', label: 'טעימות (פורטו)', sel: { tourSlug: 'culinary-tastings-private', card: 'porto-tastings' } },
   { key: 'douro', label: 'דורו (פורטו)', sel: { tourSlug: 'douro-private', card: 'douro' } },
   // שילובים

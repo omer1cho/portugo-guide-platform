@@ -103,8 +103,9 @@ export type PrivateTour = {
   // 2. אופציה מקוצרת — אופציונלי (רק קלאסי)
   shortPrice?: PrivatePriceTable;
 
-  // 3. תוספת רכב — אופציונלי (רק קלאסי, בלם)
+  // 3. תוספת רכב — אופציונלי (רק קלאסי, בלם). carAddons = ליסבון (פרדאוטו).
   carAddons?: CarAddonTable[];
+  carAddonsPorto?: CarAddonTable[]; // רכב לפורטו הקלאסית (ספק ז'ורז', שונה מליסבון)
   carNote?: string;              // אזהרה/הסבר על worst case
 
   // 4. שילובים — אופציונלי (רק בכרטיס הראשי)
@@ -167,6 +168,14 @@ const CAR_FULL_DAY_ROWS: CarTierRow[] = [
   { groupSizeLabel: '16-25', vehicleLabel: '19/25 מקומות', cost: 399 },
   { groupSizeLabel: '26-34', vehicleLabel: '34 מקומות', cost: 473 },
   { groupSizeLabel: '35+', vehicleLabel: 'שני רכבים — הצעה נפרדת', cost: null },
+];
+
+// תוספת רכב לפורטו הקלאסית — חצי יום (ספק ז'ורז', worst case)
+// מקור: ספקי רכבים פורטו.docx. מעל 7 אין מחיר חצי-יום בפורטו — חסום (הצעה נפרדת).
+const CAR_HALF_DAY_PORTO_ROWS: CarTierRow[] = [
+  { groupSizeLabel: '2', vehicleLabel: 'רכב פרטי', cost: 150 },
+  { groupSizeLabel: '3-7', vehicleLabel: 'וואן (עד 7)', cost: 190 },
+  { groupSizeLabel: '8+', vehicleLabel: 'אין מחיר חצי-יום בפורטו — הצעה נפרדת', cost: null },
 ];
 
 // שילוב א: קלאסי + בלם
@@ -249,6 +258,9 @@ const CLASSIC_PRIVATE: PrivateTour = {
   carAddons: [
     { label: 'חצי יום — סיור בודד (קלאסי בלבד)', rows: CAR_HALF_DAY_ROWS },
     { label: 'יום מלא — שילוב קלאסי + בלם', rows: CAR_FULL_DAY_ROWS },
+  ],
+  carAddonsPorto: [
+    { label: 'חצי יום — פורטו הקלאסית', rows: CAR_HALF_DAY_PORTO_ROWS },
   ],
   carNote: 'ספק = פרדאוטו תמיד (worst case — מגן עלינו אם מורטה לא זמין באותו יום). מורטה זול ב-50-100€ בפועל, אז כשסוגרים מורטה — הפער הופך לרווח נוסף. הרכב נבחר כזול ביותר בפרדאוטו שמכיל את הקבוצה. חלוקה לאדם דינמית: עלות רכב ÷ מספר אנשים בפועל. בכל המחירים: +5% תוספת דלק פרדאוטו (תקף כל עוד דלק מעל 2€/ליטר).',
   combos: [

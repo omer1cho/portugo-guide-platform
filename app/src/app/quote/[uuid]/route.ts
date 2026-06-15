@@ -273,8 +273,8 @@ export async function GET(
   for (const tour of sel.tours) {
     if (tour.comboSlug) continue;
     const card = tour.card || mapToCardSelector(tour).dataTour;
-    // רק לכרטיסים שיש בהם תוכן רכב מובנה במוקאפ (קלאסי ליסבון + בלם)
-    const hasCarContent = card === 'classic-lisbon' || card === 'belem';
+    // רק לכרטיסים שיש בהם תוכן רכב מובנה במוקאפ (קלאסי ליסבון + בלם + פורטו הקלאסית)
+    const hasCarContent = card === 'classic-lisbon' || card === 'belem' || card === 'porto-classic';
     if (hasCarContent && !tour.car) noCarStrip.add(card!);
   }
 

@@ -50,6 +50,7 @@ export type ScenarioInput = {
   variant?: 'regular' | 'short';  // קלאסי בלבד
   comboSlug?: string;             // אם זו הצעת שילוב
   car?: 'half' | 'full' | null;   // רכב צמוד (רק קלאסי/בלם)
+  city?: 'lisbon' | 'porto';      // קובע איזו טבלת רכב (ליסבון=פרדאוטו / פורטו=ז'ורז')
   composition: Composition;
 };
 
@@ -160,12 +161,15 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
   }
 
   // תוספת רכב (רק אם נבחר ויש לסיור טבלת רכב)
+  // פורטו משתמש בטבלת ז'ורז' (carAddonsPorto), ליסבון בטבלת פרדאוטו (carAddons).
   let carPerPerson = 0;
-  if (input.car && tour.carAddons?.length) {
+  const carTables =
+    input.city === 'porto' && tour.carAddonsPorto?.length ? tour.carAddonsPorto : tour.carAddons;
+  if (input.car && carTables?.length) {
     const carTable =
-      tour.carAddons.find((t) =>
+      carTables.find((t) =>
         input.car === 'full' ? t.label.includes('יום מלא') : t.label.includes('חצי'),
-      ) ?? tour.carAddons[0];
+      ) ?? carTables[0];
     const cost = carCost(carTable.rows, bodies);
     if (cost != null && size > 0) {
       carPerPerson = Math.ceil(cost / size); // חלוקה לפי המשלמים (ספירת הקטגוריה)
