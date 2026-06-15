@@ -191,9 +191,11 @@ export default function NewQuotePage() {
   }
 
   function quoteLink(slugOrId: string): string {
-    // הלינק ללקוח נבנה מהדומיין המקצועי (proposal.portugo.co.il) אם הוגדר ב-Vercel,
-    // אחרת נופל אוטומטית לכתובת הנוכחית — כך שלעולם לא נוצר לינק שבור.
-    const base = (process.env.NEXT_PUBLIC_QUOTE_BASE_URL || '').replace(/\/+$/, '') || window.location.origin;
+    // הלינק ללקוח נבנה מהדומיין הנקי portugo-proposal.vercel.app (חי ומאומת).
+    // אפשר לדרוס דרך NEXT_PUBLIC_QUOTE_BASE_URL; אם שום דבר זמין — נופל לכתובת הנוכחית.
+    const base =
+      (process.env.NEXT_PUBLIC_QUOTE_BASE_URL || 'https://portugo-proposal.vercel.app').replace(/\/+$/, '') ||
+      window.location.origin;
     return `${base}/quote/${slugOrId}`;
   }
 
