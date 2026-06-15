@@ -395,13 +395,18 @@ export async function GET(
     }
   });
 
-  // 2.7) ביום משולב עם רכב — נקודות המפגש בתוכנית הופכות ל"איסוף מהמלון",
-  //      והערת "מעבר עצמאי" (שסותרת רכב צמוד) מוסרת.
+  // 2.7) ביום משולב עם רכב — רק הצעד הראשון (הבוקר) מציג "איסוף מהמלון".
+  //      בצעדים הבאים הלקוח כבר עם המדריך והרכב מהבוקר, אז שורת נקודת המפגש מוסרת.
+  //      הערת "מעבר עצמאי" (שסותרת רכב צמוד) מוסרת גם היא.
   carComboCards.forEach(function(dt){
     var card = document.querySelector('[data-tour="' + dt + '"]');
     if (!card) return;
+    var firstMeet = true;
     card.querySelectorAll('.combo-plan .step-detail').forEach(function(sd){
-      if (/נקודת מפגש/.test(sd.textContent)) { sd.textContent = 'איסוף מהמלון'; }
+      if (/נקודת מפגש/.test(sd.textContent)) {
+        if (firstMeet) { sd.textContent = 'איסוף מהמלון'; firstMeet = false; }
+        else { sd.style.display = 'none'; }
+      }
     });
     card.querySelectorAll('.combo-note').forEach(function(n){ n.style.display = 'none'; });
   });
