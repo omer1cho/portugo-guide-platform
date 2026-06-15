@@ -217,11 +217,11 @@ export default function NewQuotePage() {
             <label style={labelStyle}>רכב צמוד</label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15 }}>
               <input type="checkbox" checked={withCar} onChange={toggleWithCar} />
-              ההצעה כוללת רכב צמוד (לסיורי העיר: קלאסי / בלם)
+              ההצעה כוללת רכב צמוד (לסיורי העיר: ליסבון הקלאסית / בלם / פורטו הקלאסית)
             </label>
             {withCar && (
               <div style={{ fontSize: 13, color: C.inkSoft, marginTop: 8, background: C.band, borderRadius: 8, padding: '8px 10px' }}>
-                בהצעה עם רכב, הקלאסי והבלם מוצגים עם רכב צמוד, וקולינרי / טעימות אינם זמינים.
+                בהצעה עם רכב, ליסבון הקלאסית, בלם ופורטו הקלאסית מוצגים עם רכב צמוד, וקולינרי / טעימות אינם זמינים.
               </div>
             )}
           </div>
