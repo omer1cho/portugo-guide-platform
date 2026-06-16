@@ -82,9 +82,10 @@ export function getPrivateTour(slug: string): PrivateTour | undefined {
   return PRIVATE_TOURS.find((t) => t.slug === slug);
 }
 
-/** ספירת קטגוריה: מבוגרים + ילדים בני 7+ (ילדים עד 6 שקופים לתמחור). */
+/** ספירת קטגוריה: מבוגרים + ילדים בני 7+ (ילדים עד 6 שקופים לתמחור).
+ *  הגיל מעוגל כלפי מטה לשנים שלמות — ילד בן 6.5 הוא בן 6 (עדיין לא 7). */
 export function categorySize(comp: Composition): number {
-  return comp.adults + comp.childrenAges.filter((a) => a >= 7).length;
+  return comp.adults + comp.childrenAges.filter((a) => Math.floor(a) >= 7).length;
 }
 
 /** מספר גופים פיזי (לבחירת גודל הרכב): כולם, כולל פעוטות. */
@@ -202,7 +203,9 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
 
   for (let i = 0; i < comp.adults; i++) addPerson('מבוגר', adultUnit);
 
-  for (const age of comp.childrenAges) {
+  for (const rawAge of comp.childrenAges) {
+    // הגיל מעוגל כלפי מטה לשנים שלמות (6.5 → 6) כדי שלא ייפול בין מדרגות הגיל.
+    const age = Math.floor(rawAge);
     const tourPart = childTourPrice(tour, age, adultBase);
     const paysCar = age >= 7; // ילד 7+ משלם חלק רכב מלא; פעוט/3-6 לא
     const unit = tourPart + (paysCar ? carPerPerson : 0);

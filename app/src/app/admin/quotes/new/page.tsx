@@ -450,10 +450,10 @@ function CompEditor({ label, comp, onChange }: { label?: string; comp: Comp; onC
         {comp.ages.map((age, idx) => (
           <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0e9da', borderRadius: 6, padding: '3px 6px' }}>
             <input
-              type="number" min={0} max={17} value={age}
+              type="number" min={0} max={17} step={1} value={age}
               onChange={(e) => {
                 const ages = [...comp.ages];
-                ages[idx] = Math.max(0, Math.min(17, Number(e.target.value) || 0));
+                ages[idx] = Math.max(0, Math.min(17, Math.floor(Number(e.target.value) || 0)));
                 onChange({ ...comp, ages });
               }}
               style={{ ...inputStyle, width: 52, padding: '4px 6px' }}
