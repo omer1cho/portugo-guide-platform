@@ -2588,7 +2588,21 @@
       });
     }
 
-    // add-more chips (every tour not already selected), grouped by city
+    // add-more chips: only tours that are part of THIS proposal (cards the
+    // route handler hid = tours not in the proposal, so they never become chips),
+    // grouped by city.
+    // A card counts as part of the proposal only if it is actually rendered.
+    // getClientRects() returns 0 when the card OR any ancestor is display:none,
+    // so opt-pick variants inside a hidden combo card don't leak in as chips.
+    const isVisibleCard = (c) => c.getClientRects().length > 0;
+    let visibleSelectable = 0;
+    allCards.forEach(c => { if (isVisibleCard(c)) visibleSelectable++; });
+    // proposalCount: the authoritative number of tours in this proposal, injected
+    // by the /quote route. In the standalone mockup it's undefined, so we fall back
+    // to the visible-card count. (A single tour can render as several cards, e.g.
+    // the culinary morning/afternoon picks, so the DOM count alone overcounts.)
+    const proposalCount = (typeof window.__PROPOSAL_TOUR_COUNT__ === 'number')
+      ? window.__PROPOSAL_TOUR_COUNT__ : visibleSelectable;
     addChips.innerHTML = '';
     let addable = 0;
     const cityGroups = [
@@ -2599,6 +2613,7 @@
       const chips = [];
       allCards.forEach(card => {
         if (card.classList.contains('selected')) return;
+        if (!isVisibleCard(card)) return;
         if (!card.closest(g.sel)) return;
         const tourId = card.dataset.tour;
         const name = card.dataset.tourName || tourId;
@@ -2623,7 +2638,9 @@
         addChips.appendChild(grp);
       }
     });
-    addWrap.style.display = addable > 0 ? 'block' : 'none';
+    // When the proposal holds a single tour there are no alternatives to offer,
+    // so the whole "add more tour" block is hidden.
+    addWrap.style.display = (addable > 0 && proposalCount > 1) ? 'block' : 'none';
   }
 
   // A date picked in the summary writes back to the tour card, then we rebuild
