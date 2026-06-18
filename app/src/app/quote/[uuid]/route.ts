@@ -175,20 +175,34 @@ function priceBlockHtml(cols: DisplayColumn[], rawCols: QuoteColumn[]): string {
   return priceRangeHtml(cols, rawCols);
 }
 
-/** שורת הרכב בהירו לפי העמודה הראשונה. */
-function heroBreakdown(col: QuoteColumn): { total: number; breakdown: string } {
+/**
+ * טקסט "כמות משתתפים" בהירו לפי כל עמודות התרחיש.
+ * הצעת טווח (שתי עמודות) מציגה את שני המספרים/המדרגות עם "או" (למשל "7 או 9"),
+ * בלי פירוט הרכב, כי כל עמודה עשויה להיות בהרכב שונה והפירוט מופיע בבלוק המחיר.
+ */
+function heroParticipants(cols: QuoteColumn[]): { amount: string; breakdown: string } {
+  if (cols.length >= 2) {
+    const sizes = cols.map((c) =>
+      c.type === 'band'
+        ? `${c.minSize} עד ${c.maxSize}`
+        : String(c.adults + c.childrenAges.length),
+    );
+    return { amount: sizes.join(' או '), breakdown: '' };
+  }
+  const col = cols[0];
+  if (!col) return { amount: '', breakdown: '' };
   if (col.type === 'band') {
     return {
-      total: col.minSize,
+      amount: String(col.minSize),
       breakdown: ` (קבוצה של ${col.minSize} עד ${col.maxSize} משתתפים)`,
     };
   }
   const total = col.adults + col.childrenAges.length;
   const hasChildren = col.childrenAges.length > 0;
-  const breakdown = hasChildren
-    ? ` מתוכם: ${compositionLabel(col.adults, col.childrenAges)}`
-    : '';
-  return { total, breakdown };
+  return {
+    amount: String(total),
+    breakdown: hasChildren ? ` מתוכם: ${compositionLabel(col.adults, col.childrenAges)}` : '',
+  };
 }
 
 export async function GET(
@@ -242,14 +256,13 @@ export async function GET(
     );
   }
 
-  // ─── טרנספורם 2: שורת ההרכב בהירו (לפי העמודה הראשונה) ───
-  const firstCol = sel.columns[0];
-  if (firstCol) {
-    const { total, breakdown } = heroBreakdown(firstCol);
-    // משמרים בדיוק את מבנה המוקאפ: המספר בתוך <b><bdi>..</bdi></b>, ה-breakdown בתוך span.
+  // ─── טרנספורם 2: שורת "כמות משתתפים" בהירו (תומך בטווח של שתי עמודות) ───
+  const part = heroParticipants(sel.columns);
+  if (part.amount) {
+    // משמרים בדיוק את מבנה המוקאפ: הכמות בתוך <b><bdi>..</bdi></b>, ה-breakdown בתוך span.
     const newStat =
-      `<span class="hero-stat">כמות משתתפים <b><bdi>${total}</bdi></b>` +
-      (breakdown ? `<span class="hero-breakdown">${htmlEscape(breakdown)}</span>` : '') +
+      `<span class="hero-stat">כמות משתתפים <b><bdi>${htmlEscape(part.amount)}</bdi></b>` +
+      (part.breakdown ? `<span class="hero-breakdown">${htmlEscape(part.breakdown)}</span>` : '') +
       `</span>`;
     html = html.replace(
       /<span class="hero-stat">כמות משתתפים <b><bdi>11<\/bdi><\/b><span class="hero-breakdown">[^<]*<\/span><\/span>/,
