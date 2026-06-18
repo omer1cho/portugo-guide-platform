@@ -25,6 +25,7 @@ import {
   addAdminExpense,
   setExpenseReceiptUrl,
   updateInvoiceDate,
+  updateInvoiceAmount,
   updateTransferSettledAt,
   deleteAdminExpense,
   type CashflowPrepareData,
@@ -254,7 +255,7 @@ function FlagSummary({
           <li>⚠️ <strong>{unscheduledCount} קבלות מס בלי תאריך</strong> — בסקציה למטה</li>
         )}
         {noAmountInvoiceCount > 0 && (
-          <li>💼 <strong>{noAmountInvoiceCount} קבלות מס בלי סכום ב-DB</strong> — בעיית סנכרון, צריך לבדוק</li>
+          <li>💼 <strong>{noAmountInvoiceCount} קבלות מס בלי סכום</strong> — להזין את הסכום שכתוב על הקבלה</li>
         )}
       </ul>
     </div>
@@ -1245,10 +1246,12 @@ function SalaryRow({
   onChange: () => void;
 }) {
   const [invoiceDate, setInvoiceDate] = useState(invoice.invoice_date || '');
+  const amountInit = invoice.amount != null ? String(invoice.amount) : '';
+  const [amountStr, setAmountStr] = useState(amountInit);
   const [showReceipt, setShowReceipt] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const dirty = invoiceDate !== (invoice.invoice_date || '');
+  const dirty = invoiceDate !== (invoice.invoice_date || '') || amountStr !== amountInit;
   const missingAmount = invoice.amount === null;
   const missingDate = !invoice.invoice_date;
   const flagBg = missingAmount || missingDate ? '#fee2e2' : 'transparent';
@@ -1256,7 +1259,10 @@ function SalaryRow({
   const handleSave = async () => {
     onSavingStart();
     try {
+      const cleaned = amountStr.trim().replace(',', '.');
+      const parsedAmount = cleaned === '' ? null : parseFloat(cleaned);
       await updateInvoiceDate(invoice.ack_id, invoiceDate || null);
+      await updateInvoiceAmount(invoice.ack_id, parsedAmount != null && !isNaN(parsedAmount) ? parsedAmount : null);
       onChange();
     } catch (e) {
       const err = e as { message?: string };
@@ -1300,7 +1306,15 @@ function SalaryRow({
           {missingDate && <div style={{ fontSize: 11, color: '#991b1b', marginTop: 2 }}>חסר תאריך</div>}
         </td>
         <td style={{ ...tdStyle, fontWeight: 600 }}>
-          {invoice.amount !== null ? fmtEuro(invoice.amount, true) : <span style={{ color: '#991b1b', fontSize: 11 }}>חסר ב-DB</span>}
+          <input
+            type="text"
+            inputMode="decimal"
+            value={amountStr}
+            onChange={(ev) => setAmountStr(ev.target.value)}
+            placeholder="מהקבלה"
+            style={{ ...inputStyle(), width: 90 }}
+          />
+          {missingAmount && <div style={{ fontSize: 11, color: '#991b1b', marginTop: 2 }}>צריך סכום</div>}
         </td>
         <td style={tdStyle}>
           {invoice.receipt_url ? (

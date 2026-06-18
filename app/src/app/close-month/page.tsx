@@ -47,6 +47,8 @@ function CloseMonthContent() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   // תאריך ההוצאה שמודפס על הקבלה (emitida em) — קובע לאיזה חודש קשפלו הקבלה נכנסת
   const [receiptInvoiceDate, setReceiptInvoiceDate] = useState('');
+  // הסכום שכתוב על הקבלה (TOTAL A PAGAR) — זה הסכום שייכנס לקשפלו
+  const [receiptInvoiceAmount, setReceiptInvoiceAmount] = useState('');
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [receiptError, setReceiptError] = useState('');
 
@@ -370,6 +372,11 @@ function CloseMonthContent() {
       setReceiptError('צריך להזין את התאריך שמודפס על הקבלה');
       return;
     }
+    const parsedReceiptAmount = parseFloat(receiptInvoiceAmount.trim().replace(',', '.'));
+    if (!receiptInvoiceAmount.trim() || isNaN(parsedReceiptAmount) || parsedReceiptAmount <= 0) {
+      setReceiptError('צריך להזין את הסכום שכתוב על הקבלה');
+      return;
+    }
     setReceiptError('');
     setReceiptUploading(true);
 
@@ -394,6 +401,7 @@ function CloseMonthContent() {
       month: month + 1,
       receipt_url: receiptUrl,
       invoice_date: receiptInvoiceDate,
+      invoice_amount: parsedReceiptAmount,
     });
 
     setReceiptUploading(false);
@@ -405,6 +413,7 @@ function CloseMonthContent() {
     setShowReceiptModal(false);
     setReceiptFile(null);
     setReceiptInvoiceDate('');
+    setReceiptInvoiceAmount('');
   }
 
   return (
@@ -952,6 +961,23 @@ function CloseMonthContent() {
               />
             </div>
 
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">
+                סכום הקבלה (€) <span className="text-red-600">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                הסכום שכתוב על הקבלה (<span dir="ltr">TOTAL A PAGAR</span>).
+              </p>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={receiptInvoiceAmount}
+                onChange={(e) => setReceiptInvoiceAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-base"
+              />
+            </div>
+
             {receiptError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
                 {receiptError}
@@ -961,7 +987,7 @@ function CloseMonthContent() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleReceiptUpload}
-                disabled={receiptUploading || !receiptFile || !receiptInvoiceDate}
+                disabled={receiptUploading || !receiptFile || !receiptInvoiceDate || !receiptInvoiceAmount.trim()}
                 className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
               >
                 {receiptUploading ? 'שולח...' : 'אפשר לשלוח את הקבלה, תודה!'}
@@ -971,6 +997,7 @@ function CloseMonthContent() {
                   setShowReceiptModal(false);
                   setReceiptFile(null);
                   setReceiptInvoiceDate('');
+                  setReceiptInvoiceAmount('');
                   setReceiptError('');
                 }}
                 disabled={receiptUploading}

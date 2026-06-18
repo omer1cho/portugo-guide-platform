@@ -544,7 +544,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     (async () => {
       const primary = await supabase
         .from('receipt_acknowledgements')
-        .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date, is_deferred')
+        .select('*')
         .eq('is_deferred', false)
         .gte('invoice_date', start)
         .lte('invoice_date', end);
@@ -553,7 +553,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
         // עמודת is_deferred עוד לא קיימת → fallback בלי הסינון
         const fb = await supabase
           .from('receipt_acknowledgements')
-          .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
+          .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date, invoice_amount')
           .gte('invoice_date', start)
           .lte('invoice_date', end);
         return fb;
@@ -583,14 +583,14 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
   const unscheduledInvoicesRes = await (async () => {
     const primary = await supabase
       .from('receipt_acknowledgements')
-      .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date, is_deferred')
+      .select('*')
       .eq('is_deferred', false)
       .is('invoice_date', null);
     if (!primary.error) return primary;
     if (primary.error.message?.toLowerCase().includes('is_deferred')) {
       return supabase
         .from('receipt_acknowledgements')
-        .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date')
+        .select('id, guide_id, year, month, acknowledged_at, receipt_url, invoice_date, invoice_amount')
         .is('invoice_date', null);
     }
     return primary;
@@ -733,7 +733,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     }
   }
 
-  type RawAck = { id: string; guide_id: string; year: number; month: number; acknowledged_at: string; receipt_url: string | null; invoice_date?: string | null };
+  type RawAck = { id: string; guide_id: string; year: number; month: number; acknowledged_at: string; receipt_url: string | null; invoice_date?: string | null; invoice_amount?: number | null };
   type AllAck = { id: string; guide_id: string; year: number; month: number; is_deferred?: boolean };
 
   // בונים מפת "מה כל קבלת issued סופגת" לפי כרונולוגיה:
@@ -771,9 +771,8 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     const key = `${a.guide_id}_${a.year}_${a.month}`;
     const ownAmount = salaryByGuideMonth.get(key) ?? null;
     const absorbed = absorbedByAckId.get(a.id) || [];
-    const totalAmount = ownAmount == null && absorbed.length === 0
-      ? null
-      : (ownAmount || 0) + absorbed.reduce((s, x) => s + x.amount, 0);
+    // הסכום בקשפלו = הסכום שעל הקבלה (TOTAL A PAGAR) בלבד. המשיכה מהקופה אינה השכר
+    // (היא כוללת גם החזרי הוצאות וכו'), אז היא לא מקור לסכום — רק לזיהוי שנסגר חודש.
     return {
       ack_id: a.id,
       guide_id: a.guide_id,
@@ -782,7 +781,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       invoice_date: a.invoice_date ?? null,
       acknowledged_at: a.acknowledged_at,
       receipt_url: a.receipt_url,
-      amount: totalAmount,
+      amount: a.invoice_amount ?? null,
       own_amount: ownAmount,
       absorbed_deferred: absorbed,
       service_year: a.year,
@@ -883,6 +882,15 @@ export async function updateInvoiceDate(ackId: string, invoiceDate: string | nul
   const { error } = await supabase
     .from('receipt_acknowledgements')
     .update({ invoice_date: invoiceDate })
+    .eq('id', ackId);
+  if (error) throw error;
+}
+
+/** עדכון סכום הקבלה (TOTAL A PAGAR) — הסכום שמופיע בקשפלו על שורת השכר */
+export async function updateInvoiceAmount(ackId: string, amount: number | null): Promise<void> {
+  const { error } = await supabase
+    .from('receipt_acknowledgements')
+    .update({ invoice_amount: amount })
     .eq('id', ackId);
   if (error) throw error;
 }
