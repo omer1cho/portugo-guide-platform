@@ -20,6 +20,7 @@ import { ADMIN_COLORS, fmtEuro, monthName } from '@/lib/admin/theme';
 import {
   loadCashflowPrepareData,
   loadPreviousFinalBalance,
+  isNoReceiptExcluded,
   updateExpenseClassification,
   addAdminExpense,
   setExpenseReceiptUrl,
@@ -426,13 +427,12 @@ function buildCashflowRows(
   // 2. הוצאות (regular בלבד — multibanco/excluded לא בקשפלו)
   for (const e of data.expenses) {
     if (e.cashflow_category !== 'regular') continue;
-    // "חסרה קבלה" רק אם הקטלוג דורש קבלה (לא false). פריטים כמו "בירה" שמסומנים
-    // ב-requires_receipt=false → לא מסומנים כדגל, אבל כן מקבלים הערה באנגלית.
-    const isCatalogNoReceipt = e.catalog_requires_receipt === false;
-    const noReceiptIsFlag = !e.is_admin_added && !e.receipt_url && !isCatalogNoReceipt;
-    // Description בהוצאות רגילות = ריק (תואם mar26). שם מדריך מופיע רק בהפקדות.
-    // היחיד יוצא דופן: פריט קטלוג ללא קבלה → "no receipt issued".
-    const description = isCatalogNoReceipt && !e.receipt_url ? 'no receipt issued' : '';
+    // כלל 18.6.26 (עומר): פריט שמעצם טבעו בלי קבלה (בירה וכו') ואין צילום → לא נכנס כלל.
+    if (isNoReceiptExcluded(e)) continue;
+    // "חסרה קבלה" = פריט שכן דורש קבלה אבל המדריך לא העלה צילום → דגל לתזכורת (נשאר בגליון).
+    const noReceiptIsFlag = !e.is_admin_added && !e.receipt_url && e.catalog_requires_receipt !== false;
+    // Description בהוצאות רגילות = ריק תמיד (תואם mar26). שם מדריך מופיע רק בהפקדות.
+    const description = '';
     rows.push({
       key: `e-${e.id}`,
       type: 'expense',

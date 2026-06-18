@@ -439,6 +439,23 @@ export function guessSupplier(item: string | null, notes: string | null): string
   return deriveEntity(item, notes, null);
 }
 
+/**
+ * כלל 18.6.26 (החלטת עומר): פריט שמעצם טבעו לא דורש קבלה
+ * (`catalog_requires_receipt === false`, כמו בירה בטעימות) ואין לו צילום
+ * → **לא נכנס לקשפלו בכלל**. הסיבה: אי אפשר לדווח לרו"ח הוצאה בלי אסמכתא.
+ *
+ * שימי לב להבחנה: פריט שכן דורש קבלה אבל המדריך שכח להעלות (requires_receipt=true,
+ * אין url) **כן נשאר** בקשפלו ומסומן כדגל "חסרה קבלה" לתזכורת — הוא לא מוחרג.
+ *
+ * משמש כמקור אמת יחיד גם בחישוב סך ההוצאות וגם בבניית שורות הגליון.
+ */
+export function isNoReceiptExcluded(e: {
+  catalog_requires_receipt: boolean | null;
+  receipt_url: string | null;
+}): boolean {
+  return e.catalog_requires_receipt === false && !e.receipt_url;
+}
+
 /** אצוות עדכון: מילוי אוטומטי של supplier_name להוצאות שיש להן ניחוש בטוח. */
 async function autoFillGuessedSuppliers(
   rows: { id: string; supplier_name: string | null; suggested: string | null }[]
@@ -781,6 +798,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
   // --- summaries
   const totalRegularOutflow = expenses
     .filter((e) => e.cashflow_category === 'regular')
+    .filter((e) => !isNoReceiptExcluded(e)) // פריטים בלי קבלה מעצם טבעם לא נספרים (כלל 18.6.26)
     .reduce((s, e) => s + e.amount, 0);
   const totalDeposits = deposits.reduce((s, d) => s + d.amount, 0);
   const totalSalaries = salaryInvoices.reduce((s, i) => s + (i.amount || 0), 0);
