@@ -215,15 +215,19 @@ export async function uploadExpenseReceipt(opts: {
   expenseDate: string;
   tourType: string | null | undefined;
 }): Promise<string> {
-  const compressed = await compressImage(opts.file);
+  // PDF (קבלת מס / Fatura-Recibo) — להעלות כמו שהוא, בלי דחיסה. תמונה — לדחוס.
+  const isPdf = opts.file.type === 'application/pdf';
+  const payload = isPdf ? opts.file : await compressImage(opts.file);
+  const ext = isPdf ? 'pdf' : 'jpg';
+  const contentType = isPdf ? 'application/pdf' : 'image/jpeg';
   const year = opts.expenseDate.slice(0, 4);
   const month = monthSlug(opts.expenseDate);
   const folder = tourTypeFolderSlug(opts.tourType);
-  const path = `${year}/${month}/${folder}/${opts.expenseId}.jpg`;
+  const path = `${year}/${month}/${folder}/${opts.expenseId}.${ext}`;
 
   const { error } = await supabase.storage
     .from('expense-receipts')
-    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    .upload(path, payload, { upsert: true, contentType });
 
   if (error) throw error;
 

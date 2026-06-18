@@ -1478,14 +1478,20 @@ function AddAdminExpenseModal({
         receipt_number: receiptNum || null,
         notes: notes || null,
       });
-      if (file) {
-        const url = await uploadExpenseReceipt({
-          file,
-          expenseId: id,
-          expenseDate: date,
-          tourType: null,
-        });
-        await setExpenseReceiptUrl(id, url);
+      // אם יש קובץ והעלאתו נכשלת — מוחקים את השורה שזה עתה נוצרה כדי שלא יישארו כפילויות
+      try {
+        if (file) {
+          const url = await uploadExpenseReceipt({
+            file,
+            expenseId: id,
+            expenseDate: date,
+            tourType: null,
+          });
+          await setExpenseReceiptUrl(id, url);
+        }
+      } catch (uploadErr) {
+        await deleteAdminExpense(id).catch(() => {});
+        throw uploadErr;
       }
       onSaved();
     } catch (e) {
