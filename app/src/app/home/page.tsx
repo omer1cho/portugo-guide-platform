@@ -15,6 +15,7 @@ import {
 import { useAuthGuard, logout } from '@/lib/auth';
 import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
 import PhotoPicker from '@/components/PhotoPicker';
+import DateField from '@/components/DateField';
 import { uploadMonthlyReceipt } from '@/lib/storage';
 import {
   getCalendarEventsForDate,
@@ -181,6 +182,8 @@ function HomeContent() {
   // מודאל העלאת אסמכתא לקבלה החודשית — נפתח כשלוחצים על באנר תזכורת
   const [receiptUploadModal, setReceiptUploadModal] = useState<PendingReceipt | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  // תאריך ההוצאה שמודפס על הקבלה (emitida em) — קובע לאיזה חודש קשפלו הקבלה נכנסת
+  const [receiptInvoiceDate, setReceiptInvoiceDate] = useState('');
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [receiptError, setReceiptError] = useState('');
   // פירוט שכר פר-סיור — נטען עם שאר הסיכום, מוצג בדרופדאון "פירוט סיורים"
@@ -574,6 +577,10 @@ function HomeContent() {
       setReceiptError('צריך לצרף תמונה של הקבלה');
       return;
     }
+    if (!receiptInvoiceDate) {
+      setReceiptError('צריך להזין את התאריך שמודפס על הקבלה');
+      return;
+    }
     const id = localStorage.getItem('portugo_guide_id');
     if (!id) return;
 
@@ -600,6 +607,7 @@ function HomeContent() {
       year: receiptUploadModal.year,
       month: receiptUploadModal.month,
       receipt_url: receiptUrl,
+      invoice_date: receiptInvoiceDate,
     });
 
     setReceiptUploading(false);
@@ -613,6 +621,7 @@ function HomeContent() {
     );
     setReceiptUploadModal(null);
     setReceiptFile(null);
+    setReceiptInvoiceDate('');
   }
 
   const handleLogout = () => {
@@ -867,6 +876,7 @@ function HomeContent() {
                 onClick={() => {
                   setReceiptUploadModal(r);
                   setReceiptFile(null);
+                  setReceiptInvoiceDate('');
                   setReceiptError('');
                 }}
                 className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-lg py-2.5 font-semibold text-sm"
@@ -1396,6 +1406,21 @@ function HomeContent() {
               <PhotoPicker value={receiptFile} onChange={setReceiptFile} label="" emoji="" acceptPdf />
             </div>
 
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">
+                תאריך שמודפס על הקבלה <span className="text-red-600">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                התאריך שליד <span dir="ltr">emitida em</span> בקבלה. בדרך כלל זה החודש שאחרי.
+              </p>
+              <DateField
+                value={receiptInvoiceDate}
+                onChange={(e) => setReceiptInvoiceDate(e.target.value)}
+                placeholder="בחרו תאריך"
+                style={{ border: '1px solid #d1d5db', borderRadius: 12, padding: '10px 12px', fontSize: 15 }}
+              />
+            </div>
+
             {receiptError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
                 {receiptError}
@@ -1405,7 +1430,7 @@ function HomeContent() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleReceiptUpload}
-                disabled={receiptUploading || !receiptFile}
+                disabled={receiptUploading || !receiptFile || !receiptInvoiceDate}
                 className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
               >
                 {receiptUploading ? 'שולח...' : 'אפשר לשלוח את הקבלה, תודה!'}
@@ -1414,6 +1439,7 @@ function HomeContent() {
                 onClick={() => {
                   setReceiptUploadModal(null);
                   setReceiptFile(null);
+                  setReceiptInvoiceDate('');
                   setReceiptError('');
                 }}
                 disabled={receiptUploading}

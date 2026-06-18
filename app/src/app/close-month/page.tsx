@@ -8,6 +8,7 @@ import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type Sal
 import { useAuthGuard } from '@/lib/auth';
 import { uploadMonthlyReceipt } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
+import DateField from '@/components/DateField';
 
 function formatMonthLabel(year: number, month: number) {
   return new Date(year, month, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
@@ -44,6 +45,8 @@ function CloseMonthContent() {
   const [receiptIssued, setReceiptIssued] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  // תאריך ההוצאה שמודפס על הקבלה (emitida em) — קובע לאיזה חודש קשפלו הקבלה נכנסת
+  const [receiptInvoiceDate, setReceiptInvoiceDate] = useState('');
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [receiptError, setReceiptError] = useState('');
 
@@ -363,6 +366,10 @@ function CloseMonthContent() {
       setReceiptError('צריך לצרף תמונה של הקבלה');
       return;
     }
+    if (!receiptInvoiceDate) {
+      setReceiptError('צריך להזין את התאריך שמודפס על הקבלה');
+      return;
+    }
     setReceiptError('');
     setReceiptUploading(true);
 
@@ -386,6 +393,7 @@ function CloseMonthContent() {
       year,
       month: month + 1,
       receipt_url: receiptUrl,
+      invoice_date: receiptInvoiceDate,
     });
 
     setReceiptUploading(false);
@@ -396,6 +404,7 @@ function CloseMonthContent() {
     setReceiptIssued(true);
     setShowReceiptModal(false);
     setReceiptFile(null);
+    setReceiptInvoiceDate('');
   }
 
   return (
@@ -928,6 +937,21 @@ function CloseMonthContent() {
               <PhotoPicker value={receiptFile} onChange={setReceiptFile} label="" emoji="" acceptPdf />
             </div>
 
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">
+                תאריך שמודפס על הקבלה <span className="text-red-600">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                התאריך שליד <span dir="ltr">emitida em</span> בקבלה. בדרך כלל זה החודש שאחרי.
+              </p>
+              <DateField
+                value={receiptInvoiceDate}
+                onChange={(e) => setReceiptInvoiceDate(e.target.value)}
+                placeholder="בחרו תאריך"
+                style={{ border: '1px solid #d1d5db', borderRadius: 12, padding: '10px 12px', fontSize: 15 }}
+              />
+            </div>
+
             {receiptError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-3">
                 {receiptError}
@@ -937,7 +961,7 @@ function CloseMonthContent() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleReceiptUpload}
-                disabled={receiptUploading || !receiptFile}
+                disabled={receiptUploading || !receiptFile || !receiptInvoiceDate}
                 className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold"
               >
                 {receiptUploading ? 'שולח...' : 'אפשר לשלוח את הקבלה, תודה!'}
@@ -946,6 +970,7 @@ function CloseMonthContent() {
                 onClick={() => {
                   setShowReceiptModal(false);
                   setReceiptFile(null);
+                  setReceiptInvoiceDate('');
                   setReceiptError('');
                 }}
                 disabled={receiptUploading}
