@@ -940,6 +940,28 @@ export async function loadPreviousFinalBalance(year: number, month: number): Pro
   return (data?.final_balance ?? null) as number | null;
 }
 
+/** שמירת רשומת היסטוריה של הרצת קשפלו (לאחר ייצור הגליון) */
+export async function insertCashflowRun(opts: {
+  year: number;
+  month: number;
+  tours_income: number;
+  total_outflow: number;
+  previous_balance: number;
+  final_balance: number;
+  transactions_count: number;
+}): Promise<void> {
+  const { error } = await supabase.from('cashflow_runs').insert({
+    year: opts.year,
+    month: opts.month,
+    tours_income: opts.tours_income,
+    total_outflow: opts.total_outflow,
+    previous_balance: opts.previous_balance,
+    final_balance: opts.final_balance,
+    transactions_count: opts.transactions_count,
+  });
+  if (error) throw error;
+}
+
 /** מחיקת הוצאת אדמין (להחלפה במקרה של טעות) */
 export async function deleteAdminExpense(expenseId: string): Promise<void> {
   const { error } = await supabase

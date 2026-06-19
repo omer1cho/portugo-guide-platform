@@ -29,11 +29,13 @@ import {
   deleteAcknowledgement,
   updateTransferSettledAt,
   deleteAdminExpense,
+  insertCashflowRun,
   type CashflowPrepareData,
   type CashflowExpense,
   type CashflowDeposit,
   type CashflowSalaryInvoice,
 } from '@/lib/admin/cashflow-data';
+import { generateCashflowExcel, type CashflowExcelRow } from '@/lib/admin/cashflow-excel';
 import { uploadExpenseReceipt, uploadMonthlyReceipt } from '@/lib/storage';
 import DateField from '@/components/DateField';
 
@@ -181,7 +183,13 @@ export default function CashflowPreparePage() {
       )}
 
       {/* Bottom summary + continue */}
-      <SummaryBar data={data} />
+      <SummaryBar
+        data={data}
+        year={year}
+        month={month}
+        prevBalance={parseFloat(prevBalance) || 0}
+        toursIncome={parseFloat(toursIncome) || 0}
+      />
 
       {/* Modal */}
       {showAddModal && (
@@ -1449,8 +1457,60 @@ function UnscheduledInvoicesSection({
 // Bottom summary bar
 // ===========================================================================
 
-function SummaryBar({ data }: { data: CashflowPrepareData }) {
+function SummaryBar({
+  data,
+  year,
+  month,
+  prevBalance,
+  toursIncome,
+}: {
+  data: CashflowPrepareData;
+  year: number;
+  month: number;
+  prevBalance: number;
+  toursIncome: number;
+}) {
   const totalOutflow = data.totalRegularOutflow + data.totalDeposits + data.totalSalaries;
+  const [generating, setGenerating] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleGenerate = async () => {
+    if (generating) return;
+    setDone(false);
+    setGenerating(true);
+    try {
+      const rows: CashflowExcelRow[] = buildCashflowRows(data, toursIncome).map((r) => ({
+        date: r.date,
+        entity: r.entity,
+        description: r.description,
+        inflow: r.inflow,
+        outflow: r.outflow,
+        isDeposit: r.type === 'deposit',
+        docNum: r.expense?.receipt_number ?? null,
+      }));
+      const { finalBalance } = await generateCashflowExcel({ year, month, prevBalance, rows });
+      try {
+        await insertCashflowRun({
+          year,
+          month,
+          tours_income: toursIncome,
+          total_outflow: totalOutflow,
+          previous_balance: prevBalance,
+          final_balance: finalBalance,
+          transactions_count: rows.length,
+        });
+      } catch {
+        // היסטוריית ההרצה לא קריטית — אם נכשלה, הקובץ כבר ירד
+      }
+      setDone(true);
+    } catch (e) {
+      const err = e as { message?: string };
+      alert('שגיאה ביצירת הגליון: ' + (err.message || 'משהו השתבש'));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <section style={{ ...cardStyle, position: 'sticky', bottom: 0, zIndex: 5, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
@@ -1472,13 +1532,16 @@ function SummaryBar({ data }: { data: CashflowPrepareData }) {
             <div style={{ fontWeight: 700, fontSize: 18, color: ADMIN_COLORS.green900 }}>{fmtEuro(totalOutflow, true)}</div>
           </div>
         </div>
-        <button
-          disabled
-          title="שלב 3 (ייצור Excel) ייבנה בסשן הבא"
-          style={{ ...primaryBtnStyle, opacity: 0.5, cursor: 'not-allowed', fontSize: 14, padding: '10px 20px' }}
-        >
-          → המשך לייצור Excel (בקרוב)
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {done && <span style={{ fontSize: 13, color: ADMIN_COLORS.green700 }}>✓ הגליון ירד</span>}
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            style={{ ...primaryBtnStyle, fontSize: 14, padding: '10px 20px', cursor: generating ? 'wait' : 'pointer' }}
+          >
+            {generating ? 'יוצרת...' : '↓ צרי את גליון האקסל'}
+          </button>
+        </div>
       </div>
     </section>
   );
