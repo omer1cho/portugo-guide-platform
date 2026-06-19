@@ -190,3 +190,50 @@ export async function generateCashflowExcel(opts: {
 
   return { finalBalance, transactionsCount: rows.length, sheetName };
 }
+
+/**
+ * ייצוא נתונים נקי כ-JSON — נשא הנתונים שגוגו קוראת כדי למלא את קובץ המאסטר האמיתי.
+ * התאריכים נשמרים כמחרוזת ISO ('yyyy-mm-dd') בדיוק כפי שהם, בלי המרה ל-Date,
+ * כך שאין באג אזור-זמן (בניגוד לייצוא ה-xlsx). זה התוצר המומלץ לשלב 3.
+ */
+export function exportCashflowDataJson(opts: {
+  year: number;
+  month: number; // 1-12
+  prevBalance: number;
+  toursIncome: number;
+  rows: CashflowExcelRow[];
+}): { finalBalance: number; transactionsCount: number; sheetName: string } {
+  const { year, month, prevBalance, toursIncome, rows } = opts;
+  const sheetName = monthSheetName(year, month);
+  let inflow = 0;
+  let outflow = 0;
+  for (const r of rows) {
+    inflow += r.inflow || 0;
+    outflow += r.outflow || 0;
+  }
+  const finalBalance = Math.round((prevBalance + inflow - outflow) * 100) / 100;
+  const payload = {
+    meta: {
+      year,
+      month,
+      monthName: MONTH_NAMES_EN[month - 1],
+      sheetName,
+      previousBalance: prevBalance,
+      toursIncome,
+      finalBalance,
+      transactions: rows.length,
+    },
+    rows: rows.map((r) => ({
+      date: r.date, // ISO yyyy-mm-dd — בלי המרה, בלי הזזת timezone
+      entity: r.entity,
+      description: r.description,
+      docNum: r.docNum ?? null,
+      inflow: r.inflow || 0,
+      outflow: r.outflow || 0,
+      isDeposit: !!r.isDeposit,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 1)], { type: 'application/json' });
+  triggerDownload(blob, `cashflow-${sheetName}-data.json`);
+  return { finalBalance, transactionsCount: rows.length, sheetName };
+}

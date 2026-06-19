@@ -37,7 +37,7 @@ import {
   type CashflowDeposit,
   type CashflowSalaryInvoice,
 } from '@/lib/admin/cashflow-data';
-import { generateCashflowExcel, type CashflowExcelRow } from '@/lib/admin/cashflow-excel';
+import { exportCashflowDataJson, type CashflowExcelRow } from '@/lib/admin/cashflow-excel';
 import { uploadExpenseReceipt, uploadMonthlyReceipt } from '@/lib/storage';
 import DateField from '@/components/DateField';
 
@@ -1539,7 +1539,7 @@ function SummaryBar({
         isDeposit: r.type === 'deposit',
         docNum: r.expense?.receipt_number ?? null,
       }));
-      const { finalBalance } = await generateCashflowExcel({ year, month, prevBalance, rows });
+      const { finalBalance } = exportCashflowDataJson({ year, month, prevBalance, toursIncome, rows });
       try {
         await insertCashflowRun({
           year,
@@ -1584,13 +1584,14 @@ function SummaryBar({
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {done && <span style={{ fontSize: 13, color: ADMIN_COLORS.green700 }}>✓ הגליון ירד</span>}
+          {done && <span style={{ fontSize: 13, color: ADMIN_COLORS.green700 }}>✓ הנתונים ירדו (קובץ לגוגו)</span>}
           <button
             onClick={handleGenerate}
             disabled={generating}
+            title="מוריד קובץ נתונים שגוגו ממלאת ממנו את קובץ המאסטר"
             style={{ ...primaryBtnStyle, fontSize: 14, padding: '10px 20px', cursor: generating ? 'wait' : 'pointer' }}
           >
-            {generating ? 'יוצרת...' : '↓ צרי את גליון האקסל'}
+            {generating ? 'מייצאת...' : '↓ ייצוא נתונים לקשפלו'}
           </button>
         </div>
       </div>
