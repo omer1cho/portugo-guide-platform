@@ -916,6 +916,43 @@ export async function updateTransferSettledAt(transferId: string, settledAt: str
   if (error) throw error;
 }
 
+export type CashflowMonthSettings = { previous_balance: number | null; tours_income: number | null };
+
+/** טוען את ערכי ההכנה השמורים לחודש (יתרת פתיחה + הכנסת סיורים). null אם אין/הטבלה לא קיימת. */
+export async function loadCashflowMonthSettings(year: number, month: number): Promise<CashflowMonthSettings | null> {
+  const { data, error } = await supabase
+    .from('cashflow_month_settings')
+    .select('previous_balance, tours_income')
+    .eq('year', year)
+    .eq('month', month)
+    .maybeSingle();
+  if (error) {
+    if (error.message?.toLowerCase().includes('cashflow_month_settings')) return null;
+    return null;
+  }
+  if (!data) return null;
+  return {
+    previous_balance: (data as CashflowMonthSettings).previous_balance ?? null,
+    tours_income: (data as CashflowMonthSettings).tours_income ?? null,
+  };
+}
+
+/** שומר (upsert) את ערכי ההכנה לחודש כדי שלא ייעלמו ברענון. */
+export async function saveCashflowMonthSettings(
+  year: number,
+  month: number,
+  previousBalance: number | null,
+  toursIncome: number | null
+): Promise<void> {
+  const { error } = await supabase
+    .from('cashflow_month_settings')
+    .upsert(
+      { year, month, previous_balance: previousBalance, tours_income: toursIncome },
+      { onConflict: 'year,month' }
+    );
+  if (error) throw error;
+}
+
 /** מחזיר את היתרה הסוגרת של חודש קודם (= I12 בגליון של החודש הזה) — אם קיימת. */
 export async function loadPreviousFinalBalance(year: number, month: number): Promise<number | null> {
   // מחפש את הרצת הקשפלו האחרונה לחודש ה-(month-1) של אותה שנה

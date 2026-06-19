@@ -20,6 +20,8 @@ import { ADMIN_COLORS, fmtEuro, monthName } from '@/lib/admin/theme';
 import {
   loadCashflowPrepareData,
   loadPreviousFinalBalance,
+  loadCashflowMonthSettings,
+  saveCashflowMonthSettings,
   isNoReceiptExcluded,
   updateExpenseClassification,
   addAdminExpense,
@@ -83,13 +85,17 @@ export default function CashflowPreparePage() {
     setLoading(true);
     setError(null);
     try {
-      const [d, prev] = await Promise.all([
+      const [d, prev, settings] = await Promise.all([
         loadCashflowPrepareData(year, month),
         loadPreviousFinalBalance(year, month),
+        loadCashflowMonthSettings(year, month),
       ]);
       setData(d);
-      // אם יש יתרת חודש קודם ב-DB — אל תדרוס מה שעומר הזינה ידנית
-      setPrevBalance((cur) => (cur ? cur : prev != null ? String(prev) : ''));
+      // יתרת פתיחה: עדיפות לערך ששמרת; אחרת יתרת חודש קודם מה-DB. לא דורסים עריכה לא-שמורה.
+      const savedPrev = settings?.previous_balance;
+      setPrevBalance((cur) => (cur ? cur : savedPrev != null ? String(savedPrev) : prev != null ? String(prev) : ''));
+      const savedIncome = settings?.tours_income;
+      setToursIncome((cur) => (cur ? cur : savedIncome != null ? String(savedIncome) : ''));
     } catch (e) {
       const err = e as { message?: string };
       setError(err.message || 'משהו השתבש');
@@ -140,6 +146,8 @@ export default function CashflowPreparePage() {
       {/* Cashflow setup — שורת הכנסה ויתרה (הלב של הקשפלו) */}
       <CashflowSetupSection
         data={data}
+        year={year}
+        month={month}
         prevBalance={prevBalance}
         setPrevBalance={setPrevBalance}
         toursIncome={toursIncome}
@@ -288,17 +296,47 @@ const TARGET_FINAL_BALANCE_MID = (TARGET_FINAL_BALANCE_MIN + TARGET_FINAL_BALANC
 
 function CashflowSetupSection({
   data,
+  year,
+  month,
   prevBalance,
   setPrevBalance,
   toursIncome,
   setToursIncome,
 }: {
   data: CashflowPrepareData;
+  year: number;
+  month: number;
   prevBalance: string;
   setPrevBalance: (v: string) => void;
   toursIncome: string;
   setToursIncome: (v: string) => void;
 }) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // חיווי "נשמר" נעלם ברגע שמשנים ערך
+  useEffect(() => { setSaved(false); }, [prevBalance, toursIncome]);
+
+  const handleSaveSettings = async () => {
+    if (saving) return;
+    setSaved(false);
+    setSaving(true);
+    try {
+      await saveCashflowMonthSettings(
+        year,
+        month,
+        prevBalance.trim() === '' ? null : parseFloat(prevBalance),
+        toursIncome.trim() === '' ? null : parseFloat(toursIncome)
+      );
+      setSaved(true);
+    } catch (e) {
+      const err = e as { message?: string };
+      alert('שגיאה בשמירה: ' + (err.message || 'משהו השתבש'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const totalOutflow = data.totalRegularOutflow + data.totalDeposits + data.totalSalaries;
   const prev = parseFloat(prevBalance) || 0;
   const suggested = totalOutflow - prev + TARGET_FINAL_BALANCE_MID;
@@ -394,6 +432,13 @@ function CashflowSetupSection({
             {isInRange ? ' ✓ בטווח' : isClose ? ' ~ קרוב' : ' ⚠ לא בטווח'}
           </strong>
         </div>
+      </div>
+
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end' }}>
+        {saved && <span style={{ fontSize: 12, color: ADMIN_COLORS.green700 }}>✓ נשמר</span>}
+        <button onClick={handleSaveSettings} disabled={saving} style={{ ...primaryBtnStyle, cursor: saving ? 'wait' : 'pointer' }}>
+          {saving ? 'שומרת...' : 'שמרי יתרה והכנסה'}
+        </button>
       </div>
     </section>
   );
