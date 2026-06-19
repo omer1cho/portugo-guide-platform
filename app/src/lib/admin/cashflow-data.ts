@@ -895,6 +895,18 @@ export async function updateInvoiceAmount(ackId: string, amount: number | null):
   if (error) throw error;
 }
 
+/**
+ * מחיקת שורת קבלת מס (receipt_acknowledgement) — לשורות שגויות/ריקות שאין להן קבלה אמיתית.
+ * שימי לב: אם המדריך עדיין אמור להוציא קבלה לחודש הזה, התזכורת תחזור אצלו.
+ */
+export async function deleteAcknowledgement(ackId: string): Promise<void> {
+  const { error } = await supabase
+    .from('receipt_acknowledgements')
+    .delete()
+    .eq('id', ackId);
+  if (error) throw error;
+}
+
 /** עדכון תאריך הפקדה בפועל של transfer (לעקוף את transfer_date כשההפקדה הייתה אחר כך) */
 export async function updateTransferSettledAt(transferId: string, settledAt: string | null): Promise<void> {
   const { error } = await supabase

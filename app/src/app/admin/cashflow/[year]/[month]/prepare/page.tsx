@@ -26,6 +26,7 @@ import {
   setExpenseReceiptUrl,
   updateInvoiceDate,
   updateInvoiceAmount,
+  deleteAcknowledgement,
   updateTransferSettledAt,
   deleteAdminExpense,
   type CashflowPrepareData,
@@ -1272,6 +1273,23 @@ function SalaryRow({
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm(
+      `למחוק את שורת קבלת המס של ${invoice.guide_name} (${invoice.service_month}/${invoice.service_year})?\n\n` +
+      `מחקי רק אם אין קבלה אמיתית כזו. אם המדריך עדיין אמור להוציא קבלה לחודש הזה, התזכורת תחזור אצלו.`
+    )) return;
+    onSavingStart();
+    try {
+      await deleteAcknowledgement(invoice.ack_id);
+      onChange();
+    } catch (e) {
+      const err = e as { message?: string };
+      alert(err.message || 'שגיאה במחיקה');
+    } finally {
+      onSavingEnd();
+    }
+  };
+
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
@@ -1338,11 +1356,21 @@ function SalaryRow({
           )}
         </td>
         <td style={tdStyle}>
-          {dirty && (
-            <button onClick={handleSave} disabled={isSaving} style={primaryBtnStyle}>
-              {isSaving ? '...' : 'שמרי'}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {dirty && (
+              <button onClick={handleSave} disabled={isSaving} style={primaryBtnStyle}>
+                {isSaving ? '...' : 'שמרי'}
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={isSaving}
+              title="מחקי שורה ריקה/שגויה"
+              style={{ background: 'transparent', border: 'none', cursor: isSaving ? 'wait' : 'pointer', color: ADMIN_COLORS.red, fontSize: 15, padding: 2, fontFamily: 'inherit' }}
+            >
+              🗑
             </button>
-          )}
+          </div>
         </td>
       </tr>
       {showReceipt && invoice.receipt_url && (
