@@ -172,15 +172,21 @@ export default function CashflowPreparePage() {
         <PendingDepositsSection deposits={data.pendingDeposits} />
       )}
 
-      {/* קבלות מס שעדיין אין להן תאריך (כל החודשים) — דורשות שיוך */}
-      {data.unscheduledInvoices.length > 0 && (
-        <UnscheduledInvoicesSection
-          invoices={data.unscheduledInvoices}
-          savingId={savingId}
-          setSavingId={setSavingId}
-          onChange={reload}
-        />
-      )}
+      {/* קבלות מס שדורשות השלמה — בלי תאריך (כל החודשים) או בלי סכום (החודש הזה) */}
+      {(() => {
+        const needsAttention = [
+          ...data.unscheduledInvoices,
+          ...data.salaryInvoices.filter((i) => i.amount === null),
+        ];
+        return needsAttention.length > 0 ? (
+          <UnscheduledInvoicesSection
+            invoices={needsAttention}
+            savingId={savingId}
+            setSavingId={setSavingId}
+            onChange={reload}
+          />
+        ) : null;
+      })()}
 
       {/* Bottom summary + continue */}
       <SummaryBar
@@ -1417,11 +1423,11 @@ function UnscheduledInvoicesSection({
     <section style={{ ...cardStyle, background: '#fef2f2', borderColor: '#fca5a5' }}>
       <div style={sectionHeaderStyle}>
         <h2 style={{ ...sectionTitleStyle, color: '#991b1b' }}>
-          ⚠️ קבלות מס בלי תאריך הוצאת חשבונית ({invoices.length})
+          ⚠️ קבלות מס שדורשות השלמה ({invoices.length})
         </h2>
       </div>
       <p style={{ ...hintStyle, color: '#991b1b' }}>
-        כדי שקבלה תופיע בקשפלו, צריך להזין את התאריך שבו המדריך הפיק אותה. התאריך הזה קובע באיזה חודש קשפלו היא תיכלל.
+        לכל קבלה צריך גם תאריך הוצאה (קובע באיזה חודש קשפלו היא תיכלל) וגם סכום (כפי שכתוב על הקבלה). השלימי את החסר ושמרי.
       </p>
       <div style={{ overflowX: 'auto' }}>
         <table style={tableStyle}>
