@@ -246,6 +246,15 @@ function FlagSummary({
   const pendingCount = data.pendingDeposits.length;
   const noAmountInvoiceCount = data.salaryInvoices.filter((i) => i.amount === null).length;
 
+  // כמה דגלים יושבים בפועל כשורה בטבלה (מולטיבנקו / חסרה תמונת קבלה).
+  // שאר הדגלים (הפקדות ממתינות, קבלות בלי תאריך/סכום) מטופלים בסקציות למטה,
+  // ולכן סינון הטבלה לא יציג אותם. את כפתור הסינון מציגים רק כשיש מה לסנן.
+  const flaggedRowCount = data.expenses.filter((e) =>
+    e.cashflow_category === 'regular' &&
+    !isNoReceiptExcluded(e) &&
+    (e.multibanco_suspect || (!e.is_admin_added && !e.receipt_url && e.catalog_requires_receipt !== false))
+  ).length;
+
   return (
     <div style={{
       padding: 14,
@@ -257,9 +266,11 @@ function FlagSummary({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
         <span><strong>🚨 {data.flaggedCount} פריטים דורשים תשומת לב</strong></span>
-        <button onClick={onToggleFilter} style={smallBtnStyle()}>
-          {showOnlyFlagged ? 'הצג הכל' : 'סנן בטבלה רק דגלים'}
-        </button>
+        {flaggedRowCount > 0 && (
+          <button onClick={onToggleFilter} style={smallBtnStyle()}>
+            {showOnlyFlagged ? 'הצג הכל' : 'סנן בטבלה רק דגלים'}
+          </button>
+        )}
       </div>
       <ul style={{ margin: 0, paddingInlineStart: 20, lineHeight: 1.7 }}>
         {missingReceiptCount > 0 && (
@@ -599,7 +610,10 @@ function CashflowChronologicalTable({
   onChange: () => void;
 }) {
   const allRows = buildCashflowRows(data, toursIncome);
-  const visible = showOnlyFlagged
+  // מסננים "רק דגלים" רק כשבאמת יש שורות מסומנות, אחרת הטבלה הייתה מתרוקנת
+  // כשהדגלים היחידים יושבים בסקציות שמחוץ לטבלה (הפקדות ממתינות / קבלות בלי סכום).
+  const hasFlaggedRows = allRows.some((r) => !!r.flag);
+  const visible = showOnlyFlagged && hasFlaggedRows
     ? allRows.filter((r) => !!r.flag)
     : allRows;
 
