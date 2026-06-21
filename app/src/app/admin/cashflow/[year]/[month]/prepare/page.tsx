@@ -159,7 +159,7 @@ export default function CashflowPreparePage() {
         <FlagSummary
           data={data}
           showOnlyFlagged={showOnlyFlagged}
-          onToggleFilter={() => setShowOnlyFlagged((v) => !v)}
+          setShowOnlyFlagged={setShowOnlyFlagged}
         />
       )}
 
@@ -228,12 +228,23 @@ export default function CashflowPreparePage() {
 function FlagSummary({
   data,
   showOnlyFlagged,
-  onToggleFilter,
+  setShowOnlyFlagged,
 }: {
   data: CashflowPrepareData;
   showOnlyFlagged: boolean;
-  onToggleFilter: () => void;
+  setShowOnlyFlagged: (v: boolean) => void;
 }) {
+  const onToggleFilter = () => setShowOnlyFlagged(!showOnlyFlagged);
+  // גלילה חלקה אל סקציה לפי id
+  const jumpTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  // דגלים שיושבים כשורות בטבלה: מדליקים את הסינון ואז קופצים לטבלה
+  const jumpToFlaggedRows = () => {
+    setShowOnlyFlagged(true);
+    window.setTimeout(() => jumpTo('cf-table'), 60);
+  };
   // "חסרה קבלה" רק אם הקטלוג דורש קבלה (catalog_requires_receipt !== false).
   const missingReceiptCount = data.expenses.filter((e) =>
     !e.is_admin_added &&
@@ -272,24 +283,41 @@ function FlagSummary({
           </button>
         )}
       </div>
-      <ul style={{ margin: 0, paddingInlineStart: 20, lineHeight: 1.7 }}>
+      <ul style={{ margin: 0, paddingInlineStart: 20, lineHeight: 1.9 }}>
         {missingReceiptCount > 0 && (
           <li>
-            📷 <strong>{missingReceiptCount} הוצאות בלי תמונת קבלה</strong>
-            <span style={{ color: '#92400e' }}> — שורות אדומות בטבלה. לחיצה על "סנן בטבלה רק דגלים" תציג רק אותן.</span>
+            <button style={flagLinkStyle} onClick={jumpToFlaggedRows}>
+              📷 <strong>{missingReceiptCount} הוצאות בלי תמונת קבלה</strong> — להציג ולסמן אותן בטבלה ←
+            </button>
           </li>
         )}
         {multibancoCount > 0 && (
-          <li>💳 <strong>{multibancoCount} חשד למולטיבנקו</strong> — להחליט אם להחריג</li>
+          <li>
+            <button style={flagLinkStyle} onClick={jumpToFlaggedRows}>
+              💳 <strong>{multibancoCount} חשד למולטיבנקו</strong> — לראות בטבלה ולהחליט אם להחריג ←
+            </button>
+          </li>
         )}
         {pendingCount > 0 && (
-          <li>⏳ <strong>{pendingCount} הפקדות ממתינות</strong> — בסקציה למטה (לא נכנסות לקשפלו)</li>
+          <li>
+            <button style={flagLinkStyle} onClick={() => jumpTo('cf-pending')}>
+              ⏳ <strong>{pendingCount} הפקדות ממתינות</strong> — מעבר לסקציה (לא נכנסות לקשפלו) ←
+            </button>
+          </li>
         )}
         {unscheduledCount > 0 && (
-          <li>⚠️ <strong>{unscheduledCount} קבלות מס בלי תאריך</strong> — בסקציה למטה</li>
+          <li>
+            <button style={flagLinkStyle} onClick={() => jumpTo('cf-invoices')}>
+              ⚠️ <strong>{unscheduledCount} קבלות מס בלי תאריך</strong> — מעבר להשלמת התאריך ←
+            </button>
+          </li>
         )}
         {noAmountInvoiceCount > 0 && (
-          <li>💼 <strong>{noAmountInvoiceCount} קבלות מס בלי סכום</strong> — להזין את הסכום שכתוב על הקבלה</li>
+          <li>
+            <button style={flagLinkStyle} onClick={() => jumpTo('cf-invoices')}>
+              💼 <strong>{noAmountInvoiceCount} קבלות מס בלי סכום</strong> — מעבר להזנת הסכום שכתוב על הקבלה ←
+            </button>
+          </li>
         )}
       </ul>
     </div>
@@ -626,7 +654,7 @@ function CashflowChronologicalTable({
   }
 
   return (
-    <section style={cardStyle}>
+    <section id="cf-table" style={cardStyle}>
       <div style={sectionHeaderStyle}>
         <h2 style={sectionTitleStyle}>📋 קשפלו — תנועות החודש ({allRows.length})</h2>
         <button onClick={onAddClick} style={primaryBtnStyle}>+ הוסף קבלה ידנית</button>
@@ -1208,7 +1236,7 @@ function DepositRow({
 function PendingDepositsSection({ deposits }: { deposits: CashflowDeposit[] }) {
   const total = deposits.reduce((s, d) => s + d.amount, 0);
   return (
-    <section style={{ ...cardStyle, background: '#fffbeb', borderColor: '#fcd34d' }}>
+    <section id="cf-pending" style={{ ...cardStyle, background: '#fffbeb', borderColor: '#fcd34d' }}>
       <div style={sectionHeaderStyle}>
         <h2 style={{ ...sectionTitleStyle, color: '#78350f' }}>
           ⏳ ממתינות להפקדה ({deposits.length})
@@ -1479,7 +1507,7 @@ function UnscheduledInvoicesSection({
   onChange: () => void;
 }) {
   return (
-    <section style={{ ...cardStyle, background: '#fef2f2', borderColor: '#fca5a5' }}>
+    <section id="cf-invoices" style={{ ...cardStyle, background: '#fef2f2', borderColor: '#fca5a5' }}>
       <div style={sectionHeaderStyle}>
         <h2 style={{ ...sectionTitleStyle, color: '#991b1b' }}>
           ⚠️ קבלות מס שדורשות השלמה ({invoices.length})
@@ -1819,6 +1847,21 @@ const hintStyle: React.CSSProperties = {
   color: ADMIN_COLORS.gray500,
   margin: '0 0 12px',
   lineHeight: 1.5,
+};
+
+// שורת דגל לחיצה בהתראה — קופצת אל המקום שצריך לטפל בו
+const flagLinkStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: 'none',
+  padding: 0,
+  margin: 0,
+  font: 'inherit',
+  color: '#78350f',
+  cursor: 'pointer',
+  textAlign: 'right',
+  textDecoration: 'underline',
+  textDecorationColor: '#f59e0b',
+  textUnderlineOffset: 3,
 };
 
 function inputStyle(full: boolean = false): React.CSSProperties {
