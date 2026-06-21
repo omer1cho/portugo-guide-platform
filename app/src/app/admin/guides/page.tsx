@@ -317,7 +317,7 @@ function GuideCard({
       .from('guides')
       .update({
         name: form.name,
-        email: form.email || null,
+        email: (form.email || '').replace(/[^\x20-\x7E]/g, '').trim() || null,
         city: form.city,
         travel_type: form.travel_type,
         has_vat: form.has_vat,
@@ -688,7 +688,7 @@ function AddGuideModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     setSaveError(null);
     const { error } = await supabase.from('guides').insert({
       name: form.name,
-      email: form.email || null,
+      email: (form.email || '').replace(/[^\x20-\x7E]/g, '').trim() || null,
       city: form.city,
       travel_type: form.travel_type,
       has_vat: form.has_vat,
