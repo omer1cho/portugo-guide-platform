@@ -13,7 +13,7 @@
  * פעולות:
  *   - "פרסמי שבוע" — draft → published
  *   - "הוסיפי שיבוץ ידני" — לסיורים פרטיים
- *   - "מלאי קבע פורטו" — תום/דותן לפי הקבע
+ *   - "מלאי קבע פורטו" — תום/דותן/שקד לפי הקבע (PORTO_ROSTER)
  */
 
 import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
@@ -268,24 +268,29 @@ type PortoSlot = {
   secondary?: { guide_name: string; notes: string };
 };
 const PORTO_ROSTER: PortoSlot[] = [
+  // ראשון
   { dayOfWeek: 0, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
-  { dayOfWeek: 1, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
-  { dayOfWeek: 2, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'דותן' },
+  // שני — בוקר תום, אחה"צ שקד (16:30). שעה מוצמדת כי יש שתי קלאסיות באותו יום.
+  { dayOfWeek: 1, tour_type: 'פורטו_1', time: '09:45', defaultTime: '09:45', guide_name: 'תום' },
+  { dayOfWeek: 1, tour_type: 'פורטו_1', time: '16:30', defaultTime: '16:30', guide_name: 'שקד' },
+  // שלישי — בוקר דותן, טעימות דותן, אחה"צ שקד (16:30)
+  { dayOfWeek: 2, tour_type: 'פורטו_1', time: '09:45', defaultTime: '09:45', guide_name: 'דותן' },
   { dayOfWeek: 2, tour_type: 'טעימות',  defaultTime: '14:30', guide_name: 'דותן' },
+  { dayOfWeek: 2, tour_type: 'פורטו_1', time: '16:30', defaultTime: '16:30', guide_name: 'שקד' },
+  // רביעי — דורו תום; קלאסי בוקר 9:45 תלוי-דורו (דותן/תום); אחה"צ שקד (16:30)
   { dayOfWeek: 3, tour_type: 'דורו',     defaultTime: '08:20', guide_name: 'תום' },
   {
-    dayOfWeek: 3, tour_type: 'פורטו_1', defaultTime: '09:45',
+    dayOfWeek: 3, tour_type: 'פורטו_1', time: '09:45', defaultTime: '09:45',
     guide_name: 'דותן', notes: 'אם הדורו יוצא',
     secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
   },
+  { dayOfWeek: 3, tour_type: 'פורטו_1', time: '16:30', defaultTime: '16:30', guide_name: 'שקד' },
+  // חמישי
   { dayOfWeek: 4, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
   { dayOfWeek: 4, tour_type: 'טעימות',  defaultTime: '14:30', guide_name: 'תום' },
+  // שישי — תום קבוע על הדורו (אם לא יוצא, אין לו סיור). הקלאסי 9:45 קבוע לשקד. דותן ירד מימי שישי.
   { dayOfWeek: 5, tour_type: 'דורו',     defaultTime: '08:20', guide_name: 'תום' },
-  {
-    dayOfWeek: 5, tour_type: 'פורטו_1', defaultTime: '10:30',
-    guide_name: 'דותן', notes: 'אם הדורו יוצא',
-    secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
-  },
+  { dayOfWeek: 5, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'שקד' },
   // שבת — מתחלפים תום/דותן לפי שבוע, אז לא בקבע אוטומטי
 ];
 
