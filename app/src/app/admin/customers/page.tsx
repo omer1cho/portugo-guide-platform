@@ -19,7 +19,6 @@ import { useSearchParams } from 'next/navigation';
 import { ADMIN_COLORS, fmtEuro, monthName } from '@/lib/admin/theme';
 import { supabase } from '@/lib/supabase';
 import KpiCard from '@/components/admin/KpiCard';
-import MonthSwitcher from '@/components/admin/MonthSwitcher';
 
 type RawBooking = {
   people: number;
@@ -88,8 +87,11 @@ const PIE_COLORS = [
 function CustomersContent() {
   const searchParams = useSearchParams();
   const now = new Date();
-  const year = searchParams.get('year') ? parseInt(searchParams.get('year')!) : now.getFullYear();
-  const month = searchParams.get('month') ? parseInt(searchParams.get('month')!) - 1 : now.getMonth();
+  const initYear = searchParams.get('year') ? parseInt(searchParams.get('year')!) : now.getFullYear();
+  const initMonth = searchParams.get('month') ? parseInt(searchParams.get('month')!) - 1 : now.getMonth();
+  // טווח תקופה: מ-(from) עד-(to). ברירת מחדל = החודש הנבחר (חודש בודד).
+  const [fromYM, setFromYM] = useState({ year: initYear, month: initMonth });
+  const [toYM, setToYM] = useState({ year: initYear, month: initMonth });
   const initialCity = (searchParams.get('city') as CityFilter) || 'all';
   const [cityFilter, setCityFilter] = useState<CityFilter>(initialCity);
 
@@ -105,9 +107,9 @@ function CustomersContent() {
     setLoading(true);
     setError(null);
     (async () => {
-      const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-      const lastDay = new Date(year, month + 1, 0).getDate();
-      const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const start = `${fromYM.year}-${String(fromYM.month + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(toYM.year, toYM.month + 1, 0).getDate();
+      const end = `${toYM.year}-${String(toYM.month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
       const { data, error: err } = await supabase
         .from('bookings')
@@ -128,7 +130,13 @@ function CustomersContent() {
     return () => {
       cancelled = true;
     };
-  }, [year, month]);
+  }, [fromYM, toYM]);
+
+  // האם זה חודש בודד (from==to)
+  const isSingleMonth = fromYM.year === toYM.year && fromYM.month === toYM.month;
+  const periodLabel = isSingleMonth
+    ? monthName(fromYM.year, fromYM.month)
+    : `${monthName(fromYM.year, fromYM.month)} – ${monthName(toYM.year, toYM.month)}`;
 
   // סינון לפי עיר
   const filtered = useMemo(
@@ -197,12 +205,12 @@ function CustomersContent() {
             📊 ניתוח לקוחות
           </h1>
           <p style={{ fontSize: 14, color: ADMIN_COLORS.gray500, marginTop: 4 }}>
-            {monthName(year, month)} — מקורות, קטגוריות, טיפים, תפוסה
+            {periodLabel} — מקורות, קטגוריות, טיפים, תפוסה
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <CityToggle value={cityFilter} onChange={setCityFilter} />
-          <MonthSwitcher year={year} month={month} />
+          <PeriodSelector from={fromYM} to={toYM} setFrom={setFromYM} setTo={setToYM} />
         </div>
       </header>
 
@@ -237,7 +245,7 @@ function CustomersContent() {
 
           {totalPeople === 0 ? (
             <div style={{ background: '#fff', borderRadius: 12, padding: 40, textAlign: 'center', color: ADMIN_COLORS.gray500 }}>
-              אין נתוני לקוחות בחודש זה
+              אין נתוני לקוחות בתקופה זו
             </div>
           ) : (
             <>
@@ -318,6 +326,79 @@ function CustomersContent() {
 // ===========================================================================
 // UI Components
 // ===========================================================================
+
+type YM = { year: number; month: number };
+
+/** בורר תקופה: מ-(from) עד-(to) + כפתור "כל הנתונים" (מאפריל 2026, תחילת הנתונים). */
+function PeriodSelector({
+  from,
+  to,
+  setFrom,
+  setTo,
+}: {
+  from: YM;
+  to: YM;
+  setFrom: (v: YM) => void;
+  setTo: (v: YM) => void;
+}) {
+  const now = new Date();
+  // רשימת חודשים מאפריל 2026 (תחילת הנתונים החיים) עד החודש הנוכחי
+  const options: YM[] = [];
+  let y = 2026;
+  let m = 3; // אפריל (0-indexed)
+  while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
+    options.push({ year: y, month: m });
+    m += 1;
+    if (m > 11) { m = 0; y += 1; }
+  }
+  const key = (v: YM) => `${v.year}-${v.month}`;
+  const first = options[0];
+  const last = options[options.length - 1];
+
+  const onFrom = (k: string) => {
+    const [yy, mm] = k.split('-').map(Number);
+    const nf = { year: yy, month: mm };
+    setFrom(nf);
+    if (yy > to.year || (yy === to.year && mm > to.month)) setTo(nf); // from לא יכול להיות אחרי to
+  };
+  const onTo = (k: string) => {
+    const [yy, mm] = k.split('-').map(Number);
+    const nt = { year: yy, month: mm };
+    setTo(nt);
+    if (yy < from.year || (yy === from.year && mm < from.month)) setFrom(nt);
+  };
+  const isAll = options.length > 1 && key(from) === key(first) && key(to) === key(last);
+
+  const selStyle: React.CSSProperties = {
+    padding: '8px 10px', border: `1px solid ${ADMIN_COLORS.gray300}`, borderRadius: 8,
+    fontFamily: 'inherit', fontSize: 13, color: ADMIN_COLORS.gray700, background: '#fff',
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 13, color: ADMIN_COLORS.gray500 }}>מ-</span>
+      <select value={key(from)} onChange={(e) => onFrom(e.target.value)} style={selStyle}>
+        {options.map((o) => <option key={key(o)} value={key(o)}>{monthName(o.year, o.month)}</option>)}
+      </select>
+      <span style={{ fontSize: 13, color: ADMIN_COLORS.gray500 }}>עד</span>
+      <select value={key(to)} onChange={(e) => onTo(e.target.value)} style={selStyle}>
+        {options.map((o) => <option key={key(o)} value={key(o)}>{monthName(o.year, o.month)}</option>)}
+      </select>
+      <button
+        onClick={() => { setFrom(first); setTo(last); }}
+        title="כל הנתונים מתחילת השנה (אפריל)"
+        style={{
+          padding: '8px 12px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+          border: `1px solid ${isAll ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray300}`,
+          background: isAll ? ADMIN_COLORS.green25 : '#fff',
+          color: isAll ? ADMIN_COLORS.green700 : ADMIN_COLORS.gray700,
+        }}
+      >
+        כל הנתונים
+      </button>
+    </div>
+  );
+}
 
 function CityToggle({ value, onChange }: { value: CityFilter; onChange: (v: CityFilter) => void }) {
   const options: { value: CityFilter; label: string }[] = [
