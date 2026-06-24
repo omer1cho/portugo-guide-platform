@@ -120,7 +120,7 @@ const TENTATIVE_PREFIX = '[כנראה] ';
 
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
-// Palette צבעים נעימה למדריכים — 12 צבעים עם ניגודיות טקסט גבוהה.
+// Palette צבעים נעימה למדריכים — 13 צבעים עם ניגודיות טקסט גבוהה.
 // 8 הראשונים נשמרו כפי שהיו (כדי לא לשנות צבעים קיימים); 4 נוספו כשהגדל
 // מספר המדריכים מעבר ל-8 וגרם לשני מדריכים לקבל אותו צבע. השאר מרווח לעתיד.
 const GUIDE_PALETTE: Array<{ bg: string; fg: string; border: string }> = [
@@ -136,6 +136,7 @@ const GUIDE_PALETTE: Array<{ bg: string; fg: string; border: string }> = [
   { bg: '#e0e7ff', fg: '#3730a3', border: '#a5b4fc' }, // אינדיגו
   { bg: '#fae8ff', fg: '#86198f', border: '#f0abfc' }, // פוקסיה
   { bg: '#ccfbf1', fg: '#0f766e', border: '#5eead4' }, // טיל
+  { bg: '#e2e8f0', fg: '#334155', border: '#94a3b8' }, // כחול-אפור (slate)
 ];
 
 // צבע קבוע לכל מדריך לפי השם — כדי שצבע לא "יזוז" כשמוסיפים מדריך חדש.
@@ -152,7 +153,9 @@ const GUIDE_COLOR_BY_NAME: Record<string, number> = {
   'תום': 7,       // אדום
   'רונה': 9,      // אינדיגו
   'שקד': 8,       // ליים (צהבהב, נפרד מהצהוב-חום של עומר הבן)
+  'נופר': 10,     // פוקסיה (נפרד מהאדום של תום)
   'עומר': 11,     // טיל
+  'דניאל': 12,    // כחול-אפור (נפרד מהצהוב-חום של עומר הבן)
 };
 
 function guideColor(guideId: string | null, guides: Guide[]): { bg: string; fg: string; border: string } | null {
