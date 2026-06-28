@@ -568,8 +568,11 @@ function AddTourContent() {
             });
             await supabase.from('tours').update({ photo_url: url }).eq('id', tourId);
           } catch (photoErr) {
-            // לא חוסמים את השמירה — מתעדים לקונסול וממשיכים
+            // לא חוסמים את השמירה — אבל כן מודיעים למדריכה שהתמונה לא עלתה (ולמה)
             console.error('Photo upload failed:', photoErr);
+            const pmsg = photoErr instanceof Error ? photoErr.message
+              : (photoErr as { message?: string })?.message || 'שגיאה לא ידועה';
+            alert(`הסיור נשמר, אבל התמונה לא עלתה. סיבה: ${pmsg}\nאפשר לנסות לצרף תמונה שוב דרך עריכת הסיור.`);
           }
         }
 

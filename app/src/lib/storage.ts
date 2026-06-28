@@ -122,13 +122,18 @@ export async function uploadTourPhoto(opts: {
   tourType: string;
 }): Promise<string> {
   const compressed = await compressImage(opts.file);
+  // compressImage מצליח → image/jpeg. נכשל (למשל HEIC ב-Safari של אייפון) → הקובץ המקורי.
+  // במקרה כזה מעלים עם הסוג/הסיומת האמיתיים כדי שהאחסון לא ידחה בגלל אי-התאמה.
+  const isJpeg = !compressed.type || compressed.type === 'image/jpeg';
+  const contentType = isJpeg ? 'image/jpeg' : compressed.type;
+  const ext = isJpeg ? 'jpg' : (compressed.type.split('/')[1] || 'jpg');
   const year = opts.tourDate.slice(0, 4);
   const folder = tourTypeFolderSlug(opts.tourType);
-  const path = `${year}/${folder}/${opts.tourDate}_${opts.tourId}.jpg`;
+  const path = `${year}/${folder}/${opts.tourDate}_${opts.tourId}.${ext}`;
 
   const { error } = await supabase.storage
     .from('tour-photos')
-    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    .upload(path, compressed, { upsert: true, contentType });
 
   if (error) throw error;
 
