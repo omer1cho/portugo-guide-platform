@@ -85,9 +85,27 @@ export function tourTypeFolderLabel(tourType: string | null | undefined): string
  * אם הדפדפן לא תומך — מחזיר את הקובץ המקורי בלי טיפול.
  */
 export async function compressImage(file: File): Promise<File> {
-  if (typeof window === 'undefined' || !window.createImageBitmap) return file;
+  if (typeof window === 'undefined') return file;
+
+  // אייפון: תמונות מהגלריה הן HEIC/HEIF. ב-Safari ההמרה דרך canvas לא תמיד עובדת,
+  // אז ממירים קודם ל-JPEG עם heic2any (נטען רק כשצריך). זה מה שפותר העלאה מהגלריה.
+  let work = file;
+  const isHeic = /image\/(heic|heif)/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+  if (isHeic) {
+    try {
+      const heic2any = (await import('heic2any')).default;
+      const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      const blob = Array.isArray(out) ? out[0] : out;
+      work = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+    } catch {
+      // אם ההמרה נכשלה — נמשיך עם המקורי; ה-canvas למטה ינסה, ואם גם הוא ייכשל
+      // יחזור הקובץ המקורי וה-uploadTourPhoto יעלה אותו כ-HEIC (הבאקט מאפשר).
+    }
+  }
+
+  if (!window.createImageBitmap) return work;
   try {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await createImageBitmap(work);
     const MAX_DIM = 1600;
     let { width, height } = bitmap;
     if (width > MAX_DIM || height > MAX_DIM) {
@@ -99,15 +117,15 @@ export async function compressImage(file: File): Promise<File> {
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return file;
+    if (!ctx) return work;
     ctx.drawImage(bitmap, 0, 0, width, height);
     const blob: Blob | null = await new Promise((res) =>
       canvas.toBlob((b) => res(b), 'image/jpeg', 0.85),
     );
-    if (!blob) return file;
-    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+    if (!blob) return work;
+    return new File([blob], work.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
   } catch {
-    return file;
+    return work;
   }
 }
 
