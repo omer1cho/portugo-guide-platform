@@ -1368,10 +1368,21 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
     if (!confirm(`למחוק את המשמרת של ${tourLabel} ב-${shortTime(shift.shift_time)}?\nהשיבוץ ייעלם מהלוח לחלוטין.`)) return;
     setBusy(true);
     try {
-      // אם זה שיבוץ "🤖 קבע" — לזכור שעומר ביטלה אותו ידנית, אחרת ה-autofill ישחזר אותו בטעינה הבאה
-      const isRosterAutofill = shift.notes?.startsWith(ROSTER_AUTOFILL_PREFIX) ?? false;
-      if (isRosterAutofill && shift.city === 'porto') {
-        addSkippedRosterSlot(rosterSlotKey(shift.shift_date, shortTime(shift.shift_time), shift.tour_type, 'porto'));
+      // אם זה שיבוץ שנוצר ע"י הקבע (גיבוי תום "אם הדורו לא יוצא" וכו') — לזכור שעומר
+      // ביטלה אותו ידנית, אחרת ה-autofill ישחזר אותו בטעינה הבאה.
+      // מזהים גם לפי קידומת "🤖 קבע" (ישן) וגם לפי התאמה ל-secondary ב-PORTO_ROSTER (כי
+      // שיבוצי הגיבוי נוצרים עם ה-notes של ה-secondary, בלי הקידומת).
+      if (shift.city === 'porto') {
+        const dow = new Date(shift.shift_date + 'T00:00:00').getDay();
+        const t = shortTime(shift.shift_time);
+        const slot = PORTO_ROSTER.find(
+          (r) => r.dayOfWeek === dow && r.tour_type === shift.tour_type && (!r.time || r.time === t),
+        );
+        const isRosterSecondary = !!(slot?.secondary && shift.notes === slot.secondary.notes);
+        const isRosterAutofill = shift.notes?.startsWith(ROSTER_AUTOFILL_PREFIX) ?? false;
+        if (isRosterSecondary || isRosterAutofill) {
+          addSkippedRosterSlot(rosterSlotKey(shift.shift_date, t, shift.tour_type, 'porto'));
+        }
       }
       await deleteShift(shift.id);
       onChange();
