@@ -16,7 +16,9 @@
     --green-soft: #eef6f0;
     --terra: #c4602f;
     --terra-mute: #9c6b4c;
+    --terra-soft: #f9efe7;
     --gold: #bfa14f;
+    --gold-soft: #f3ecd9;
     --bg: #faf6ee;
     --surface: #fffdf8;
     --band: #f0e9da;
@@ -61,13 +63,13 @@
   .logo-wrap img { height: 42px; width: auto; }
 
   /* ===== Hero ===== */
-  .hero { background: var(--bg); padding: 28px clamp(16px, 4vw, 40px) 36px; }
+  .hero { background: var(--bg); padding: 28px clamp(16px, 4vw, 40px) 20px; }
   .hero-frame {
     max-width: 1100px; margin: 0 auto;
     border: 1px solid var(--gold); padding: 14px;
   }
   .hero-photo {
-    height: 320px;
+    height: 300px;
     background:
       linear-gradient(180deg, rgba(8,30,18,0.04), rgba(8,30,18,0.12)),
       url('/hero-quote-lisbon.jpg') center 42%/cover no-repeat;
@@ -76,104 +78,60 @@
     position: relative; z-index: 2;
     max-width: 640px; margin: -64px auto 0;
     background: var(--surface); border: 1px solid var(--gold);
-    padding: 28px 32px; text-align: center;
+    padding: 26px 32px; text-align: center;
     box-shadow: var(--shadow);
   }
   .hero-greet {
     font-weight: 800; line-height: 1.12;
-    font-size: clamp(28px, 4vw, 42px); color: var(--forest);
+    font-size: clamp(28px, 4vw, 40px); color: var(--forest);
   }
   .hero-tagline {
     font-size: clamp(16px, 2.2vw, 19px); font-weight: 600;
     color: var(--terra); margin-top: 10px; letter-spacing: .01em;
   }
-  .hero-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-  .hero-stat {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: var(--band); border: 1px solid var(--border); border-radius: 100px;
-    padding: 8px 16px; font-size: 14px; color: var(--ink-soft);
-  }
-  .hero-stat b { color: var(--green-deep); font-weight: 700; }
-
-  /* ===== Sticky category nav (legend pills) ===== */
-  .catnav {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(255,255,255,0.94);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    white-space: nowrap;
-    padding: 10px clamp(16px, 4vw, 32px);
-  }
-  .catnav::-webkit-scrollbar { display: none; }
-  .catnav a {
-    display: inline-block;
-    background: var(--green-soft);
-    color: var(--green-dark);
-    padding: 7px 15px;
-    border-radius: 100px;
-    font-size: 14px; font-weight: 600;
-    text-decoration: none;
-    margin-inline-end: 8px;
-    transition: background 0.2s, color 0.2s, transform 0.2s;
-  }
-  .catnav a:hover { background: var(--green); color: #fff; transform: translateY(-1px); }
-  .catnav a.gold {
-    background: rgba(191,161,79,0.16);
-    color: #8a6d1f;
-  }
-  .catnav a.gold:hover { background: var(--gold); color: #fff; }
 
   /* ===== Main layout ===== */
   main { max-width: 920px; margin: 0 auto; padding: 0 32px; }
 
-  /* ===== Table of contents ===== */
-  .toc { padding: 36px 0 40px; border-bottom: 1px solid var(--border); }
-  .toc-head {
-    font-size: clamp(21px, 3.2vw, 27px); font-weight: 800;
-    color: var(--forest); text-align: center;
-    margin-bottom: 20px;
+  /* ===== Category tile grid (fun, replaces heavy TOC) ===== */
+  .cats {
+    padding: 26px 0 8px;
+    scroll-margin-top: 12px;
   }
-  .toc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .toc-list a {
-    display: flex; align-items: center; gap: 14px;
-    text-decoration: none;
+  .cats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .cat-tile {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 16px 8px 13px;
+    text-decoration: none;
+    box-shadow: var(--shadow);
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
-  .toc-list a:hover {
+  .cat-tile:hover {
     border-color: var(--green);
-    box-shadow: 0 4px 14px rgba(35,40,31,0.06);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(35,40,31,0.08);
+    transform: translateY(-2px);
   }
-  .toc-num {
-    flex-shrink: 0;
-    width: 32px; height: 32px;
-    display: grid; place-items: center;
-    background: var(--green-soft); color: var(--green-dark);
-    border-radius: 50%;
-    font-size: 16px; font-weight: 700;
+  .cat-tile .cat-emoji { font-size: 27px; line-height: 1; }
+  .cat-tile .cat-label {
+    font-size: 14px; font-weight: 700; color: var(--forest);
+    text-align: center; line-height: 1.25;
   }
-  .toc-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-  .toc-title { font-size: 17px; font-weight: 700; color: var(--forest); }
-  .toc-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
-  .toc-sub b { color: var(--green-deep); font-weight: 700; }
-  .toc-arrow {
-    flex-shrink: 0; color: var(--gold);
-    font-size: 20px; font-weight: 700;
-    transition: transform 0.2s;
-  }
-  .toc-list a:hover .toc-arrow { transform: translateX(-4px); }
+  .cat-tile.gold { background: var(--gold-soft); border-color: #e5d9b8; }
+  .cat-tile.gold .cat-label { color: #8a6d1f; }
+  .cat-tile.gold:hover { border-color: var(--gold); }
 
   /* ===== City frame ===== */
-  .city-frame { margin: 56px 0; scroll-margin-top: 70px; }
+  .city-frame { margin: 48px 0; scroll-margin-top: 16px; }
   .city-head {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 16px;
     position: relative;
@@ -185,7 +143,7 @@
     background: var(--gold); border-radius: 3px;
   }
   .city-head h2 {
-    font-size: clamp(30px, 5.4vw, 42px); font-weight: 700;
+    font-size: clamp(30px, 5.4vw, 40px); font-weight: 700;
     color: var(--forest);
     line-height: 1.1;
   }
@@ -195,41 +153,59 @@
   }
 
   /* ===== Subsection ===== */
-  .subsection { margin-top: 44px; scroll-margin-top: 70px; }
-  .sub-head { margin-bottom: 20px; }
-  .sub-head h3 {
-    font-size: 26px; font-weight: 700;
-    color: var(--forest); margin-bottom: 6px;
+  .subsection { margin-top: 40px; scroll-margin-top: 16px; }
+  .sub-head { margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+  .sub-head .sub-emoji {
+    flex-shrink: 0;
+    width: 46px; height: 46px;
+    display: grid; place-items: center;
+    background: var(--green-soft);
+    border-radius: 50%;
+    font-size: 23px;
   }
-  .sub-desc {
-    font-size: 16px; color: var(--ink-soft);
-    line-height: 1.6;
-    max-width: 620px;
+  .sub-head h3 {
+    font-size: 25px; font-weight: 700;
+    color: var(--forest);
+    line-height: 1.2;
+  }
+  .sub-head .sub-desc {
+    font-size: 15.5px; color: var(--ink-soft);
+    line-height: 1.5; margin-top: 2px;
   }
 
   /* ===== Place cards ===== */
-  .places { display: grid; gap: 12px; }
+  .places { display: grid; gap: 11px; }
   .place {
-    display: block;
+    display: flex; align-items: flex-start; gap: 14px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 18px 22px;
+    padding: 15px 18px;
     text-decoration: none;
     color: var(--ink);
     box-shadow: var(--shadow);
     transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.2s;
   }
   .place:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: var(--green-mute); }
+  .place-emoji {
+    flex-shrink: 0;
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    background: var(--green-soft);
+    border-radius: 12px;
+    font-size: 21px;
+    margin-top: 2px;
+  }
+  .place-body { flex: 1; min-width: 0; }
   .place-top {
     display: flex; align-items: baseline; justify-content: space-between;
     gap: 12px; flex-wrap: wrap;
   }
-  .place-name { font-size: 19px; font-weight: 700; color: var(--forest); line-height: 1.3; }
+  .place-name { font-size: 18.5px; font-weight: 700; color: var(--forest); line-height: 1.3; }
   .place-map {
     flex-shrink: 0;
     color: var(--ink);
-    font-weight: 600; font-size: 14px;
+    font-weight: 600; font-size: 13.5px;
     text-decoration: underline dashed var(--gold);
     text-underline-offset: 4px;
     white-space: nowrap;
@@ -242,39 +218,36 @@
     font-weight: 700;
   }
   .place:hover .place-map { color: var(--green-deep); }
-  .place-desc { font-size: 16px; color: var(--ink-soft); line-height: 1.65; margin-top: 4px; }
+  .place-desc { font-size: 15.5px; color: var(--ink-soft); line-height: 1.6; margin-top: 3px; }
 
-  /* ===== Polaroid photo strip (like the quote page) ===== */
-  .tour-photo {
-    max-width: 580px; margin: 52px auto 0;
-    background: #fff; padding: 12px 12px 16px;
-    border-radius: 8px; border: 1px solid var(--border);
-    box-shadow: 0 10px 28px rgba(35,40,31,0.14);
-  }
-  .tour-photo img {
-    width: 100%; height: auto; display: block;
-    border-radius: 4px;
-  }
-
-  /* ===== Map block (combos-block style) ===== */
+  /* ===== Map block (with live map) ===== */
   .map-block {
     margin-top: 48px;
-    scroll-margin-top: 70px;
+    scroll-margin-top: 16px;
     background: var(--band);
     border-radius: var(--radius);
-    padding: 32px;
     border: 1px solid var(--border);
     border-inline-start: 4px solid var(--gold);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
-  .map-block h3 {
+  .map-text { padding: 30px 32px; align-self: center; }
+  .map-text h3 {
     font-size: 24px; font-weight: 700; color: var(--forest);
     margin-bottom: 8px;
   }
-  .map-block p {
+  .map-text p {
     font-size: 15px; color: var(--ink-soft);
     line-height: 1.7;
     margin-bottom: 20px;
-    max-width: 560px;
+  }
+  .map-visual { position: relative; min-height: 260px; }
+  .map-visual iframe {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border: 0;
+    filter: saturate(0.85);
   }
   .map-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -291,70 +264,53 @@
   }
   .map-btn:hover { background: var(--green-soft); transform: translateY(-1px); }
 
-  /* ===== Tour cards ===== */
-  .cards { display: grid; gap: 40px; }
-  .card {
+  /* ===== Polaroid photo strip ===== */
+  .tour-photo {
+    max-width: 580px; margin: 48px auto 0;
+    background: #fff; padding: 12px 12px 16px;
+    border-radius: 8px; border: 1px solid var(--border);
+    box-shadow: 0 10px 28px rgba(35,40,31,0.14);
+  }
+  .tour-photo img {
+    width: 100%; height: auto; display: block;
+    border-radius: 4px;
+  }
+
+  /* ===== Compact tour cards (photo side) ===== */
+  .tours-list { display: grid; gap: 14px; }
+  .tour {
+    display: flex; align-items: stretch;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-    display: flex; flex-direction: column;
     text-decoration: none;
     color: var(--ink);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
-  .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
-  .card-img-wrap {
-    position: relative;
-    overflow: hidden;
+  .tour:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .tour-img {
+    width: 132px; flex-shrink: 0;
     background: var(--band);
-    width: 100%;
-    height: 230px;
+    overflow: hidden;
   }
-  .card-img-wrap img {
-    width: 100%; height: 100%; object-fit: cover;
-    object-position: center;
-    display: block;
+  .tour-img img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
     transition: transform 0.5s;
   }
-  .card:hover .card-img-wrap img { transform: scale(1.02); }
-  .card-body { padding: 26px 28px 26px; }
-  .card-title {
-    font-size: 24px; font-weight: 700;
-    color: var(--forest);
-    margin-bottom: 6px;
-    line-height: 1.2;
+  .tour:hover .tour-img img { transform: scale(1.03); }
+  .tour-info { flex: 1; padding: 15px 18px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+  .tour-name { font-size: 20px; font-weight: 700; color: var(--forest); line-height: 1.25; }
+  .tour-tagline { font-size: 14.5px; font-weight: 600; color: var(--green-deep); }
+  .tour-price { font-size: 14.5px; color: var(--ink-soft); margin-top: 3px; }
+  .tour-price .amt { font-weight: 700; color: var(--terra); font-size: 16px; }
+  .tour-price .pkg { color: var(--green-dark); font-weight: 700; }
+  .tour-go {
+    font-size: 14px; font-weight: 700; color: var(--green-dark);
+    margin-top: 5px;
   }
-  .card-tagline {
-    font-size: 17px; font-weight: 600;
-    color: var(--green-deep);
-    margin-bottom: 14px;
-  }
-  .card-meta-strip {
-    background: var(--band);
-    border-radius: 12px;
-    padding: 12px 18px;
-    margin-bottom: 18px;
-    display: flex; gap: 10px 28px;
-    align-items: center;
-    font-size: 15px;
-    color: var(--ink-soft);
-    flex-wrap: wrap;
-  }
-  .meta-item { display: flex; align-items: center; gap: 8px; }
-  .meta-item strong { color: var(--ink); font-weight: 600; }
-  .meta-icon { width: 18px; height: 18px; color: var(--green-dark); flex-shrink: 0; }
-  .card-cta {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: white;
-    color: var(--green-dark);
-    border: 2px solid var(--green);
-    padding: 13px 20px;
-    border-radius: 12px;
-    font-size: 16px; font-weight: 700;
-  }
-  .card:hover .card-cta { background: var(--green-soft); }
+  .tour-go::after { content: ' ←'; color: var(--gold); font-weight: 700; }
 
   /* package note */
   .package-note {
@@ -364,7 +320,7 @@
     font-size: 15px;
     color: var(--ink);
     line-height: 1.6;
-    margin-top: 24px;
+    margin-top: 20px;
   }
   .package-note b { color: var(--green-dark); }
   .package-note strong { color: var(--terra); font-weight: 700; }
@@ -374,9 +330,9 @@
     background: linear-gradient(135deg, var(--green-deep) 0%, var(--forest) 100%);
     color: #fffdf8;
     border-radius: var(--radius);
-    padding: 48px;
-    margin-top: 56px;
-    scroll-margin-top: 70px;
+    padding: 44px 48px;
+    margin-top: 52px;
+    scroll-margin-top: 16px;
     box-shadow: 0 8px 32px rgba(10,61,34,0.22);
   }
   .form-wrap h2 {
@@ -385,7 +341,7 @@
   }
   .form-wrap .lead {
     font-size: 16px; opacity: 0.92;
-    margin-bottom: 28px;
+    margin-bottom: 26px;
     max-width: 480px;
   }
   .review-btns { display: grid; gap: 12px; max-width: 420px; }
@@ -409,8 +365,20 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   }
+  .feedback-note {
+    margin-top: 18px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    opacity: 0.92;
+    max-width: 460px;
+  }
+  .feedback-note a {
+    color: #fff; font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
   .stay-connected {
-    margin-top: 28px;
+    margin-top: 26px;
     padding-top: 22px;
     border-top: 1px solid rgba(255,255,255,0.18);
   }
@@ -433,14 +401,26 @@
     transform: translateY(-1px);
   }
 
+  /* back to top */
+  .back-top {
+    text-align: center;
+    margin-top: 36px;
+  }
+  .back-top a {
+    color: var(--green-dark);
+    font-size: 14px; font-weight: 700;
+    text-decoration: none;
+  }
+  .back-top a:hover { text-decoration: underline; }
+
   /* ===== Footer ===== */
   footer {
     text-align: center;
-    padding: 48px 24px 32px;
+    padding: 40px 24px 32px;
     font-size: 13px;
     color: var(--ink-mute);
     border-top: 1px solid var(--border);
-    margin-top: 64px;
+    margin-top: 48px;
   }
   footer a { color: var(--green-dark); text-decoration: none; font-weight: 600; }
 
@@ -480,33 +460,34 @@
   }
   .action-bar .a-tours:hover { background: var(--green-deep); border-color: var(--green-deep); }
 
-  /* ===== Tablet ===== */
-  @media (max-width: 980px) {
-    .card-img-wrap { height: 210px; }
-    .cards { gap: 32px; }
-  }
-
   /* ===== Mobile ===== */
   @media (max-width: 720px) {
     header.site { padding: 12px 20px; }
     .logo-wrap img { height: 36px; }
-    .hero { padding: 16px 14px 28px; }
+    .hero { padding: 16px 14px 16px; }
     .hero-frame { padding: 10px; }
-    .hero-photo { height: 200px; }
-    .hero-plate { margin: -44px 10px 0; padding: 22px 20px; }
+    .hero-photo { height: 190px; }
+    .hero-plate { margin: -44px 10px 0; padding: 20px 18px; }
     .hero-greet { font-size: 26px; }
     main { padding: 0 20px; }
-    .city-head h2 { font-size: 32px; }
-    .sub-head h3 { font-size: 22px; }
-    .place { padding: 15px 17px; }
-    .place-name { font-size: 17.5px; }
-    .place-desc { font-size: 15px; }
+    .cats-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+    .cat-tile { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 12px 14px; }
+    .cat-tile .cat-emoji { font-size: 22px; }
+    .cat-tile .cat-label { text-align: start; }
+    .city-head h2 { font-size: 30px; }
+    .sub-head h3 { font-size: 21px; }
+    .sub-head .sub-emoji { width: 40px; height: 40px; font-size: 20px; }
+    .place { padding: 13px 14px; gap: 11px; }
+    .place-emoji { width: 38px; height: 38px; font-size: 19px; }
+    .place-name { font-size: 17px; }
+    .place-desc { font-size: 14.5px; }
+    .map-block { grid-template-columns: 1fr; }
+    .map-visual { min-height: 200px; order: -1; }
+    .map-text { padding: 22px 20px 26px; }
+    .tour-img { width: 104px; }
+    .tour-info { padding: 12px 14px; }
+    .tour-name { font-size: 18px; }
     .tour-photo { margin-top: 36px; padding: 8px 8px 12px; }
-    .map-block { padding: 24px 20px; }
-    .card-img-wrap { height: 190px; }
-    .card-body { padding: 20px 20px; }
-    .card-title { font-size: 21px; }
-    .card-meta-strip { gap: 10px 14px; }
     .form-wrap { padding: 28px 22px; }
     .form-wrap h2 { font-size: 24px; }
   }
@@ -531,83 +512,30 @@
 </header>
 
 <!-- ===== HERO ===== -->
-<section class="hero">
+<section class="hero" id="top">
   <div class="hero-frame">
     <div class="hero-photo"></div>
   </div>
   <div class="hero-plate">
     <div class="hero-greet">הטיפים שלנו בליסבון</div>
     <div class="hero-tagline">ההמלצות של צוות פורטוגו, מהניסיון שלנו בעיר</div>
-    <div class="hero-meta">
-      <span class="hero-stat">כל מקום נפתח <b>במפה</b> בלחיצה</span>
-    </div>
   </div>
 </section>
 
-<!-- ===== Reusable SVG icons ===== -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="icon-clock" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
-      <polyline points="12 7 12 12 15 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </symbol>
-    <symbol id="icon-guide" viewBox="0 0 24 24">
-      <circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>
-      <path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </symbol>
-  </defs>
-</svg>
-
-<!-- ===== Sticky category nav ===== -->
-<nav class="catnav" aria-label="ניווט מהיר">
-  <a href="#eat">מסעדות ובתי קפה</a>
-  <a href="#views">תצפיות</a>
-  <a href="#fado">פאדו</a>
-  <a href="#night">חיי לילה</a>
-  <a href="#shop">שופינג</a>
-  <a href="#map">המפה שלנו</a>
-  <a class="gold" href="#tours">עוד סיורים</a>
-  <a class="gold" href="#review">ביקורת</a>
-</nav>
-
 <main>
 
-  <!-- ===== TOC ===== -->
-  <nav class="toc" aria-label="מה מחכה לכם כאן">
-    <div class="toc-head">מה מחכה לכם כאן?</div>
-    <ol class="toc-list">
-      <li><a href="#tips">
-        <span class="toc-num">1</span>
-        <span class="toc-text">
-          <span class="toc-title">ההמלצות שלנו בליסבון</span>
-          <span class="toc-sub"><b>מסעדות ובתי קפה</b> · תצפיות · פאדו · חיי לילה · שופינג</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-      <li><a href="#map">
-        <span class="toc-num">2</span>
-        <span class="toc-text">
-          <span class="toc-title">כל ההמלצות על מפה אחת</span>
-          <span class="toc-sub">שומרים פעם אחת, ורואים הכל מסומן כשמסתובבים בעיר</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-      <li><a href="#tours">
-        <span class="toc-num">3</span>
-        <span class="toc-text">
-          <span class="toc-title">עוד סיורים איתנו</span>
-          <span class="toc-sub">סינטרה · קולינרי · בלם · אראבידה · אובידוש</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-      <li><a href="#review">
-        <span class="toc-num">4</span>
-        <span class="toc-text">
-          <span class="toc-title">נהניתם? ספרו לנו</span>
-        </span>
-        <span class="toc-arrow" aria-hidden="true">←</span>
-      </a></li>
-    </ol>
+  <!-- ===== Category tiles ===== -->
+  <nav class="cats" id="cats" aria-label="קטגוריות">
+    <div class="cats-grid">
+      <a class="cat-tile" href="#eat"><span class="cat-emoji">🍽️</span><span class="cat-label">מסעדות ובתי קפה</span></a>
+      <a class="cat-tile" href="#views"><span class="cat-emoji">🌅</span><span class="cat-label">תצפיות שוות</span></a>
+      <a class="cat-tile" href="#fado"><span class="cat-emoji">🎶</span><span class="cat-label">מופע פאדו</span></a>
+      <a class="cat-tile" href="#night"><span class="cat-emoji">🍻</span><span class="cat-label">חיי לילה</span></a>
+      <a class="cat-tile" href="#shop"><span class="cat-emoji">🛍️</span><span class="cat-label">שופינג</span></a>
+      <a class="cat-tile" href="#map"><span class="cat-emoji">🗺️</span><span class="cat-label">המפה שלנו</span></a>
+      <a class="cat-tile gold" href="#tours"><span class="cat-emoji">✨</span><span class="cat-label">עוד סיורים</span></a>
+      <a class="cat-tile gold" href="#review"><span class="cat-emoji">⭐</span><span class="cat-label">ספרו לנו</span></a>
+    </div>
   </nav>
 
   <!-- ============================================ -->
@@ -616,55 +544,88 @@
   <section class="city-frame" id="tips">
     <div class="city-head">
       <h2>ההמלצות שלנו</h2>
-      <p class="city-lead">אלו ההמלצות שאנחנו נותנים לחברים שמגיעים לבקר. כל מקום ברשימה נפתח אצלכם במפות גוגל בלחיצה, עם ניווט, שעות פתיחה וכל הפרטים.</p>
+      <p class="city-lead">אלו ההמלצות שאנחנו נותנים לחברים שמגיעים לבקר. כל מקום נפתח אצלכם במפות גוגל בלחיצה, עם ניווט, שעות פתיחה וכל הפרטים.</p>
     </div>
 
     <!-- ====== מסעדות ובתי קפה ====== -->
     <div class="subsection" id="eat">
       <div class="sub-head">
-        <h3>מסעדות ובתי קפה</h3>
-        <p class="sub-desc">אנחנו הישראלים אוהבים להכיר מקום דרך הבטן, אז נתחיל מכאן.</p>
+        <span class="sub-emoji">🍽️</span>
+        <div>
+          <h3>מסעדות ובתי קפה</h3>
+          <div class="sub-desc">אנחנו הישראלים אוהבים להכיר מקום דרך הבטן, אז נתחיל מכאן.</div>
+        </div>
       </div>
       <div class="places">
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Time+Out+Market+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Time Out Market</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">שוק אוכל ענק עם דוכנים של המסעדות המובילות בעיר, בבחירת המגזין "טיים אאוט".</div>
+          <span class="place-emoji">🍜</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Time Out Market</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">שוק אוכל ענק עם דוכנים של המסעדות המובילות בעיר, בבחירת המגזין "טיים אאוט".</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=A+Padaria+Portuguesa+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Padaria Portuguesa</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">רשת מאפים שפזורה בכל רחבי העיר: ארוחות בוקר, לחמים, סנדוויצ'ים ועוד. זול, טרי וטעים!</div>
+          <span class="place-emoji">🥐</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Padaria Portuguesa</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">רשת מאפים שפזורה בכל רחבי העיר: ארוחות בוקר, לחמים, סנדוויצ'ים ועוד. זול, טרי וטעים!</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Os+Cabacas+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Os Cabaças</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">מסעדה מקומית פשוטה וזולה, הידועה במנות בשר ייחודיות.</div>
+          <span class="place-emoji">🥩</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Os Cabaças</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדה מקומית פשוטה וזולה, הידועה במנות בשר ייחודיות.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Cervejaria+Ramiro+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Cervejaria Ramiro</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">מוסד אוכל ותיק ופופולרי, המתמחה בדגים ומאכלי ים.</div>
+          <span class="place-emoji">🦐</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Cervejaria Ramiro</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מוסד אוכל ותיק ופופולרי, המתמחה בדגים ומאכלי ים.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Come+Prima+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Come Prima</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">אי אפשר בלי המלצה על מסעדה איטלקית אחת.. ואת זו אתם לא תרצו לפספס! אותנטית ומשובחת.</div>
+          <span class="place-emoji">🍝</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Come Prima</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">אי אפשר בלי המלצה על מסעדה איטלקית אחת.. ואת זו אתם לא תרצו לפספס! אותנטית ומשובחת.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Jardim+das+Cerejas+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Jardim das Cerejas</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">מסעדת בופה לצמחונים וטבעונים, אוכל ביתי מפנק.</div>
+          <span class="place-emoji">🌱</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Jardim das Cerejas</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדת בופה לצמחונים וטבעונים, אוכל ביתי מפנק.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Topo+Martim+Moniz+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Topo Martim Moniz</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">מסעדת טאפסים כיפית עם נוף מרהיב על העיר ועל הטירה של אלפמה.</div>
+          <span class="place-emoji">🌇</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Topo Martim Moniz</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדת טאפסים כיפית עם נוף מרהיב על העיר ועל הטירה של אלפמה.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Tantura+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Tantura</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">אין כמו לפרגן לח'ברה משלנו! מסעדה ים תיכונית איכותית שקטפה אינסוף תארים מקומיים.</div>
+          <span class="place-emoji">🧆</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Tantura</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">אין כמו לפרגן לח'ברה משלנו! מסעדה ים תיכונית איכותית שקטפה אינסוף תארים מקומיים.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Darwin+Cafe+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Darwin Cafe</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">באזור בלם, בתוך מבנה חדשני ומרהיב. האוכל נהדר והנוף עוצר נשימה.</div>
+          <span class="place-emoji">☕</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Darwin Cafe</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">באזור בלם, בתוך מבנה חדשני ומרהיב. האוכל נהדר והנוף עוצר נשימה.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Pasteis+de+Belem" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Pastéis de Belém</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">גם על המובן מאליו צריך להמליץ! הגרסה המקורית של המאפה המסורתי של פורטוגל.</div>
+          <span class="place-emoji">🧁</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Pastéis de Belém</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">גם על המובן מאליו צריך להמליץ! הגרסה המקורית של המאפה המסורתי של פורטוגל.</span>
+          </span>
         </a>
       </div>
     </div>
@@ -672,16 +633,26 @@
     <!-- ====== תצפיות ====== -->
     <div class="subsection" id="views">
       <div class="sub-head">
-        <h3>תצפיות שוות</h3>
+        <span class="sub-emoji">🌅</span>
+        <div>
+          <h3>תצפיות שוות</h3>
+          <div class="sub-desc">העליות של ליסבון מתגמלות, מבטיחים.</div>
+        </div>
       </div>
       <div class="places">
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Miradouro+da+Nossa+Senhora+do+Monte" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Miradouro da Nossa Senhora do Monte</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">הנקודה לתצפית על השקיעה!</div>
+          <span class="place-emoji">🌇</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Miradouro da Nossa Senhora do Monte</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">הנקודה לתצפית על השקיעה!</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Miradouro+Sao+Pedro+de+Alcantara" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Miradouro São Pedro de Alcântara</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">נקודת התצפית היחידה שמשקיפה מזרחה.</div>
+          <span class="place-emoji">🌄</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Miradouro São Pedro de Alcântara</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">נקודת התצפית היחידה שמשקיפה מזרחה.</span>
+          </span>
         </a>
       </div>
     </div>
@@ -689,16 +660,26 @@
     <!-- ====== פאדו ====== -->
     <div class="subsection" id="fado">
       <div class="sub-head">
-        <h3>מופע פאדו</h3>
+        <span class="sub-emoji">🎶</span>
+        <div>
+          <h3>מופע פאדו</h3>
+          <div class="sub-desc">אי אפשר לעזוב את ליסבון בלי ערב אחד כזה.</div>
+        </div>
       </div>
       <div class="places">
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Fado+in+Chiado+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Fado in Chiado</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">מופע פאדו מקסים (ללא ארוחה) בן כ-50 דקות, מדי ערב.</div>
+          <span class="place-emoji">🎤</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Fado in Chiado</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מופע פאדו מקסים (ללא ארוחה) בן כ-50 דקות, מדי ערב.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Timpanas+Fado+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Timpanas</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">מופע פאדו אותנטי המשלב פולקלור, על רקע ארוחת ערב חביבה.</div>
+          <span class="place-emoji">🎻</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Timpanas</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מופע פאדו אותנטי המשלב פולקלור, על רקע ארוחת ערב חביבה.</span>
+          </span>
         </a>
       </div>
     </div>
@@ -706,20 +687,33 @@
     <!-- ====== חיי לילה ====== -->
     <div class="subsection" id="night">
       <div class="sub-head">
-        <h3>חיי לילה</h3>
+        <span class="sub-emoji">🍻</span>
+        <div>
+          <h3>חיי לילה</h3>
+          <div class="sub-desc">לאמיצים שביניכם, העיר רק מתחילה כשמחשיך.</div>
+        </div>
       </div>
       <div class="places">
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Bairro+Alto+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Bairro Alto</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">שכונה שמציעה מגוון ברים. סגנון הבילוי הוא ח'ברה ששותים את הבירה שלהם ממש ברחוב! עוברים מבר לבר ואין שום משמעות לבר שתבחרו. רק תגיעו!</div>
+          <span class="place-emoji">🍺</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Bairro Alto</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">שכונה שמציעה מגוון ברים. סגנון הבילוי הוא ח'ברה ששותים את הבירה שלהם ממש ברחוב! עוברים מבר לבר ואין שום משמעות לבר שתבחרו. רק תגיעו!</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Pink+Street+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>The Pink Street</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">הרחוב הוורוד, כשמו כן הוא. באזור הזה תמצאו ברים מיוחדים כמו <bdi>BytheWine</bdi> ו-<bdi>Pink Wine Point</bdi>.</div>
+          <span class="place-emoji">🍷</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>The Pink Street</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">הרחוב הוורוד, כשמו כן הוא. באזור הזה תמצאו ברים מיוחדים כמו <bdi>BytheWine</bdi> ו-<bdi>Pink Wine Point</bdi>.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Lux+Fragil+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name"><bdi>Lux</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">ללא ספק המועדון הכי גדול ומפורסם בליסבון! בעל 3 קומות והרבה סטייל.</div>
+          <span class="place-emoji">🪩</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Lux</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">ללא ספק המועדון הכי גדול ומפורסם בליסבון! בעל 3 קומות והרבה סטייל.</span>
+          </span>
         </a>
       </div>
     </div>
@@ -727,33 +721,54 @@
     <!-- ====== שופינג ====== -->
     <div class="subsection" id="shop">
       <div class="sub-head">
-        <h3>שופינג</h3>
+        <span class="sub-emoji">🛍️</span>
+        <div>
+          <h3>שופינג</h3>
+          <div class="sub-desc">לחובבי הקניות שביניכם, יש פה במה לצלול.</div>
+        </div>
       </div>
       <div class="places">
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Centro+Colombo+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name">קניון <bdi>Colombo</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">הקניון שמציע הכל מהכל, גם את פריימארק!</div>
+          <span class="place-emoji">🏬</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name">קניון <bdi>Colombo</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">הקניון שמציע הכל מהכל, גם את פריימארק!</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Centro+Vasco+da+Gama+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name">קניון <bdi>Vasco da Gama</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">עוד קניון ענק, ממוקם במזרח העיר בקרבת האוקיינריום המפורסם.</div>
+          <span class="place-emoji">🐙</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name">קניון <bdi>Vasco da Gama</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">עוד קניון ענק, ממוקם במזרח העיר בקרבת האוקיינריום המפורסם.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Rua+Augusta+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name">מדרחובות <bdi>Rua Augusta</bdi> ו-<bdi>Rua Garrett</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">המדרחובות המרכזיים של העיר.</div>
+          <span class="place-emoji">🚶</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name">מדרחובות <bdi>Rua Augusta</bdi> ו-<bdi>Rua Garrett</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">המדרחובות המרכזיים של העיר.</span>
+          </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Avenida+da+Liberdade+Lisboa" target="_blank" rel="noopener">
-          <div class="place-top"><span class="place-name">שדרת <bdi>Avenida da Liberdade</bdi></span><span class="place-map">פתחו במפה</span></div>
-          <div class="place-desc">שדרת היוקרה של ליסבון.</div>
+          <span class="place-emoji">👜</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name">שדרת <bdi>Avenida da Liberdade</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">שדרת היוקרה של ליסבון.</span>
+          </span>
         </a>
       </div>
     </div>
 
     <!-- ====== המפה שלנו ====== -->
     <div class="map-block reveal" id="map">
-      <h3>כל ההמלצות על מפה אחת</h3>
-      <p>שמרו את המפה של פורטוגו אצלכם בגוגל מפות פעם אחת, וכל ההמלצות שלנו יופיעו לכם מסומנות על המפה כשתסתובבו בעיר.</p>
-      <a class="map-btn" href="#" target="_blank" rel="noopener">שמרו את המפה של פורטוגו</a>
+      <div class="map-text">
+        <h3>🗺️ כל ההמלצות על מפה אחת</h3>
+        <p>שמרו את המפה של פורטוגו אצלכם בגוגל מפות פעם אחת, וכל ההמלצות שלנו יופיעו לכם מסומנות על המפה כשתסתובבו בעיר.</p>
+        <a class="map-btn" href="#" target="_blank" rel="noopener">שמרו את המפה של פורטוגו</a>
+      </div>
+      <div class="map-visual">
+        <iframe src="https://maps.google.com/maps?q=Lisboa&z=13&output=embed&hl=iw" loading="lazy" title="מפת ליסבון" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
     </div>
 
     <!-- polaroid strip -->
@@ -767,90 +782,65 @@
   <!-- ============================================ -->
   <section class="city-frame" id="tours">
     <div class="city-head">
-      <h2>בא לכם עוד?</h2>
+      <h2>בא לכם עוד? ✨</h2>
       <p class="city-lead">אם נהניתם איתנו היום, יש לנו עוד כמה דרכים להמשיך להכיר את האזור. לחיצה על סיור תעביר אתכם לכל הפרטים ולהרשמה באתר.</p>
     </div>
 
-    <div class="cards">
+    <div class="tours-list">
 
-      <a class="card reveal" href="https://portugo.co.il/tour/sintra" target="_blank" rel="noopener">
-        <div class="card-img-wrap">
-          <img src="/tours/sintra.jpg" alt="סינטרה והסביבה" loading="lazy">
-        </div>
-        <div class="card-body">
-          <h3 class="card-title">סינטרה והסביבה</h3>
-          <p class="card-tagline">הסיור המבוקש ביותר מחוץ לליסבון</p>
-          <div class="card-meta-strip">
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>טיול יום מלא</span></div>
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
-          </div>
-          <span class="card-cta">לפרטים והרשמה</span>
-        </div>
+      <a class="tour reveal" href="https://portugo.co.il/tour/sintra" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/sintra.jpg" alt="סינטרה והסביבה" loading="lazy"></span>
+        <span class="tour-info">
+          <span class="tour-name">סינטרה והסביבה</span>
+          <span class="tour-tagline">יום שלם · הסיור המבוקש ביותר מחוץ לליסבון</span>
+          <span class="tour-price"><span class="amt">95€</span> לאדם · <span class="pkg">90€ למשתתפי הקלאסי</span></span>
+          <span class="tour-go">לפרטים והרשמה</span>
+        </span>
       </a>
 
-      <a class="card reveal" href="https://portugo.co.il/tour/colinary-lisbon" target="_blank" rel="noopener">
-        <div class="card-img-wrap">
-          <img src="/tours/culinary-lisbon.jpg" alt="הסיור הקולינרי של ליסבון" loading="lazy">
-        </div>
-        <div class="card-body">
-          <h3 class="card-title">הסיור הקולינרי של ליסבון</h3>
-          <p class="card-tagline">טעימות, סיפורים ומשקה מקומי</p>
-          <div class="card-meta-strip">
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>כ-3 שעות</span></div>
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
-          </div>
-          <span class="card-cta">לפרטים והרשמה</span>
-        </div>
+      <a class="tour reveal" href="https://portugo.co.il/tour/colinary-lisbon" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/culinary-lisbon.jpg" alt="הסיור הקולינרי של ליסבון" loading="lazy"></span>
+        <span class="tour-info">
+          <span class="tour-name">הסיור הקולינרי של ליסבון</span>
+          <span class="tour-tagline">כ-3 שעות · טעימות, סיפורים ומשקה מקומי</span>
+          <span class="tour-price"><span class="amt">65€</span> לאדם · <span class="pkg">60€ למשתתפי הקלאסי</span></span>
+          <span class="tour-go">לפרטים והרשמה</span>
+        </span>
       </a>
 
-      <a class="card reveal" href="https://portugo.co.il/tour/belem-tour" target="_blank" rel="noopener">
-        <div class="card-img-wrap">
-          <img src="/tours/belem.jpg" alt="סיור באזור בלם" loading="lazy">
-        </div>
-        <div class="card-body">
-          <h3 class="card-title">סיור באזור בלם</h3>
-          <p class="card-tagline">מסע בעקבות מגלי הארצות בתור הזהב של פורטוגל</p>
-          <div class="card-meta-strip">
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>כשעה וחצי</span></div>
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
-          </div>
-          <span class="card-cta">לפרטים והרשמה</span>
-        </div>
+      <a class="tour reveal" href="https://portugo.co.il/tour/belem-tour" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/belem.jpg" alt="סיור באזור בלם" loading="lazy"></span>
+        <span class="tour-info">
+          <span class="tour-name">סיור באזור בלם</span>
+          <span class="tour-tagline">כשעה וחצי · מסע בעקבות מגלי הארצות</span>
+          <span class="tour-price"><span class="amt">20€</span> לאדם · <span class="pkg">15€ למשתתפי הקלאסי</span></span>
+          <span class="tour-go">לפרטים והרשמה</span>
+        </span>
       </a>
 
-      <a class="card reveal" href="https://portugo.co.il/tour/arrabida-tour" target="_blank" rel="noopener">
-        <div class="card-img-wrap">
-          <img src="/tours/arrabida.jpg" alt="אראבידה והסביבה" loading="lazy">
-        </div>
-        <div class="card-body">
-          <h3 class="card-title">אראבידה והסביבה</h3>
-          <p class="card-tagline">שמורת טבע, חופים מטריפים ועיירת חוף קטנטנה</p>
-          <div class="card-meta-strip">
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>טיול יום מלא</span></div>
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
-          </div>
-          <span class="card-cta">לפרטים והרשמה</span>
-        </div>
+      <a class="tour reveal" href="https://portugo.co.il/tour/arrabida-tour" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/arrabida.jpg" alt="אראבידה והסביבה" loading="lazy"></span>
+        <span class="tour-info">
+          <span class="tour-name">אראבידה והסביבה</span>
+          <span class="tour-tagline">יום שלם · שמורת טבע וחופים מטריפים</span>
+          <span class="tour-price"><span class="amt">95€</span> לאדם · <span class="pkg">90€ למשתתפי הקלאסי</span></span>
+          <span class="tour-go">לפרטים והרשמה</span>
+        </span>
       </a>
 
-      <a class="card reveal" href="https://portugo.co.il/tour/obidos-tour" target="_blank" rel="noopener">
-        <div class="card-img-wrap">
-          <img src="/tours/obidos.jpg" alt="אובידוש והסביבה" loading="lazy">
-        </div>
-        <div class="card-body">
-          <h3 class="card-title">אובידוש והסביבה</h3>
-          <p class="card-tagline">רצועת החוף המערבית ועיירה מוקפת חומה</p>
-          <div class="card-meta-strip">
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-clock"/></svg><span>טיול יום מלא</span></div>
-            <div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>
-          </div>
-          <span class="card-cta">לפרטים והרשמה</span>
-        </div>
+      <a class="tour reveal" href="https://portugo.co.il/tour/obidos-tour" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/obidos.jpg" alt="אובידוש והסביבה" loading="lazy"></span>
+        <span class="tour-info">
+          <span class="tour-name">אובידוש והסביבה</span>
+          <span class="tour-tagline">יום שלם · רצועת החוף המערבית</span>
+          <span class="tour-price"><span class="amt">105€</span> לאדם · <span class="pkg">100€ למשתתפי הקלאסי</span></span>
+          <span class="tour-go">לפרטים והרשמה</span>
+        </span>
       </a>
     </div>
 
     <div class="package-note reveal">
-      <b>טיפ של מקומיים:</b> השתתפתם בסיור הקלאסי? מגיעה לכם <strong>הנחה של 5€ לאדם</strong> על כל סיור נוסף בעיר.
+      <b>💚 טיפ של מקומיים:</b> השתתפתם בסיור הקלאסי? מגיעה לכם <strong>הנחה של 5€ לאדם</strong> על כל סיור נוסף בעיר. פשוט ציינו את זה בהרשמה.
     </div>
   </section>
 
@@ -858,12 +848,13 @@
   <!-- ===========       ביקורת          =========== -->
   <!-- ============================================ -->
   <section class="form-wrap reveal" id="review">
-    <h2>נהניתם? ספרו לעולם</h2>
+    <h2>נהניתם? ספרו לעולם 💚</h2>
     <p class="lead">ההמלצה שלכם היא הדרך הכי טובה לעזור לנו להמשיך. נשמח אם תשתפו את החוויה, זה לוקח דקה.</p>
     <div class="review-btns">
       <a class="submit-btn" href="#" target="_blank" rel="noopener">כתבו לנו ביקורת בגוגל ⭐</a>
       <a class="submit-btn" href="#" target="_blank" rel="noopener">המליצו עלינו בפייסבוק</a>
     </div>
+    <p class="feedback-note">משהו היה פחות מוצלח? יש לכם רעיון לשיפור? <a href="mailto:info.portugo@gmail.com?subject=פידבק על הסיור">כתבו לנו ישירות</a>, אנחנו קוראים הכל ולומדים מכל סיור.</p>
     <div class="stay-connected">
       <div class="stay-label">נשארים בקשר:</div>
       <div class="stay-chips">
@@ -874,11 +865,15 @@
     </div>
   </section>
 
+  <div class="back-top">
+    <a href="#cats">↑ חזרה לכל הקטגוריות</a>
+  </div>
+
 </main>
 
 <footer>
   פורטוגו · סיורים בעברית בפורטוגל<br>
-  <a href="https://www.portugo.co.il/">www.portugo.co.il</a> · <a href="mailto:info.portugo@gmail.com">info.portugo@gmail.com</a> · <bdi>052-2122122</bdi>
+  <a href="https://www.portugo.co.il/">www.portugo.co.il</a> · <a href="mailto:info.portugo@gmail.com">info.portugo@gmail.com</a>
 </footer>
 
 <!-- ===== Sticky bottom action bar ===== -->
