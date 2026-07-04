@@ -62,32 +62,44 @@
   .logo-wrap { display: flex; align-items: center; gap: 12px; }
   .logo-wrap img { height: 42px; width: auto; }
 
-  /* ===== Hero ===== */
-  .hero { background: var(--bg); padding: 28px clamp(16px, 4vw, 40px) 20px; }
-  .hero-frame {
-    max-width: 560px; margin: 0 auto;
-    border: 1px solid var(--gold); padding: 14px;
-  }
-  .hero-photo {
-    aspect-ratio: 4 / 3;
-    background:
-      linear-gradient(180deg, rgba(8,30,18,0.02), rgba(8,30,18,0.10)),
-      url('/tips-hero-founders.jpg') center/cover no-repeat;
-  }
-  .hero-plate {
-    position: relative; z-index: 2;
-    max-width: 640px; margin: -64px auto 0;
-    background: var(--surface); border: 1px solid var(--gold);
-    padding: 26px 32px; text-align: center;
+  /* ===== Hero (greeting card + round medallion) ===== */
+  .hero { background: var(--bg); padding: 90px clamp(16px, 4vw, 40px) 8px; }
+  .hero-card {
+    position: relative;
+    max-width: 620px; margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    padding: 84px 30px 26px;
+    text-align: center;
     box-shadow: var(--shadow);
+  }
+  .hero-avatar {
+    position: absolute;
+    top: -66px; left: 50%;
+    transform: translateX(-50%);
+    width: 132px; height: 132px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--gold);
+    box-shadow: 0 6px 20px rgba(35,40,31,0.18);
+    background: #fff;
+  }
+  .hero-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center 28%;
+    display: block;
   }
   .hero-greet {
     font-weight: 800; line-height: 1.12;
-    font-size: clamp(28px, 4vw, 40px); color: var(--forest);
+    font-size: clamp(26px, 4vw, 36px); color: var(--forest);
   }
-  .hero-tagline {
-    font-size: clamp(16px, 2.2vw, 19px); font-weight: 600;
-    color: var(--terra); margin-top: 10px; letter-spacing: .01em;
+  .hero-intro {
+    font-size: 17.5px;
+    color: var(--ink);
+    line-height: 1.65;
+    max-width: 480px;
+    margin: 12px auto 0;
   }
 
   /* ===== Main layout ===== */
@@ -108,7 +120,7 @@
   }
   .cats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 10px;
   }
   .cat-tile {
@@ -472,10 +484,11 @@
   @media (max-width: 720px) {
     header.site { padding: 12px 20px; }
     .logo-wrap img { height: 36px; }
-    .hero { padding: 16px 14px 16px; }
-    .hero-frame { padding: 10px; }
-    .hero-plate { margin: -44px 10px 0; padding: 20px 18px; }
-    .hero-greet { font-size: 26px; }
+    .hero { padding: 76px 14px 4px; }
+    .hero-card { padding: 68px 20px 22px; }
+    .hero-avatar { width: 112px; height: 112px; top: -56px; }
+    .hero-greet { font-size: 25px; }
+    .hero-intro { font-size: 16px; }
     main { padding: 0 20px; }
     .cats-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
     .cat-tile { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 12px 14px; }
@@ -520,12 +533,10 @@
 
 <!-- ===== HERO ===== -->
 <section class="hero" id="top">
-  <div class="hero-frame">
-    <div class="hero-photo"></div>
-  </div>
-  <div class="hero-plate">
+  <div class="hero-card">
+    <div class="hero-avatar"><img src="/tips-hero-founders.jpg" alt="רונה ועומר, פורטוגו"></div>
     <div class="hero-greet">הטיפים שלנו בליסבון!</div>
-    <div class="hero-tagline">ההמלצות של צוות פורטוגו, מהניסיון שלנו בעיר</div>
+    <p class="hero-intro">משתפים באהבה את ההמלצות הכי טובות שלנו! מקווים שנהניתם בסיור, מוזמנים לשתף את הפידבק שלכם 💚</p>
   </div>
 </section>
 
@@ -533,7 +544,6 @@
 
   <!-- ===== Category tiles ===== -->
   <nav class="cats" id="cats" aria-label="קטגוריות">
-    <p class="cats-intro">משתפים באהבה את ההמלצות הכי טובות שלנו! מקווים שנהניתם בסיור, מוזמנים לשתף את הפידבק שלכם 💚</p>
     <div class="cats-grid">
       <a class="cat-tile" href="#eat"><span class="cat-emoji">🍽️</span><span class="cat-label">מסעדות ובתי קפה</span></a>
       <a class="cat-tile" href="#views"><span class="cat-emoji">🌅</span><span class="cat-label">תצפיות שוות</span></a>
@@ -541,8 +551,6 @@
       <a class="cat-tile" href="#night"><span class="cat-emoji">🍻</span><span class="cat-label">חיי הלילה</span></a>
       <a class="cat-tile" href="#shop"><span class="cat-emoji">🛍️</span><span class="cat-label">שופינג</span></a>
       <a class="cat-tile" href="#map"><span class="cat-emoji">🗺️</span><span class="cat-label">המפה המלאה שלנו</span></a>
-      <a class="cat-tile gold" href="#tours"><span class="cat-emoji">✨</span><span class="cat-label">סיורים נוספים</span></a>
-      <a class="cat-tile gold" href="#review"><span class="cat-emoji">⭐</span><span class="cat-label">ההמלצה שלכם</span></a>
     </div>
   </nav>
 
