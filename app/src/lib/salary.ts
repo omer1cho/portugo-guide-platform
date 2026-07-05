@@ -168,21 +168,24 @@ export function calculatePerTourBreakdown(
  *                           Veterans = 10€. New guides starting mid-2026 = 11€.
  *                           Defaults to 10 to keep old call sites working.
  *
- * חישוב:
+ * חישוב (עודכן 5.7.26 — כלל קבוצות קטנות, הנחיית עומר):
  *   - paying = max(0, people - kids) — יכול להיות עשרוני (למשל 1.5).
- *   - transfer = paying × transferPerPerson — עשרוני כפי שהוא (1.5 × 10€ = 15€).
- *   - base = lookup לפי tier, עם **עיגול למעלה** של מספר המשלמים
- *     (1.5 → tier של 2 = 10€, 12.5 → tier של 13-22 = 20€).
+ *   - בודד (paying עד 1): הפרשה קבועה 5€ לכולם, בלי בסיס.
+ *   - זוג (paying עד 2, כולל 1.5): הפרשה = התעריף פעם אחת (ותיקים 10€ / חדשים 11€), בלי בסיס.
+ *   - 3 ומעלה: transfer = paying × transferPerPerson (עשרוני כפי שהוא),
+ *     base = lookup לפי tier עם **עיגול למעלה** של מספר המשלמים
+ *     (2.5 → tier של 3-12 = 15€, 12.5 → tier של 13-22 = 20€).
  */
 export function calcClassicSalary(people: number, kids: number = 0, transferPerPerson: number = 10) {
   const paying = Math.max(0, people - kids);
+  if (paying <= 0) return { base: 0, transfer: 0 };
+  if (paying <= 1) return { base: 0, transfer: 5 };
+  if (paying <= 2) return { base: 0, transfer: transferPerPerson };
   const transfer = paying * transferPerPerson;
   // עיגול למעלה לחישוב ה-base
   const payingForBase = Math.ceil(paying);
   let base: number;
-  if (payingForBase <= 1) base = 5;
-  else if (payingForBase <= 2) base = 10;
-  else if (payingForBase <= 12) base = 15;
+  if (payingForBase <= 12) base = 15;
   else if (payingForBase <= 22) base = 20;
   else if (payingForBase <= 32) base = 25;
   else base = 30;
