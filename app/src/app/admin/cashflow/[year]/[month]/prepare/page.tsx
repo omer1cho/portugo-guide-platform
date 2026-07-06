@@ -43,6 +43,7 @@ import DateField from '@/components/DateField';
 
 // ספקים תכופים — autocomplete לעמודת "ספק"
 const FREQUENT_SUPPLIERS = [
+  'quinta do beijo',
   'Pastéis de Belém',
   'José Maria da Fonseca',
   'Rei do Bacalhau',
