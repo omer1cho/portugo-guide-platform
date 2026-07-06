@@ -797,7 +797,42 @@ function CashflowRowItem({
             </div>
           )}
           {row.flag === 'multibanco' && (
-            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2 }}>🚨 חשד מולטיבנקו</div>
+            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span>🚨 חשד מולטיבנקו</span>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={async () => {
+                  if (!row.expense) return;
+                  onSavingStart();
+                  try {
+                    await updateExpenseClassification({ expenseId: row.expense.id, mb_confirmed_cash: true });
+                    onChange();
+                  } catch (e) {
+                    const err = e as { message?: string };
+                    alert(err.message || 'שגיאה בשמירה');
+                  } finally {
+                    onSavingEnd();
+                  }
+                }}
+                style={{
+                  fontSize: 10,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  border: '1px solid #92400e',
+                  background: '#fffbeb',
+                  color: '#92400e',
+                  cursor: 'pointer',
+                }}
+              >
+                {isSaving ? '...' : '✓ שולם באשראי והוחזר במזומן מהקופה — תקין'}
+              </button>
+            </div>
+          )}
+          {row.expense?.mb_confirmed_cash && (
+            <div style={{ fontSize: 10, color: ADMIN_COLORS.gray500, marginTop: 2 }}>
+              💳 שולם באשראי והוחזר במזומן מהקופה ✓
+            </div>
           )}
           {row.flag === 'no-receipt' && (
             <div style={{ fontSize: 10, color: '#991b1b', marginTop: 2 }}>⚠ חסרה תמונת קבלה</div>

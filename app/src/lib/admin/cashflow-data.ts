@@ -248,6 +248,8 @@ export type CashflowExpense = {
   tour_type: string | null;
   /** סימן חשד למולטיבנקו (heuristic) — כשהמדריך לא סימן ידנית */
   multibanco_suspect: boolean;
+  /** אושר ע"י אדמין: שולם באשראי של המדריך אבל הוחזר לו במזומן מהקופה → נשאר בקשפלו, בלי דגל */
+  mb_confirmed_cash: boolean;
   /** האם פריט זה דורש קבלה לפי הקטלוג. null = פריט שלא מהקטלוג (free text) */
   catalog_requires_receipt: boolean | null;
   /** שם פריט הקטלוג (אם נבחר מקטלוג) */
@@ -500,6 +502,14 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
 
     // הוצאות בכל החודש (כולל is_admin_added) + הצטרפות לקטלוג לקבלת requires_receipt
     (async () => {
+      // ניסיון ראשון — כולל mb_confirmed_cash (עמודה חדשה 5.7.26)
+      const withMb = await supabase
+        .from('expenses')
+        .select('id, guide_id, expense_date, item, amount, notes, receipt_url, tour_type, supplier_name, receipt_number, cashflow_category, is_admin_added, catalog_item_id, mb_confirmed_cash, expense_catalog(item_name, requires_receipt)')
+        .gte('expense_date', start)
+        .lte('expense_date', end)
+        .order('expense_date');
+      if (!withMb.error) return withMb;
       const primary = await supabase
         .from('expenses')
         .select('id, guide_id, expense_date, item, amount, notes, receipt_url, tour_type, supplier_name, receipt_number, cashflow_category, is_admin_added, catalog_item_id, expense_catalog(item_name, requires_receipt)')
@@ -639,6 +649,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     cashflow_category?: string | null;
     is_admin_added?: boolean | null;
     catalog_item_id?: string | null;
+    mb_confirmed_cash?: boolean | null;
     expense_catalog?: { item_name: string | null; requires_receipt: boolean | null } | null;
   };
   // שלב א': עיבוד ראשוני וניחוש Entity (ספק / סוג סיור / לפי מילות מפתח)
@@ -662,7 +673,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
     const isAdmin = !!e.is_admin_added;
     const guideName = isAdmin ? 'אדמין' : guideById.get(e.guide_id || '')?.name || '—';
     const supplier = e.supplier_name ?? autoApplied.get(e.id) ?? null;
-    const suspectMb = cat === 'regular' && looksLikeMultibanco(e.item, e.notes, supplier);
+    const suspectMb = cat === 'regular' && !e.mb_confirmed_cash && looksLikeMultibanco(e.item, e.notes, supplier);
     const catalogReq = e.expense_catalog?.requires_receipt ?? null;
     const catalogItemName = e.expense_catalog?.item_name ?? null;
     return {
@@ -681,6 +692,7 @@ export async function loadCashflowPrepareData(year: number, month: number): Prom
       is_admin_added: isAdmin,
       tour_type: e.tour_type,
       multibanco_suspect: suspectMb,
+      mb_confirmed_cash: !!e.mb_confirmed_cash,
       catalog_requires_receipt: catalogReq,
       catalog_item_name: catalogItemName,
     };
@@ -833,11 +845,13 @@ export async function updateExpenseClassification(opts: {
   supplier_name?: string | null;
   receipt_number?: string | null;
   cashflow_category?: 'regular' | 'multibanco' | 'excluded';
+  mb_confirmed_cash?: boolean;
 }): Promise<void> {
   const patch: Record<string, unknown> = {};
   if (opts.supplier_name !== undefined) patch.supplier_name = opts.supplier_name || null;
   if (opts.receipt_number !== undefined) patch.receipt_number = opts.receipt_number || null;
   if (opts.cashflow_category !== undefined) patch.cashflow_category = opts.cashflow_category;
+  if (opts.mb_confirmed_cash !== undefined) patch.mb_confirmed_cash = opts.mb_confirmed_cash;
   if (Object.keys(patch).length === 0) return;
   const { error } = await supabase.from('expenses').update(patch).eq('id', opts.expenseId);
   if (error) throw error;
