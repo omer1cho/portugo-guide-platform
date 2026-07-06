@@ -608,6 +608,7 @@ function salaryFullNameLc(fullName: string): string {
     'עומר הבן': 'omer',
     'ניר': 'nir',
     'רונה': 'rona',
+    'יותם': 'yotam eshel',
   };
   if (!fullName || fullName === 'אדמין') return '';
   for (const [he, en] of Object.entries(map)) {
