@@ -41,10 +41,10 @@ export type GuideMonthSummary = {
   status: GuideStatus;
   closed_at: string | null; // תאריך סגירת החודש (אם נסגר)
   salary: SalaryBreakdown;
-  /** סיורים בלי תמונה (ולא photo_skipped=true) — דוח חודשי */
+  /** סיורים בלי תמונה — כולל דילוג מודע (photo_skipped) וגם שכחה — דוח חודשי */
   missing_photos: number;
-  /** רשימת הסיורים החסרים תמונה — לתצוגה מפורטת */
-  missing_photos_list: { id: string; tour_date: string; tour_type: string }[];
+  /** רשימת הסיורים בלי תמונה — לתצוגה מפורטת. skipped=המדריך דילג במודע */
+  missing_photos_list: { id: string; tour_date: string; tour_type: string; skipped: boolean }[];
   /** סה"כ ממתין להפקדה (חוצה חודשים — נצבר עד שהמדריך מפקיד פיזית) */
   pending_total: number;
   /** סטטוס הקבלה החודשית — אם יש שורה ב-receipt_acknowledgements לחודש הזה */
@@ -337,14 +337,12 @@ export async function loadMonthSnapshot(
       status = 'open';
     }
 
-    // תמונות חסרות: סיורים שאין להם photo_url ולא photo_skipped
-    const missingPhotosTours = myTours.filter(
-      (t) => !t.photo_url && !t.photo_skipped,
-    );
+    // תמונות חסרות: כל סיור בלי photo_url — גם דילוג מודע (photo_skipped) וגם שכחה
+    const missingPhotosTours = myTours.filter((t) => !t.photo_url);
     const missing_photos = missingPhotosTours.length;
     const missing_photos_list = missingPhotosTours
       .sort((a, b) => a.tour_date.localeCompare(b.tour_date))
-      .map((t) => ({ id: t.id, tour_date: t.tour_date, tour_type: t.tour_type }));
+      .map((t) => ({ id: t.id, tour_date: t.tour_date, tour_type: t.tour_type, skipped: !!t.photo_skipped }));
 
     const myAck = acks.find((a) => a.guide_id === g.id);
 

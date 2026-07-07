@@ -914,7 +914,7 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
         }}
       >
         <span style={{ fontSize: 16, fontWeight: 600, color: '#a37b00' }}>
-          📷 תמונות חסרות החודש ({snapshot.totals.missing_photos_total})
+          📷 סיורים בלי תמונה החודש ({snapshot.totals.missing_photos_total})
         </span>
         <span style={{ color: ADMIN_COLORS.gray500, fontSize: 13 }}>
           {open ? '▲ הסתר.י' : '▼ הצג.י פירוט'}
@@ -948,7 +948,21 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
                       color: ADMIN_COLORS.gray700,
                     }}
                   >
-                    <span>{t.tour_type}</span>
+                    <span>
+                      {t.tour_type}
+                      <span
+                        style={{
+                          marginInlineStart: 8,
+                          fontSize: 11,
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          background: t.skipped ? '#ffedd5' : '#fee2e2',
+                          color: t.skipped ? '#9a3412' : '#991b1b',
+                        }}
+                      >
+                        {t.skipped ? 'דילג.ה במודע' : 'שכח.ה'}
+                      </span>
+                    </span>
                     <span style={{ color: ADMIN_COLORS.gray500 }}>{formatDate(t.tour_date)}</span>
                   </li>
                 ))}
