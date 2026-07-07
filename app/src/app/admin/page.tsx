@@ -923,50 +923,18 @@ function MissingPhotosReport({ snapshot }: { snapshot: MonthSnapshot }) {
       {open && (
         <div style={{ padding: '0 16px 16px', borderTop: '1px solid #fff8d4' }}>
           {guidesWithMissing.map((g) => (
-            <div key={g.guide.id} style={{ marginTop: 12 }}>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: ADMIN_COLORS.green800,
-                  marginBottom: 6,
-                }}
-              >
-                {g.guide.name} — {g.missing_photos} סיור{g.missing_photos > 1 ? 'ים' : ''}
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {g.missing_photos_list.map((t) => (
-                  <li
-                    key={t.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '6px 10px',
-                      background: '#fffbe6',
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: ADMIN_COLORS.gray700,
-                    }}
-                  >
-                    <span>
-                      {t.tour_type}
-                      <span
-                        style={{
-                          marginInlineStart: 8,
-                          fontSize: 11,
-                          padding: '1px 6px',
-                          borderRadius: 8,
-                          background: t.skipped ? '#ffedd5' : '#fee2e2',
-                          color: t.skipped ? '#9a3412' : '#991b1b',
-                        }}
-                      >
-                        {t.skipped ? 'דילג.ה במודע' : 'שכח.ה'}
-                      </span>
-                    </span>
-                    <span style={{ color: ADMIN_COLORS.gray500 }}>{formatDate(t.tour_date)}</span>
-                  </li>
+            <div key={g.guide.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.7, color: ADMIN_COLORS.gray700 }}>
+              <strong style={{ color: ADMIN_COLORS.green800 }}>
+                {g.guide.name} — {g.missing_photos}
+              </strong>
+              <span style={{ marginInlineStart: 8 }}>
+                {g.missing_photos_list.map((t, i) => (
+                  <span key={t.id}>
+                    {i > 0 && ' · '}
+                    {t.tour_type} ({formatDate(t.tour_date)})
+                  </span>
                 ))}
-              </ul>
+              </span>
             </div>
           ))}
         </div>
