@@ -53,6 +53,7 @@ type ExistingShift = {
   city: 'lisbon' | 'porto';
   status: 'draft' | 'published' | 'cancelled';
   guide_id: string | null;
+  source: string | null;
 };
 
 function shiftKey(s: { shift_date: string; shift_time: string; tour_type: string; city: string }): string {
@@ -153,12 +154,12 @@ export async function GET(req: NextRequest) {
     const websiteShifts = await fetchWebsiteShifts(180);
     result.fetched_from_website = websiteShifts.length;
 
-    // 2. Get all existing website-source shifts that are today or future
+    // 2. Get ALL existing shifts today or future — מכל המקורות!
+    //    גם משמרת שעומר יצרה ידנית חוסמת יצירת כפילות מהאתר (באג נופר 10.7.26)
     const today = new Date().toISOString().slice(0, 10);
     const { data: existing, error: existErr } = await supabase
       .from('shifts')
-      .select('id, shift_date, shift_time, tour_type, city, status, guide_id')
-      .eq('source', 'website')
+      .select('id, shift_date, shift_time, tour_type, city, status, guide_id, source')
       .gte('shift_date', today);
     if (existErr) throw existErr;
     const existingShifts = (existing || []) as ExistingShift[];
@@ -209,6 +210,8 @@ export async function GET(req: NextRequest) {
     const todayStr = new Date().toISOString().slice(0, 10);
     for (const [key, exShift] of existingMap.entries()) {
       if (seenKeys.has(key)) continue;
+      // לוגיקת "נעלם מהאתר" חלה רק על משמרות שמקורן באתר — ידניות של עומר לא נוגעים
+      if (exShift.source !== 'website') continue;
 
       const noteSuffix = `(סנכרון ${todayStr})`;
 
