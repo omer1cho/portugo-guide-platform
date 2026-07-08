@@ -195,6 +195,16 @@ function AdminMainContent() {
                 deltaLabel="מהחודש הקודם"
                 sub="כסף שנאסף בסיורים"
               />
+              <KpiCard
+                label="🏦 בקופות הראשיות עכשיו"
+                value={fmtEuro(snapshot.totals.main_box_total)}
+                sub={
+                  snapshot.guides
+                    .filter((g) => Math.round(g.main_box_now) !== 0)
+                    .map((g) => `${g.guide.name} ${Math.round(g.main_box_now)}`)
+                    .join(' · ') || 'הכל הופקד — הקופות ריקות'
+                }
+              />
             </div>
           </section>
 

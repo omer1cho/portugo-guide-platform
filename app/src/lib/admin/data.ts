@@ -45,6 +45,8 @@ export type GuideMonthSummary = {
   missing_photos: number;
   /** רשימת הסיורים בלי תמונה — לתצוגה מפורטת. skipped=המדריך דילג במודע */
   missing_photos_list: { id: string; tour_date: string; tour_type: string; skipped: boolean }[];
+  /** מזומן בקופה הראשית של המדריך כרגע (בחודש הנצפה) — אותה נוסחה כמו main_box_end */
+  main_box_now: number;
   /** סה"כ ממתין להפקדה (חוצה חודשים — נצבר עד שהמדריך מפקיד פיזית) */
   pending_total: number;
   /** סטטוס הקבלה החודשית — אם יש שורה ב-receipt_acknowledgements לחודש הזה */
@@ -70,6 +72,7 @@ export type MonthSnapshot = {
     open_count: number;
     pending_total: number; // סה"כ כסף שממתין להפקדה אצל כל המדריכים
     missing_photos_total: number; // סה"כ סיורים בלי תמונה
+    main_box_total: number; // סה"כ מזומן בקופות הראשיות של כולם כרגע (בחודש הנצפה)
   };
 };
 
@@ -167,6 +170,7 @@ export async function loadMonthSnapshot(
         open_count: 0,
         pending_total: 0,
         missing_photos_total: 0,
+        main_box_total: 0,
       },
     };
   }
@@ -178,7 +182,7 @@ export async function loadMonthSnapshot(
     supabase
       .from('tours')
       .select(
-        'id, guide_id, tour_date, tour_type, category, notes, photo_url, photo_skipped, bookings(people, kids, price, tip)',
+        'id, guide_id, tour_date, tour_type, category, notes, photo_url, photo_skipped, bookings(people, kids, price, tip, change_given)',
       )
       .in('guide_id', guideIds)
       .gte('tour_date', start)
@@ -233,7 +237,7 @@ export async function loadMonthSnapshot(
     notes: string | null;
     photo_url: string | null;
     photo_skipped: boolean | null;
-    bookings: { people: number; kids: number; price: number; tip: number }[] | null;
+    bookings: { people: number; kids: number; price: number; tip: number; change_given: number | null }[] | null;
   };
 
   const tours = (toursRes.data || []) as RawTour[];
@@ -306,6 +310,8 @@ export async function loadMonthSnapshot(
     // העברות לפי סוג
     let transfers_total = 0; // to_portugo
     let salary_withdrawn = 0;
+    let refills_total = 0; // cash_refill + expenses_refill — יוצאים מהקופה הראשית
+    let other_out = 0; // from_portugo וכו' — כמו trs_total_other ב-guide-month-detail
     let closed_at: string | null = null;
     for (const tr of myTrs) {
       if (tr.transfer_type === 'to_portugo') transfers_total += tr.amount || 0;
@@ -315,8 +321,26 @@ export async function loadMonthSnapshot(
         if (!closed_at || tr.transfer_date < closed_at) {
           closed_at = tr.transfer_date;
         }
+      } else if (tr.transfer_type === 'cash_refill' || tr.transfer_type === 'expenses_refill') {
+        refills_total += tr.amount || 0;
+      } else if (
+        tr.transfer_type !== 'admin_topup_change' &&
+        tr.transfer_type !== 'admin_topup_expenses' &&
+        tr.transfer_type !== 'card_load' &&
+        tr.transfer_type !== 'admin_topup_card'
+      ) {
+        other_out += tr.amount || 0;
       }
     }
+
+    // קופה ראשית עכשיו — אותה נוסחה כמו main_box_end ב-guide-month-detail:
+    // מזומן שנאסף החודש + עודף שניתן − הפקדות/אחר − חיזוקי מעטפות − משיכת משכורת
+    const change_given_total = myTours.reduce(
+      (sum, t) => sum + (t.bookings || []).reduce((s, b) => s + (b.change_given || 0), 0),
+      0,
+    );
+    const main_box_now =
+      cash_collected + change_given_total - transfers_total - other_out - refills_total - salary_withdrawn;
 
     // סטטוס:
     //  - אין סיורים ואין פעילות → empty
@@ -359,6 +383,7 @@ export async function loadMonthSnapshot(
       salary,
       missing_photos,
       missing_photos_list,
+      main_box_now,
       pending_total,
       receipt_ack: myAck
         ? {
@@ -386,6 +411,7 @@ export async function loadMonthSnapshot(
     open_count: summaries.filter((x) => x.status === 'open').length,
     pending_total: summaries.reduce((s, x) => s + (x.pending_total || 0), 0),
     missing_photos_total: summaries.reduce((s, x) => s + (x.missing_photos || 0), 0),
+    main_box_total: summaries.reduce((s, x) => s + (x.main_box_now || 0), 0),
   };
 
   return { year, month, guides: summaries, totals };
