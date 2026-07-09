@@ -141,7 +141,7 @@ export async function loadShiftsForWeek(weekStart: Date, cityFilter: 'all' | 'li
  *  • אם vacations לא קיים — נטען בלי העמודה.
  */
 export async function loadAvailableGuides(): Promise<Guide[]> {
-  const SAFE = 'id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person';
+  const SAFE = 'id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person, birthday';
   const FULL = `${SAFE}, is_guide, vacations`;
 
   // ניסיון ראשי — עם is_guide + vacations

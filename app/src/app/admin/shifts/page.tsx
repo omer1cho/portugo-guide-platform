@@ -216,8 +216,9 @@ function computeAreaHeights(ws: Date, guides: Guide[], shifts: Shift[]) {
   let maxLisbon = 0;
   for (let i = 0; i < 7; i++) {
     const isoDate = toIsoDate(addDays(ws, i));
+    const birthdayCount = guides.filter((g) => g.birthday === isoDate.slice(5)).length;
     const evCount = getCalendarEventsForDate(isoDate)
-      .filter((e) => e.category === 'israel' || e.category === 'portugal').length;
+      .filter((e) => e.category === 'israel' || e.category === 'portugal').length + birthdayCount;
     const vacCount = guides.filter((g) =>
       g.vacations?.some((v) => isoDate >= v.start && isoDate <= v.end),
     ).length;
@@ -1105,6 +1106,8 @@ function DayColumn({
 }) {
   const isToday = toIsoDate(date) === toIsoDate(new Date());
   const events = getCalendarEventsForDate(toIsoDate(date)).filter((e) => e.category === 'israel' || e.category === 'portugal');
+  // ימי הולדת של מדריכים ביום הזה (guides.birthday בפורמט MM-DD)
+  const birthdayGuides = guides.filter((g) => g.birthday === toIsoDate(date).slice(5));
 
   // קיבוץ לפי עיר בלבד (ליסבון מעל פורטו), לפי סדר השעות
   const lisbon = shifts.filter((s) => s.city === 'lisbon').sort((a, b) => a.shift_time.localeCompare(b.shift_time));
@@ -1173,6 +1176,27 @@ function DayColumn({
             title={e.text}
           >
             {e.text}
+          </div>
+        ))}
+        {birthdayGuides.map((g) => (
+          <div
+            key={`bday-${g.id}`}
+            style={{
+              fontSize: 9,
+              background: '#fce7f3',
+              color: '#9d174d',
+              padding: '2px 5px',
+              borderRadius: 3,
+              textAlign: 'center',
+              fontWeight: 600,
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={`יום הולדת ל${g.name}!`}
+          >
+            🎂 יום הולדת ל{g.name}!
           </div>
         ))}
       </div>
