@@ -108,8 +108,8 @@ export function calculatePerTourBreakdown(
     const totalTip = (tour.bookings || []).reduce((s, b) => s + (b.tip || 0), 0);
 
     if (tour.category === 'classic') {
-      const { base, transfer } = calcClassicSalary(totalPeople, totalKids, transferPerPerson);
-      const tips = totalPrice - transfer; // הטיפים נטו של המדריך
+      const { base, transfer } = calcClassicSalary(totalPeople, totalKids, transferPerPerson, totalPrice);
+      const tips = totalPrice - transfer; // הטיפים נטו של המדריך (ההפרשה חתוכה למה שנאסף — הבסיס מובטח)
       return {
         tour_date: tour.tour_date,
         tour_type: tour.tour_type,
@@ -168,20 +168,30 @@ export function calculatePerTourBreakdown(
  *                           Veterans = 10€. New guides starting mid-2026 = 11€.
  *                           Defaults to 10 to keep old call sites working.
  *
- * חישוב (עודכן 5.7.26 — כלל קבוצות קטנות, הנחיית עומר):
+ * חישוב (עודכן 5.7.26 — כלל קבוצות קטנות; 10.7.26 — בסיס מובטח, הנחיות עומר):
  *   - paying = max(0, people - kids) — יכול להיות עשרוני (למשל 1.5).
  *   - בודד (paying עד 1): הפרשה קבועה 5€ לכולם, בלי בסיס.
  *   - זוג (paying עד 2, כולל 1.5): הפרשה = התעריף פעם אחת (ותיקים 10€ / חדשים 11€), בלי בסיס.
  *   - 3 ומעלה: transfer = paying × transferPerPerson (עשרוני כפי שהוא),
  *     base = lookup לפי tier עם **עיגול למעלה** של מספר המשלמים
  *     (2.5 → tier של 3-12 = 15€, 12.5 → tier של 13-22 = 20€).
+ *   - **בסיס מובטח (10.7.26, מקרה שקד):** אם הטיפים שנאספו נמוכים מההפרשה,
+ *     ההפרשה נחתכת למה שנאסף בפועל (פורטוגו מקבלת הכל, אין חוב), והמדריך.ה
+ *     עדיין מקבל.ת את הבסיס המלא — הבסיס לא מתקזז מול החוסר.
+ *     לשם כך מעבירים את `collected` (סה"כ מה שנאסף בסיור); בלי הפרמטר אין חיתוך.
  */
-export function calcClassicSalary(people: number, kids: number = 0, transferPerPerson: number = 10) {
+export function calcClassicSalary(
+  people: number,
+  kids: number = 0,
+  transferPerPerson: number = 10,
+  collected?: number,
+) {
   const paying = Math.max(0, people - kids);
+  const cap = (t: number) => (collected === undefined ? t : Math.min(t, Math.max(0, collected)));
   if (paying <= 0) return { base: 0, transfer: 0 };
-  if (paying <= 1) return { base: 0, transfer: 5 };
-  if (paying <= 2) return { base: 0, transfer: transferPerPerson };
-  const transfer = paying * transferPerPerson;
+  if (paying <= 1) return { base: 0, transfer: cap(5) };
+  if (paying <= 2) return { base: 0, transfer: cap(transferPerPerson) };
+  const transfer = cap(paying * transferPerPerson);
   // עיגול למעלה לחישוב ה-base
   const payingForBase = Math.ceil(paying);
   let base: number;
@@ -365,14 +375,16 @@ export function calculateMonthlySalary(
       // ה-transfer זהה בכל מקרה (paying × rate, חיבורי).
       let tourPeople = 0;
       let tourKids = 0;
+      let tourCollected = 0;
       for (const b of tour.bookings || []) {
         tourPeople += b.people || 0;
         tourKids += b.kids || 0;
+        tourCollected += b.price || 0;
         classic_tips += b.price || 0;
         classic_collected += b.price || 0;
         classic_people += b.people || 0;
       }
-      const { base, transfer } = calcClassicSalary(tourPeople, tourKids, transferPerPerson);
+      const { base, transfer } = calcClassicSalary(tourPeople, tourKids, transferPerPerson, tourCollected);
       classic_base += base;
       classic_transfer += transfer;
     } else if (tour.category === 'fixed') {
