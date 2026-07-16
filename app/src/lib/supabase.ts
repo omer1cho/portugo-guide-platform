@@ -62,6 +62,8 @@ export type Guide = {
   is_active?: boolean;
   /** יום הולדת בפורמט "MM-DD" */
   birthday?: string | null;
+  /** סגירות קבועות שבועיות: מפתח יום-בשבוע ('0'=ראשון..'6'=שבת) → טקסט מגבלה ("רק בוקר") */
+  weekly_constraints?: Record<string, string> | null;
   /** זמינות קבועה (טקסט חופשי) */
   availability_notes?: string | null;
   /** חופשות עתידיות (טקסט חופשי) */

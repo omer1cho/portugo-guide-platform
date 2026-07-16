@@ -174,6 +174,12 @@ function fmtDayLabel(d: Date): string {
   return `${dow} · ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
+/** המגבלה הקבועה של מדריך ליום-בשבוע של תאריך נתון (weekly_constraints), או null */
+function guideConstraintFor(g: Guide, d: Date): string | null {
+  const t = g.weekly_constraints?.[String(d.getDay())]?.trim();
+  return t || null;
+}
+
 function fmtWeekRange(weekStart: Date): string {
   const end = addDays(weekStart, 6);
   return `${weekStart.getDate()}/${weekStart.getMonth() + 1} – ${end.getDate()}/${end.getMonth() + 1}`;
@@ -221,7 +227,7 @@ function computeAreaHeights(ws: Date, guides: Guide[], shifts: Shift[]) {
       .filter((e) => e.category === 'israel' || e.category === 'portugal').length + birthdayCount;
     const vacCount = guides.filter((g) =>
       g.vacations?.some((v) => isoDate >= v.start && isoDate <= v.end),
-    ).length;
+    ).length + guides.filter((g) => guideConstraintFor(g, addDays(ws, i))).length;
     const lisbonCount = shifts.filter(
       (s) => s.shift_date === isoDate && s.city === 'lisbon' && s.status !== 'cancelled',
     ).length;
@@ -1242,6 +1248,34 @@ function DayColumn({
             </div>
           );
         })}
+        {/* סגירות קבועות שבועיות — שלט אפור עדין, מופיע כל שבוע באותו יום */}
+        {guides.map((g) => {
+          const wc = guideConstraintFor(g, date);
+          if (!wc) return null;
+          return (
+            <div
+              key={`wc-${g.id}`}
+              data-constraint-pill
+              style={{
+                fontSize: 10,
+                background: '#f3f4f6',
+                color: ADMIN_COLORS.gray700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                textAlign: 'center',
+                fontWeight: 600,
+                lineHeight: 1.3,
+                border: `1px solid ${ADMIN_COLORS.gray300}`,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+              }}
+              title={`${g.name}: ${wc}`}
+            >
+              🔒 {g.name}: {wc}
+            </div>
+          );
+        })}
       </div>
 
       {/* שורה 4 — אזור ליסבון (גובה שמור אחיד בכל הימים, כדי שפורטו ייושר).
@@ -1676,14 +1710,16 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
           </button>
           {eligibleGuides.map((g) => {
             const c = guideColor(g.id, guides);
+            const wc = guideConstraintFor(g, new Date(`${shift.shift_date}T00:00:00`));
             return (
               <button
                 key={g.id}
                 onClick={() => handleAssign(g.id)}
                 disabled={busy}
+                title={wc ? `סגירה קבועה: ${wc}` : undefined}
                 style={pickerItemStyle(c || { bg: '#fff', fg: '#000', border: 'transparent' })}
               >
-                {g.name}{g.requires_pre_approval ? ' ⚠️' : ''}
+                {g.name}{g.requires_pre_approval ? ' ⚠️' : ''}{wc ? ` · 🔒 ${wc}` : ''}
               </button>
             );
           })}
@@ -1819,6 +1855,7 @@ function GuideCardRow({
   const [availability, setAvailability] = useState(guide.availability_notes || '');
   const [qualified, setQualified] = useState<string[]>(guide.qualified_tours || []);
   const [vacations, setVacations] = useState<GuideVacation[]>(guide.vacations || []);
+  const [weeklyC, setWeeklyC] = useState<Record<string, string>>({ ...(guide.weekly_constraints || {}) });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -1828,9 +1865,10 @@ function GuideCardRow({
       setAvailability(guide.availability_notes || '');
       setQualified(guide.qualified_tours || []);
       setVacations(guide.vacations || []);
+      setWeeklyC({ ...(guide.weekly_constraints || {}) });
       setErr('');
     }
-  }, [isEditing, guide.availability_notes, guide.qualified_tours, guide.vacations]);
+  }, [isEditing, guide.availability_notes, guide.qualified_tours, guide.vacations, guide.weekly_constraints]);
 
   const tourOptions = TOUR_TYPES[guide.city];
 
@@ -1869,9 +1907,15 @@ function GuideCardRow({
         end: v.end,
         ...(v.label?.trim() ? { label: v.label.trim() } : {}),
       }));
+      // סגירות קבועות — שומרים רק ימים עם טקסט; אם אין בכלל, null
+      const cleanedWc: Record<string, string> = {};
+      for (const [day, txt] of Object.entries(weeklyC)) {
+        if (txt?.trim()) cleanedWc[day] = txt.trim();
+      }
       await updateGuideAvailability(guide.id, {
         availability_notes: availability || null,
         qualified_tours: qualified,
+        weekly_constraints: Object.keys(cleanedWc).length > 0 ? cleanedWc : null,
       });
       await updateGuideVacations(guide.id, cleanedVacations);
       onSaved();
@@ -1937,6 +1981,15 @@ function GuideCardRow({
                   {fmtVacation(v)}
                 </span>
               ))}
+            </div>
+          )}
+          {guide.weekly_constraints && Object.values(guide.weekly_constraints).some((t) => t?.trim()) && (
+            <div style={{ fontSize: 12, color: ADMIN_COLORS.gray700, marginBottom: 4 }}>
+              <strong>🔒 סגירות קבועות:</strong>{' '}
+              {DAY_NAMES.map((dn, di) => {
+                const t = guide.weekly_constraints?.[String(di)]?.trim();
+                return t ? `${dn}: ${t}` : null;
+              }).filter(Boolean).join(' · ')}
             </div>
           )}
           {guide.qualified_tours && guide.qualified_tours.length > 0 && (
@@ -2013,6 +2066,24 @@ function GuideCardRow({
               >
                 + הוסיפי חופשה
               </button>
+            </div>
+          </div>
+
+          <div style={labelStyle}>
+            🔒 סגירות קבועות — לפי יום בשבוע (מוצג בלוח ובבחירת מדריך)
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              {DAY_NAMES.map((dn, di) => (
+                <div key={di} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500, width: 44, flexShrink: 0 }}>{dn}</span>
+                  <input
+                    type="text"
+                    value={weeklyC[String(di)] || ''}
+                    onChange={(e) => setWeeklyC((prev) => ({ ...prev, [String(di)]: e.target.value }))}
+                    placeholder='למשל: רק בוקר / בלי קלאסי אחה"צ'
+                    style={{ ...inputStyle, padding: '4px 6px', fontSize: 12, flex: 1 }}
+                  />
+                </div>
+              ))}
             </div>
           </div>
 

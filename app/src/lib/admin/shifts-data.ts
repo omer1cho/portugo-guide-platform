@@ -144,6 +144,16 @@ export async function loadAvailableGuides(): Promise<Guide[]> {
   const SAFE = 'id, name, city, is_admin, is_active, availability_notes, vacation_notes, requires_pre_approval, qualified_tours, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount, classic_transfer_per_person, birthday';
   const FULL = `${SAFE}, is_guide, vacations`;
 
+  // ניסיון ראשון — עם weekly_constraints (עמודה חדשה 15.7.26).
+  // אם העמודה עוד לא קיימת ב-DB, ממשיכים בקסקדה הרגילה בלי לשבור כלום.
+  const withWc = await supabase
+    .from('guides')
+    .select(`${FULL}, weekly_constraints`)
+    .eq('is_active', true)
+    .eq('is_guide', true)
+    .order('name');
+  if (!withWc.error) return (withWc.data || []) as Guide[];
+
   // ניסיון ראשי — עם is_guide + vacations
   const first = await supabase
     .from('guides')
@@ -388,7 +398,11 @@ export async function updateShift(
 /** מעדכן זמינות וסיורים מוסמכים של מדריך (מתוך מודאל הפרטים בשיבוצים) */
 export async function updateGuideAvailability(
   guideId: string,
-  updates: { availability_notes?: string | null; qualified_tours?: string[] },
+  updates: {
+    availability_notes?: string | null;
+    qualified_tours?: string[];
+    weekly_constraints?: Record<string, string> | null;
+  },
 ): Promise<void> {
   const { error } = await supabase.from('guides').update(updates).eq('id', guideId);
   if (error) throw error;
