@@ -412,24 +412,23 @@
     padding-top: 22px;
     border-top: 1px solid rgba(255,255,255,0.18);
   }
-  .stay-label { font-size: 14px; font-weight: 600; margin-bottom: 12px; opacity: 0.92; }
-  .stay-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .stay-chips a {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.30);
-    color: #fff;
-    border-radius: 100px;
-    padding: 9px 15px;
-    font-size: 14px; font-weight: 600;
+  .stay-label { font-size: 15px; font-weight: 700; margin-bottom: 12px; opacity: 0.95; }
+  .stay-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stay-card {
+    background: rgba(255,255,255,0.96);
+    border-radius: 12px;
+    padding: 14px 16px;
     text-decoration: none;
-    transition: all 0.2s;
-    display: inline-flex; align-items: center; gap: 7px;
+    display: block;
+    transition: transform 0.2s, box-shadow 0.2s;
   }
-  .stay-chips a:hover {
-    background: #fff;
-    color: var(--green-dark);
-    transform: translateY(-1px);
+  .stay-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.20);
   }
+  .stay-card .sc-emoji { font-size: 24px; display: block; margin-bottom: 6px; }
+  .stay-card .sc-name { font-weight: 700; font-size: 15px; color: var(--forest); display: block; line-height: 1.3; }
+  .stay-card .sc-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.45; display: block; margin-top: 3px; }
 
   /* back to top */
   .back-top {
@@ -520,6 +519,7 @@
     .tour-photo { margin-top: 36px; padding: 8px 8px 12px; }
     .form-wrap { padding: 28px 22px; }
     .form-wrap h2 { font-size: 24px; }
+    .stay-cards { grid-template-columns: 1fr; }
   }
 
   /* ===== Reduced motion (accessibility) ===== */
@@ -838,7 +838,7 @@
         <a class="map-btn" href="#" target="_blank" rel="noopener">שמרו את המפה של פורטוגו</a>
       </div>
       <div class="map-visual">
-        <iframe src="https://maps.google.com/maps?q=Lisboa&z=13&output=embed&hl=iw" loading="lazy" title="מפת ליסבון" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe src="https://maps.google.com/maps?q=Lisboa&z=13&output=embed&hl=iw" title="מפת ליסבון" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
 
@@ -850,7 +850,7 @@
   <section class="city-frame" id="tours">
     <div class="city-head">
       <h2>בא לכם עוד? ✨</h2>
-      <p class="city-lead">אם נהניתם איתנו היום, יש לנו עוד כמה דרכים להמשיך להכיר את האזור. לחיצה על סיור תעביר אתכם לכל הפרטים ולהרשמה באתר.</p>
+      <p class="city-lead">אם נהניתם איתנו היום, נשמח להמשיך להכיר לכם את פורטוגל בסיורים נוספים. משתתפי הסיור של ליסבון הקלאסית נהנים מ-5€ הנחה בכל סיור נוסף! לחיצה על סיור תעביר אתכם לכל הפרטים והרשמה באתר.</p>
     </div>
 
     <div class="tours-list">
@@ -859,7 +859,7 @@
         <span class="tour-img"><img src="/tours/sintra.jpg" alt="סינטרה והסביבה" loading="lazy"></span>
         <span class="tour-info">
           <span class="tour-name">סינטרה והסביבה</span>
-          <span class="tour-tagline">יום שלם · הסיור המבוקש ביותר מחוץ לליסבון</span>
+          <span class="tour-tagline">יום הטיול המבוקש ביותר מחוץ לליסבון</span>
           <span class="tour-price"><span class="amt">95€</span> לאדם · למשתתפי הקלאסי <span class="pkg">90€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
@@ -868,8 +868,8 @@
       <a class="tour reveal" href="https://portugo.co.il/tour/colinary-lisbon" target="_blank" rel="noopener">
         <span class="tour-img"><img src="/tours/culinary-lisbon.jpg" alt="הסיור הקולינרי של ליסבון" loading="lazy"></span>
         <span class="tour-info">
-          <span class="tour-name">הסיור הקולינרי של ליסבון</span>
-          <span class="tour-tagline">כ-3 שעות · טעימות, סיפורים ומשקה מקומי</span>
+          <span class="tour-name">הסיור הקולינרי</span>
+          <span class="tour-tagline">מסלול שהוא הביס המושלם להכרת פורטוגל דרך הטעם</span>
           <span class="tour-price"><span class="amt">65€</span> לאדם · למשתתפי הקלאסי <span class="pkg">60€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
@@ -879,7 +879,7 @@
         <span class="tour-img"><img src="/tours/belem.jpg" alt="סיור באזור בלם" loading="lazy"></span>
         <span class="tour-info">
           <span class="tour-name">סיור באזור בלם</span>
-          <span class="tour-tagline">כשעה וחצי · מסע בעקבות מגלי הארצות</span>
+          <span class="tour-tagline">מסע בעקבות מגלי הארצות של פורטוגל</span>
           <span class="tour-price"><span class="amt">20€</span> לאדם · למשתתפי הקלאסי <span class="pkg">15€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
@@ -889,7 +889,7 @@
         <span class="tour-img"><img src="/tours/arrabida.jpg" alt="אראבידה והסביבה" loading="lazy"></span>
         <span class="tour-info">
           <span class="tour-name">אראבידה והסביבה</span>
-          <span class="tour-tagline">יום שלם · שמורת טבע וחופים מטריפים</span>
+          <span class="tour-tagline">יום טיול אותנטי עם יקב מקומי ומפעל אריחים</span>
           <span class="tour-price"><span class="amt">95€</span> לאדם · למשתתפי הקלאסי <span class="pkg">90€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
@@ -899,16 +899,13 @@
         <span class="tour-img"><img src="/tours/obidos.jpg" alt="אובידוש והסביבה" loading="lazy"></span>
         <span class="tour-info">
           <span class="tour-name">אובידוש והסביבה</span>
-          <span class="tour-tagline">יום שלם · רצועת החוף המערבית</span>
+          <span class="tour-tagline">יום טיול ברצועת החוף המערבית של פורטוגל</span>
           <span class="tour-price"><span class="amt">105€</span> לאדם · למשתתפי הקלאסי <span class="pkg">100€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
       </a>
     </div>
 
-    <div class="package-note reveal">
-      <b>💚 טיפ של מקומיים:</b> השתתפתם בסיור הקלאסי? מגיעה לכם <strong>הנחה של 5€ לאדם</strong> על כל סיור נוסף בעיר. פשוט ציינו את זה בהרשמה.
-    </div>
   </section>
 
   <!-- ============================================ -->
@@ -921,13 +918,25 @@
       <a class="submit-btn" href="#" target="_blank" rel="noopener">כתבו לנו ביקורת בגוגל ⭐</a>
       <a class="submit-btn" href="#" target="_blank" rel="noopener">המליצו עלינו בפייסבוק</a>
     </div>
-    <p class="feedback-note">משהו היה פחות מוצלח? יש לכם רעיון לשיפור? <a href="mailto:info.portugo@gmail.com?subject=פידבק על הסיור">כתבו לנו ישירות</a>, אנחנו קוראים הכל ולומדים מכל סיור.</p>
+    <p class="feedback-note">החוויה הייתה פחות מוצלחת? יש לכם הצעות לשיפור? <a href="mailto:info.portugo@gmail.com?subject=פידבק על הסיור">כתבו לנו ישירות</a>, אנחנו קוראים כל פידבק לעומק ושמחים ללמוד מכל סיור ולהשתפר.</p>
     <div class="stay-connected">
-      <div class="stay-label">נשארים בקשר:</div>
-      <div class="stay-chips">
-        <a href="https://www.facebook.com/groups/1812672845680384" target="_blank" rel="noopener">קהילת המטיילים בפייסבוק</a>
-        <a href="https://www.instagram.com/portugo_portugal_tours/" target="_blank" rel="noopener">אינסטגרם</a>
-        <a href="https://www.portugo.co.il/" target="_blank" rel="noopener">האתר שלנו</a>
+      <div class="stay-label">נשארים בקשר 💛</div>
+      <div class="stay-cards">
+        <a class="stay-card" href="https://www.facebook.com/groups/1812672845680384" target="_blank" rel="noopener">
+          <span class="sc-emoji">👥</span>
+          <span class="sc-name">קהילת המטיילים בפייסבוק</span>
+          <span class="sc-sub">טיפים, שאלות והמלצות חמות של מטיילים, כל יום</span>
+        </a>
+        <a class="stay-card" href="https://www.instagram.com/portugo_portugal_tours/" target="_blank" rel="noopener">
+          <span class="sc-emoji">📸</span>
+          <span class="sc-name">האינסטגרם שלנו</span>
+          <span class="sc-sub">רגעים יפים מהסיורים, ישר מהשטח</span>
+        </a>
+        <a class="stay-card" href="https://www.portugo.co.il/" target="_blank" rel="noopener">
+          <span class="sc-emoji">🌐</span>
+          <span class="sc-name">האתר שלנו</span>
+          <span class="sc-sub">כל הסיורים, החבילות והמידע במקום אחד</span>
+        </a>
       </div>
     </div>
   </section>
