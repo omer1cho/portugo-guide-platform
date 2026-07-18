@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>הטיפים של פורטוגו בליסבון</title>
+<title>הטיפים של פורטוגו בפורטו</title>
 <link rel="icon" type="image/png" href="/logo.png">
-<meta property="og:title" content="הטיפים של פורטוגו בליסבון">
-<meta property="og:description" content="ההמלצות של צוות פורטוגו: מסעדות, תצפיות, פאדו, חיי לילה ושופינג. כל מקום נפתח במפה בלחיצה.">
+<meta property="og:title" content="הטיפים של פורטוגו בפורטו">
+<meta property="og:description" content="ההמלצות של צוות פורטוגו: מסעדות, חיי לילה ושופינג בפורטו. כל מקום נפתח במפה בלחיצה.">
 <meta property="og:image" content="https://portugo-proposal.vercel.app/tips-hero-founders.jpg">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,11 +46,10 @@
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     font-size: 18px;
-    padding-bottom: 84px; /* room for sticky action bar */
+    padding-bottom: 84px;
   }
   bdi { direction: ltr; unicode-bidi: isolate; }
 
-  /* gentle reveal */
   .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
   .reveal.in-view { opacity: 1; transform: none; }
 
@@ -105,39 +104,15 @@
     font-size: clamp(15px, 2.2vw, 18px); font-weight: 600;
     color: var(--terra); margin-top: 8px; letter-spacing: .01em;
   }
-  .hero-intro {
-    font-size: 17.5px;
-    color: var(--ink);
-    line-height: 1.65;
-    max-width: 480px;
-    margin: 12px auto 0;
-  }
 
   /* ===== Main layout ===== */
   main { max-width: 920px; margin: 0 auto; padding: 0 32px; }
 
-  /* ===== Category tile grid (fun, replaces heavy TOC) ===== */
-  .cats {
-    padding: 26px 0 8px;
-    scroll-margin-top: 12px;
-  }
-  .feedback-strip {
-    display: block;
-    width: fit-content;
-    margin: 16px auto 0;
-    background: var(--green-soft);
-    color: var(--ink);
-    border-radius: 100px;
-    padding: 10px 22px;
-    font-size: 15px; font-weight: 600;
-    text-align: center;
-    text-decoration: none;
-    transition: background 0.2s, transform 0.2s;
-  }
-  .feedback-strip:hover { background: #e2efe6; transform: translateY(-1px); }
+  /* ===== Category tiles ===== */
+  .cats { padding: 26px 0 8px; scroll-margin-top: 12px; }
   .cats-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
   }
   .cat-tile {
@@ -161,9 +136,6 @@
     font-size: 14px; font-weight: 700; color: var(--forest);
     text-align: center; line-height: 1.25;
   }
-  .cat-tile.gold { background: var(--gold-soft); border-color: #e5d9b8; }
-  .cat-tile.gold .cat-label { color: #8a6d1f; }
-  .cat-tile.gold:hover { border-color: var(--gold); }
 
   /* ===== City frame ===== */
   .city-frame { margin: 48px 0; scroll-margin-top: 16px; }
@@ -266,7 +238,7 @@
   .place:hover .place-map { color: var(--green-deep); }
   .place-desc { font-size: 15.5px; color: var(--ink-soft); line-height: 1.6; margin-top: 3px; }
 
-  /* ===== Map block (with live map) ===== */
+  /* ===== Map block ===== */
   .map-block {
     margin-top: 48px;
     scroll-margin-top: 16px;
@@ -310,19 +282,7 @@
   }
   .map-btn:hover { background: var(--green-soft); transform: translateY(-1px); }
 
-  /* ===== Polaroid photo strip ===== */
-  .tour-photo {
-    max-width: 580px; margin: 48px auto 0;
-    background: #fff; padding: 12px 12px 16px;
-    border-radius: 8px; border: 1px solid var(--border);
-    box-shadow: 0 10px 28px rgba(35,40,31,0.14);
-  }
-  .tour-photo img {
-    width: 100%; height: auto; display: block;
-    border-radius: 4px;
-  }
-
-  /* ===== Compact tour cards (photo side) ===== */
+  /* ===== Compact tour cards ===== */
   .tours-list { display: grid; gap: 14px; }
   .tour {
     display: flex; align-items: stretch;
@@ -358,20 +318,7 @@
   }
   .tour-go::after { content: ' ←'; color: var(--gold); font-weight: 700; }
 
-  /* package note */
-  .package-note {
-    background: var(--green-soft);
-    border-radius: 10px;
-    padding: 14px 18px;
-    font-size: 15px;
-    color: var(--ink);
-    line-height: 1.6;
-    margin-top: 20px;
-  }
-  .package-note b { color: var(--green-dark); }
-  .package-note strong { color: var(--terra); font-weight: 700; }
-
-  /* ===== Review block (form-wrap style) ===== */
+  /* ===== Review block ===== */
   .form-wrap {
     background: linear-gradient(135deg, var(--green-deep) 0%, var(--forest) 100%);
     color: #fffdf8;
@@ -446,11 +393,7 @@
   .stay-card .sc-name { font-weight: 700; font-size: 15px; color: var(--forest); display: block; line-height: 1.3; }
   .stay-card .sc-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.45; display: block; margin-top: 3px; }
 
-  /* back to top */
-  .back-top {
-    text-align: center;
-    margin-top: 36px;
-  }
+  .back-top { text-align: center; margin-top: 36px; }
   .back-top a {
     color: var(--green-dark);
     font-size: 14px; font-weight: 700;
@@ -458,7 +401,6 @@
   }
   .back-top a:hover { text-decoration: underline; }
 
-  /* ===== Footer ===== */
   footer {
     text-align: center;
     padding: 40px 24px 32px;
@@ -469,7 +411,7 @@
   }
   footer a { color: var(--green-dark); text-decoration: none; font-weight: 600; }
 
-  /* ===== Sticky bottom action bar (thumb zone) ===== */
+  /* ===== Sticky bottom action bar ===== */
   .action-bar {
     position: fixed; bottom: 0; inset-inline: 0; z-index: 60;
     background: rgba(255,253,248,0.97);
@@ -513,7 +455,6 @@
     .hero-card { padding: 86px 20px 22px; }
     .hero-avatar { width: 148px; height: 148px; top: -74px; }
     .hero-greet { font-size: 25px; }
-    .hero-intro { font-size: 16px; }
     main { padding: 0 20px; }
     .cats-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
     .cat-tile { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 12px 14px; }
@@ -532,13 +473,11 @@
     .tour-img { width: 104px; }
     .tour-info { padding: 12px 14px; }
     .tour-name { font-size: 18px; }
-    .tour-photo { margin-top: 36px; padding: 8px 8px 12px; }
     .form-wrap { padding: 28px 22px; }
     .form-wrap h2 { font-size: 24px; }
     .stay-cards { grid-template-columns: 1fr; }
   }
 
-  /* ===== Reduced motion (accessibility) ===== */
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
@@ -561,7 +500,7 @@
 <section class="hero" id="top">
   <div class="hero-card">
     <div class="hero-avatar"><img src="/tips-hero-founders.jpg" alt="רונה ועומר, פורטוגו"></div>
-    <div class="hero-greet">הטיפים של פורטוגו בליסבון</div>
+    <div class="hero-greet">הטיפים של פורטוגו בפורטו</div>
     <div class="hero-tagline">משתפים באהבה את המלצותינו, מהניסיון שלנו בעיר</div>
   </div>
 </section>
@@ -572,8 +511,6 @@
   <nav class="cats" id="cats" aria-label="קטגוריות">
     <div class="cats-grid">
       <a class="cat-tile" href="#eat"><span class="cat-emoji">🍽️</span><span class="cat-label">מסעדות ובתי קפה</span></a>
-      <a class="cat-tile" href="#views"><span class="cat-emoji">🌅</span><span class="cat-label">תצפיות שוות</span></a>
-      <a class="cat-tile" href="#fado"><span class="cat-emoji">🎶</span><span class="cat-label">מופעי פאדו</span></a>
       <a class="cat-tile" href="#night"><span class="cat-emoji">🍻</span><span class="cat-label">חיי הלילה</span></a>
       <a class="cat-tile" href="#shop"><span class="cat-emoji">🛍️</span><span class="cat-label">שופינג</span></a>
       <a class="cat-tile" href="#map"><span class="cat-emoji">🗺️</span><span class="cat-label">המפה המלאה שלנו</span></a>
@@ -595,155 +532,59 @@
         </div>
       </div>
       <div class="places">
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Time+Out+Market+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍜</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Time Out Market</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">שוק אוכל ענק עם דוכנים של המסעדות המובילות בעיר, בבחירת המגזין "טיים אאוט".</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Os+Cabacas+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🥩</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Os Cabaças</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">מסעדה מקומית פשוטה וזולה בביירו אלטו, מפורסמת בזכות סטייק שאתם צולים בעצמכם על אבן לוהטת. סגורה בימי שני.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Cervejaria+Ramiro+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🦞</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Cervejaria Ramiro</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">מוסד אוכל ותיק ופופולרי, המתמחה בדגים ומאכלי ים. תתכוננו לתור, ותסמכו עלינו שהוא שווה את זה.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=A+Marisqueira+do+Lis+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🦐</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>A Marisqueira do Lis</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">הסוד של המקומיים לפירות ים: אותה רמה כמו המוסדות המפורסמים, בלי התור המטורף. פועלת מאז 1973.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Osteria+Italiana+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍝</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Osteria Italiana</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">אי אפשר בלי המלצה איטלקית אחת! אוסטריה אותנטית וחמימה עם פסטה טרייה.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Ze+da+Mouraria+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍲</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Zé da Mouraria</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">טשקה אגדית בשכונת מוראריה: מנות ענק, בקלאו מהולל ותפריט על לוח גיר. פתוחה רק בצהריים, וזה חלק מהקסם.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=O+Velho+Eurico+Lisboa" target="_blank" rel="noopener">
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Tapabento+Porto" target="_blank" rel="noopener">
           <span class="place-emoji">🥘</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>O Velho Eurico</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">הטשקה הכי מדוברת בעיר כרגע: אוכל פורטוגלי מסורתי בטוויסט צעיר, צמוד לגבעת הטירה. מגיעים מוקדם, מתמלא מהר.</span>
+            <span class="place-top"><span class="place-name"><bdi>Tapabento</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדת טאפסים מודרנית ומגניבה.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Yakuza+by+Olivier+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍣</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Taberna+dos+Mercadores+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🐟</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Yakuza by Olivier</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">יפנית יוקרתית של השף אוליבייה. הטיפ שלנו: תפריט הצהריים באמצע השבוע, ארוחה מלאה במחיר משתלם במיוחד.</span>
+            <span class="place-top"><span class="place-name"><bdi>Taberna dos Mercadores</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">ה-מסעדה לדגים בפורטו: מגוון רחב של דגים ופירות ים טריים.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Dear+Breakfast+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🥞</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Cafeina+Restaurante+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🥩</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Dear Breakfast</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">ארוחת הבוקר המדוברת של ליסבון: פנקייקים, טאקו של בוקר ועיצוב שכיף לשבת בו. שלושה סניפים בעיר.</span>
+            <span class="place-top"><span class="place-name"><bdi>Cafeína</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדה פורטוגלית חדשנית עם תפריט של בשר ודגים. מומלץ להזמין מקום מראש.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Pasteis+de+Belem" target="_blank" rel="noopener">
-          <span class="place-emoji">🧁</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Reitoria+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🔥</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Pastéis de Belém</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">גם על המובן מאליו צריך להמליץ! הגרסה המקורית של המאפה המסורתי של פורטוגל. טיפ: נפתח דלפק מהיר נוסף שחוסך את התור.</span>
+            <span class="place-top"><span class="place-name"><bdi>Reitoria</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדת בשרים שיקית, הידועה בסטייקים שהיא מציעה.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Nicolau+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍳</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=La+Ricotta+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🍝</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Nicolau</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">בית קפה תוסס בלב באישה, מהשמות הכי אהובים בסצנת הבראנץ' של העיר.</span>
+            <span class="place-top"><span class="place-name"><bdi>La Ricotta</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדה איטלקית משובחת, המציעה מנות מתוחכמות בעיצוב קפדני.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Ao+26+Vegan+Food+Project+Lisboa" target="_blank" rel="noopener">
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=daTerra+Porto" target="_blank" rel="noopener">
           <span class="place-emoji">🌱</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Ao 26 Vegan Food Project</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">מסעדה טבעונית שעושה גרסאות לקלאסיקות הפורטוגליות, כולל פרנסזינייה טבעונית.</span>
+            <span class="place-top"><span class="place-name"><bdi>DaTerra</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בופה טבעוני שגם אוכלי הבשר נהנים בו! טעים ובריא במיוחד, ואל תוותרו על הקינוחים.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Zenith+Brunch+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🥞</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Zenith</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בית קפה מודרני המגיש ארוחות בוקר, עם אופציות טבעוניות וחלופות מגוונות.</span>
           </span>
         </a>
       </div>
     </div>
 
-    <!-- ====== תצפיות ====== -->
-    <div class="subsection" id="views">
-      <div class="sub-head">
-        <span class="sub-emoji">🌅</span>
-        <div>
-          <h3>תצפיות שוות</h3>
-          <div class="sub-desc">העליות של ליסבון מתגמלות, מבטיחים.</div>
-        </div>
-      </div>
-      <div class="places">
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Miradouro+da+Nossa+Senhora+do+Monte" target="_blank" rel="noopener">
-          <span class="place-emoji">🌇</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Miradouro da Nossa Senhora do Monte</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">ה-נקודה לתצפית על השקיעה!</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Miradouro+Sao+Pedro+de+Alcantara" target="_blank" rel="noopener">
-          <span class="place-emoji">🌄</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Miradouro São Pedro de Alcântara</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">נקודת התצפית היחידה שמשקיפה מזרחה.</span>
-          </span>
-        </a>
-      </div>
-    </div>
-
-    <!-- ====== פאדו ====== -->
-    <div class="subsection" id="fado">
-      <div class="sub-head">
-        <span class="sub-emoji">🎶</span>
-        <div>
-          <h3>מופעי פאדו</h3>
-          <div class="sub-desc">אי אפשר לעזוב את ליסבון בלי ערב אחד כזה.</div>
-        </div>
-      </div>
-      <div class="places">
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Fado+in+Chiado+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🎤</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Fado in Chiado</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">מופע פאדו מקסים (ללא ארוחה) בן כ-50 דקות, מדי ערב.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=A+Tasca+do+Chico+Bairro+Alto+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍷</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>A Tasca do Chico</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">פאדו עממי אמיתי במקום זעיר בביירו אלטו: בלי כרטיסים, משלמים רק על שתייה. מגיעים מוקדם, מזומן בלבד.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Mesa+de+Frades+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🕯️</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Mesa de Frades</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">בית פאדו בתוך קפלה עתיקה מצופה אזולז'וש באלפמה. אינטימי ומרגש, חובה להזמין מקום מראש.</span>
-          </span>
-        </a>
-      </div>
-    </div>
-
-    <!-- ====== חיי לילה ====== -->
+    <!-- ====== חיי הלילה ====== -->
     <div class="subsection" id="night">
       <div class="sub-head">
         <span class="sub-emoji">🍻</span>
@@ -753,39 +594,39 @@
         </div>
       </div>
       <div class="places">
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Bairro+Alto+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍺</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Rua+Galeria+de+Paris+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🎉</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Bairro Alto</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">שכונה שמציעה מגוון ברים. סגנון הבילוי הוא ח'ברה ששותים את הבירה שלהם ממש ברחוב! עוברים מבר לבר ואין שום משמעות לבר שתבחרו. רק תגיעו!</span>
+            <span class="place-top"><span class="place-name">רובע <bdi>Galeria de Paris</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מרכז חיי הלילה של פורטו: ארבעה רחובות מקבילים עם שילוב של ברים ומועדונים.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Pink+Street+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🍷</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>The Pink Street</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">הרחוב הוורוד, כשמו כן הוא. באזור הזה תמצאו ברים מיוחדים כמו <bdi>BytheWine</bdi> ו-<bdi>Pink Wine Point</bdi>. אל תפספסו את <bdi>Pensão Amor</bdi>!</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Park+Bar+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🌆</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Park</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">בר על גג של חניון, כן כן. הסוד הגלוי של המקומיים לשקיעה עם נוף על הגשר.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=IZAKAYA+Lisboa+Principe+Real" target="_blank" rel="noopener">
-          <span class="place-emoji">🏮</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Izakaya Lisboa</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">בר-מסעדה יפני שווה בפרינסיפה ריאל, מהמקומות המדוברים בעיר. קטן, תוסס ומצוין.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Lux+Fragil+Lisboa" target="_blank" rel="noopener">
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Embaixada+Porto+bar" target="_blank" rel="noopener">
           <span class="place-emoji">🪩</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Lux</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">ללא ספק המועדון הכי גדול ומפורסם בליסבון! בעל 3 קומות והרבה סטייל.</span>
+            <span class="place-top"><span class="place-name"><bdi>Embaixada</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בר-מועדון תוסס בלב הרובע.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Plano+B+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🕺</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Plano B</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מועדון ריקודים.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Aduela+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🍷</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Aduela</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בר שכונתי רגוע ואהוב.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Xico+Queijo+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🧀</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Xico Queijo</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בר יינות וקוקטיילים.</span>
           </span>
         </a>
       </div>
@@ -797,50 +638,28 @@
         <span class="sub-emoji">🛍️</span>
         <div>
           <h3>שופינג</h3>
-          <div class="sub-desc">לחובבי הקניות שביניכם, יש פה במה לצלול.</div>
         </div>
       </div>
       <div class="places">
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Centro+Colombo+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🏬</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name">קניון <bdi>Colombo</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">הקניון שמציע הכל מהכל, גם את פריימארק!</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Centro+Vasco+da+Gama+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🐙</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name">קניון <bdi>Vasco da Gama</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">עוד קניון ענק, ממוקם במזרח העיר בקרבת האוקיינריום המפורסם.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Rua+Augusta+Lisboa" target="_blank" rel="noopener">
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Rua+de+Santa+Catarina+Porto" target="_blank" rel="noopener">
           <span class="place-emoji">🚶</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name">מדרחוב <bdi>Rua Augusta</bdi> ו-<bdi>Rua Garrett</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">המדרחובים המרכזיים של העיר.</span>
+            <span class="place-top"><span class="place-name">מדרחוב <bdi>Santa Catarina</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">רחוב הקניות המרכזי של פורטו, ובמרכזו גם קניון נחמד.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Avenida+da+Liberdade+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">👜</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=NorteShopping+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🏬</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name">שדרת <bdi>Avenida da Liberdade</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">שדרת היוקרה של ליסבון.</span>
+            <span class="place-top"><span class="place-name"><bdi>NorteShopping</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">קניון ענק עם מבחר רחב של חנויות, כולל פריימארק האהובה.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Rua+Dom+Pedro+V+Principe+Real+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">👗</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Vila+do+Conde+The+Style+Outlets" target="_blank" rel="noopener">
+          <span class="place-emoji">🏷️</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name">בוטיקים ב-<bdi>Príncipe Real</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">הרחוב המרכזי של השכונה, מלא בוטיקים ומעצבים מקומיים.</span>
-          </span>
-        </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Feira+da+Ladra+Lisboa" target="_blank" rel="noopener">
-          <span class="place-emoji">🪙</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name">שוק הפשפשים <bdi>Feira da Ladra</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">שוק הפשפשים ההיסטורי של ליסבון, בימי שלישי ושבת: אריחים עתיקים, ויניל ומציאות אמיתיות. באים לפני 11:00.</span>
+            <span class="place-top"><span class="place-name"><bdi>The Style Outlets</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">אאוטלט מותגים כ-20 ק"מ צפונית לפורטו, שבהחלט מצדיק ביקור לחובבי הקניות.</span>
           </span>
         </a>
       </div>
@@ -854,10 +673,9 @@
         <span class="map-btn" style="opacity: 0.6; cursor: default;">שמרו את המפה של פורטוגו · בקרוב</span>
       </div>
       <div class="map-visual">
-        <iframe src="https://maps.google.com/maps?q=Lisboa&z=13&output=embed&hl=iw" title="מפת ליסבון" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe src="https://maps.google.com/maps?q=Porto&z=14&output=embed&hl=iw" title="מפת פורטו" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
-
   </section>
 
   <!-- ============================================ -->
@@ -866,62 +684,31 @@
   <section class="city-frame" id="tours">
     <div class="city-head">
       <h2>בא לכם עוד? ✨</h2>
-      <p class="city-lead">אם נהניתם איתנו היום, נשמח להמשיך להכיר לכם את פורטוגל בסיורים נוספים. <span class="deal-highlight">משתתפי הסיור של ליסבון הקלאסית נהנים מ-5€ הנחה בכל סיור נוסף!</span> לחיצה על סיור תעביר אתכם לכל הפרטים והרשמה באתר.</p>
+      <p class="city-lead">אם נהניתם איתנו היום, נשמח להמשיך להכיר לכם את פורטוגל בסיורים נוספים. <span class="deal-highlight">משתתפי הסיור של פורטו הקלאסית נהנים מ-5€ הנחה בכל סיור נוסף!</span> לחיצה על סיור תעביר אתכם לכל הפרטים והרשמה באתר.</p>
     </div>
 
     <div class="tours-list">
 
-      <a class="tour reveal" href="https://portugo.co.il/tour/sintra" target="_blank" rel="noopener">
-        <span class="tour-img"><img src="/tours/sintra.jpg" alt="סינטרה והסביבה" loading="lazy"></span>
+      <a class="tour reveal" href="https://portugo.co.il/tour/porto-tastings-tour" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/porto-tastings.jpg" alt="סיור הטעימות של פורטו" loading="lazy"></span>
         <span class="tour-info">
-          <span class="tour-name">סינטרה והסביבה</span>
-          <span class="tour-tagline">יום הטיול המבוקש ביותר מחוץ לליסבון</span>
-          <span class="tour-price"><span class="amt">95€</span> לאדם · למשתתפי הקלאסי <span class="pkg">90€</span></span>
-          <span class="tour-go">לפרטים והרשמה</span>
-        </span>
-      </a>
-
-      <a class="tour reveal" href="https://portugo.co.il/tour/colinary-lisbon" target="_blank" rel="noopener">
-        <span class="tour-img"><img src="/tours/culinary-lisbon.jpg" alt="הסיור הקולינרי של ליסבון" loading="lazy"></span>
-        <span class="tour-info">
-          <span class="tour-name">הסיור הקולינרי</span>
-          <span class="tour-tagline">מסלול שהוא הביס המושלם להכרת פורטוגל דרך הטעם</span>
+          <span class="tour-name">סיור הטעימות של פורטו</span>
+          <span class="tour-tagline">להכיר את פורטו דרך הטעם, כולל יין פורט כמובן</span>
           <span class="tour-price"><span class="amt">65€</span> לאדם · למשתתפי הקלאסי <span class="pkg">60€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
       </a>
 
-      <a class="tour reveal" href="https://portugo.co.il/tour/belem-tour" target="_blank" rel="noopener">
-        <span class="tour-img"><img src="/tours/belem.jpg" alt="סיור באזור בלם" loading="lazy"></span>
+      <a class="tour reveal" href="https://portugo.co.il/tour/douro-valley-tour" target="_blank" rel="noopener">
+        <span class="tour-img"><img src="/tours/douro.jpg" alt="עמק הדורו והסביבה" loading="lazy"></span>
         <span class="tour-info">
-          <span class="tour-name">סיור באזור בלם</span>
-          <span class="tour-tagline">מסע בעקבות מגלי הארצות של פורטוגל</span>
-          <span class="tour-price"><span class="amt">20€</span> לאדם · למשתתפי הקלאסי <span class="pkg">15€</span></span>
-          <span class="tour-go">לפרטים והרשמה</span>
-        </span>
-      </a>
-
-      <a class="tour reveal" href="https://portugo.co.il/tour/arrabida-tour" target="_blank" rel="noopener">
-        <span class="tour-img"><img src="/tours/arrabida.jpg" alt="אראבידה והסביבה" loading="lazy"></span>
-        <span class="tour-info">
-          <span class="tour-name">אראבידה והסביבה</span>
-          <span class="tour-tagline">יום טיול אותנטי עם יקב מקומי ומפעל אריחים</span>
-          <span class="tour-price"><span class="amt">95€</span> לאדם · למשתתפי הקלאסי <span class="pkg">90€</span></span>
-          <span class="tour-go">לפרטים והרשמה</span>
-        </span>
-      </a>
-
-      <a class="tour reveal" href="https://portugo.co.il/tour/obidos-tour" target="_blank" rel="noopener">
-        <span class="tour-img"><img src="/tours/obidos.jpg" alt="אובידוש והסביבה" loading="lazy"></span>
-        <span class="tour-info">
-          <span class="tour-name">אובידוש והסביבה</span>
-          <span class="tour-tagline">יום טיול ברצועת החוף המערבית של פורטוגל</span>
+          <span class="tour-name">עמק הדורו והסביבה</span>
+          <span class="tour-tagline">יום טיול בעמק היין העוצמתי של פורטוגל</span>
           <span class="tour-price"><span class="amt">105€</span> לאדם · למשתתפי הקלאסי <span class="pkg">100€</span></span>
           <span class="tour-go">לפרטים והרשמה</span>
         </span>
       </a>
     </div>
-
   </section>
 
   <!-- ============================================ -->
@@ -977,7 +764,6 @@
 </div>
 
 <script>
-  // gentle reveal on scroll
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
   }, { threshold: 0.08 });
