@@ -30,13 +30,13 @@ const ITEMS: Item[] = [
   // ליסבון
   { key: 'classic-lisbon', label: 'ליסבון הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'classic-lisbon' }, canCar: true },
   { key: 'belem', label: 'בלם', sel: { tourSlug: 'belem-private', card: 'belem' }, canCar: true },
-  { key: 'culinary', label: 'קולינרי (ליסבון)', sel: { tourSlug: 'culinary-tastings-private', card: 'culinary' } },
+  { key: 'culinary', label: 'קולינרי (ליסבון)', sel: { tourSlug: 'culinary-private', card: 'culinary' } },
   { key: 'sintra', label: 'סינטרה', sel: { tourSlug: 'sintra-arrabida-private', card: 'sintra' } },
   { key: 'arrabida', label: 'אראבידה', sel: { tourSlug: 'sintra-arrabida-private', card: 'arrabida' } },
   { key: 'obidos', label: 'אובידוש', sel: { tourSlug: 'obidos-private', card: 'obidos' } },
   // פורטו
   { key: 'porto-classic', label: 'פורטו הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'porto-classic' }, canCar: true },
-  { key: 'porto-tastings', label: 'טעימות (פורטו)', sel: { tourSlug: 'culinary-tastings-private', card: 'porto-tastings' } },
+  { key: 'porto-tastings', label: 'טעימות (פורטו)', sel: { tourSlug: 'tastings-private', card: 'porto-tastings' } },
   { key: 'douro', label: 'דורו (פורטו)', sel: { tourSlug: 'douro-private', card: 'douro' } },
   // שילובים
   { key: 'combo-classic-belem', label: 'שילוב: קלאסי + בלם (יום מלא)', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-belem' }, canCar: true, carType: 'full' },

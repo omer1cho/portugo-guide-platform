@@ -26,7 +26,9 @@ type QuoteRow = {
 const TOUR_SLUG_TO_DATA_TOUR: Record<string, string> = {
   'classic-private': 'classic-lisbon',
   'belem-private': 'belem',
-  'culinary-tastings-private': 'culinary',
+  'culinary-tastings-private': 'culinary', // תאימות לאחור — הצעות מלפני הפיצול
+  'culinary-private': 'culinary',
+  'tastings-private': 'porto-tastings',
   'sintra-arrabida-private': 'sintra',
   'obidos-private': 'obidos',
   'douro-private': 'douro',

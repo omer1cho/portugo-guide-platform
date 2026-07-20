@@ -79,7 +79,10 @@ function parseCarLabel(label: string): { min: number; max: number } {
 }
 
 export function getPrivateTour(slug: string): PrivateTour | undefined {
-  return PRIVATE_TOURS.find((t) => t.slug === slug);
+  // תאימות לאחור: הצעות ישנות נשמרו עם ה-slug המשותף (לפני פיצול קולינרי/טעימות 19.7.26).
+  // מיפוי לקולינרי — מחירי הילדים שאיתם ההצעות ההן חושבו במקור.
+  const effective = slug === 'culinary-tastings-private' ? 'culinary-private' : slug;
+  return PRIVATE_TOURS.find((t) => t.slug === effective);
 }
 
 /** ספירת קטגוריה: מבוגרים + ילדים בני 7+ (ילדים עד 6 שקופים לתמחור).

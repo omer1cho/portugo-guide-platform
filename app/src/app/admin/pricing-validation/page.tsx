@@ -834,7 +834,9 @@ function buildOverviewColumns(tours: PrivateTour[]): OverviewColumn[] {
       }
     } else if (tour.slug === 'belem-private') {
       cols.push({ key: 'belem', label: 'בלם', shortLabel: 'בלם', table: tour.regularPrice, tone: 'slate' });
-    } else if (tour.slug === 'culinary-tastings-private') {
+    } else if (tour.slug === 'culinary-private') {
+      // מחירי המבוגרים זהים בקולינרי ובטעימות — עמודה אחת מייצגת את שניהם
+      // (ההבדל הוא רק במחירי הילדים, שמוצגים בכרטיסים עצמם)
       cols.push({ key: 'culinary', label: 'קולינרי / טעימות', shortLabel: 'קולינרי/טעימות', table: tour.regularPrice, tone: 'amber' });
     } else if (tour.slug === 'sintra-arrabida-private') {
       cols.push({ key: 'sintra', label: 'סינטרה / אראבידה', shortLabel: 'סינטרה/אראבידה', table: tour.regularPrice, tone: 'teal' });

@@ -372,11 +372,11 @@ const CULINARY_TASTINGS_REGULAR_ROWS: PrivateTierRow[] = [
   { minSize: 16, maxSize: 18, pricePerPerson: 67 },
 ];
 
-const CULINARY_TASTINGS_PRIVATE: PrivateTour = {
-  slug: 'culinary-tastings-private',
-  name: 'קולינרי פרטי (ליסבון) = טעימות פרטי (פורטו)',
-  priceInfo: 'אותה טבלה לשני הסיורים · טווח 2-18 משתתפים',
-  priceInfoExtra: 'מחיר רגיל 65€/אדם זהה לשניהם. הפרטי תמיד רווחי יותר מהרגיל (כל קטגוריה +19€ עד +68€ תוספת רווח). אין גליטשים — כל מעבר חיובי.',
+const CULINARY_PRIVATE: PrivateTour = {
+  slug: 'culinary-private',
+  name: 'קולינרי פרטי (ליסבון)',
+  priceInfo: 'מחירי מבוגר זהים לטעימות פרטי · טווח 2-18 משתתפים',
+  priceInfoExtra: 'מחיר רגיל 65€/אדם. הפרטי תמיד רווחי יותר מהרגיל (כל קטגוריה +19€ עד +68€ תוספת רווח). אין גליטשים — כל מעבר חיובי.',
   maxParticipants: 18,
   regularPrice: {
     label: 'מחיר רגיל',
@@ -390,6 +390,27 @@ const CULINARY_TASTINGS_PRIVATE: PrivateTour = {
       { ageLabel: '13+', rule: { kind: 'fullPrice' } },
     ],
     note: 'מחיר ילד קבוע — לא תלוי בקטגוריית גודל (כי עלות המזון פר-ילד דומה תמיד). ילדים עד 6 לא נספרים בגודל הקבוצה לצורך מחיר המבוגר; ילדים 7+ כן נספרים. דוגמה: 2 מבוגרים + ילדה בת 5 + ילד בן 9 = קבוצה של 3 → מבוגר 80€, סה"כ 2×80 + 40 + 20 = 220€. אין מחירי חבילה בסיורים פרטיים.',
+  },
+};
+
+const TASTINGS_PRIVATE: PrivateTour = {
+  slug: 'tastings-private',
+  name: 'טעימות פרטי (פורטו)',
+  priceInfo: 'מחירי מבוגר זהים לקולינרי פרטי · טווח 2-18 משתתפים · ילדים 5€ פחות מקולינרי',
+  priceInfoExtra: 'מחיר רגיל 65€/אדם. מחירי הילדים נמוכים ב-5€ מקולינרי (הנחיית עומר 19.7.26).',
+  maxParticipants: 18,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: CULINARY_TASTINGS_REGULAR_ROWS,
+  },
+  children: {
+    perTier: [
+      { ageLabel: 'עד 2', rule: { kind: 'free' } },
+      { ageLabel: '3-6', rule: { kind: 'fixedPrice', price: 15 } },
+      { ageLabel: '7-12', rule: { kind: 'fixedPrice', price: 35 } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'מחיר ילד קבוע — 5€ פחות מקולינרי בכל מדרגה (3-6 = 15€, 7-12 = 35€). ילדים עד 6 לא נספרים בגודל הקבוצה לצורך מחיר המבוגר; ילדים 7+ כן נספרים. אין מחירי חבילה בסיורים פרטיים.',
   },
 };
 
@@ -508,7 +529,8 @@ const DOURO_PRIVATE: PrivateTour = {
 export const PRIVATE_TOURS: PrivateTour[] = [
   CLASSIC_PRIVATE,
   BELEM_PRIVATE,
-  CULINARY_TASTINGS_PRIVATE,
+  CULINARY_PRIVATE,
+  TASTINGS_PRIVATE,
   SINTRA_ARRABIDA_PRIVATE,
   OBIDOS_PRIVATE,
   DOURO_PRIVATE,
