@@ -207,6 +207,21 @@ function heroParticipants(cols: QuoteColumn[]): { amount: string; breakdown: str
   };
 }
 
+/**
+ * טקסט כמות המשתתפים לסעיף "שינויים במספר המשתתפים" בתנאים.
+ * עמודה אחת רגילה → "9"; מדרגה → "8 עד 11"; שתי עמודות → "7 או 9".
+ */
+function termsParticipantsText(cols: QuoteColumn[]): string {
+  return cols
+    .map((c) =>
+      c.type === 'band'
+        ? `${c.minSize} עד ${c.maxSize}`
+        : String(c.adults + c.childrenAges.length),
+    )
+    .filter(Boolean)
+    .join(' או ');
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ uuid: string }> },
@@ -270,6 +285,12 @@ export async function GET(
       /<span class="hero-stat">כמות משתתפים <b><bdi>11<\/bdi><\/b><span class="hero-breakdown">[^<]*<\/span><\/span>/,
       newStat,
     );
+  }
+
+  // ─── טרנספורם 2.5: כמות המשתתפים בסעיף "שינויים במספר המשתתפים" בתנאים ───
+  const termsCount = termsParticipantsText(sel.columns);
+  if (termsCount) {
+    html = html.replace('(11 משתתפים)', `(${htmlEscape(termsCount)} משתתפים)`);
   }
 
   // ─── טרנספורם 3+4: אילו כרטיסים מציגים + בלוקי המחיר ───
