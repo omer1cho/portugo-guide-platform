@@ -379,7 +379,21 @@ export async function GET(
       var wrap = document.createElement('div');
       wrap.innerHTML = newHtml.trim();
       var node = wrap.firstElementChild;
-      if (node) el.parentNode.replaceChild(node, el);
+      if (node) {
+        var prevCap = el.previousElementSibling;
+        var hasStandaloneCap = prevCap && prevCap.classList && prevCap.classList.contains('price-family-cap');
+        el.parentNode.replaceChild(node, el);
+        if (node.querySelector('.price-family-cap')) {
+          // הבלוק המוזרק מביא כותרת משלו - מסירים את הכותרת הסטטית שמעל כדי שלא יופיעו שתיים
+          if (hasStandaloneCap) prevCap.parentNode.removeChild(prevCap);
+        } else if (!hasStandaloneCap) {
+          // בלוק טווח בלי כותרת שהוזרק לכרטיס בלי כותרת סטטית - מוסיפים את הכותרת הקבועה
+          var cap = document.createElement('div');
+          cap.className = 'price-family-cap';
+          cap.textContent = 'המחיר לפי מספר המשתתפים';
+          node.parentNode.insertBefore(cap, node);
+        }
+      }
     }
   }
   Object.keys(priceByTour).forEach(function(dt){
