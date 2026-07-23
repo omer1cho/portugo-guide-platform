@@ -26,6 +26,7 @@ export const maxDuration = 60;
 // מיפוי שם הסיור באתר → tour_type שמשמש בשאר המערכת + עיר
 // (שמות הtour_type נלקחים מ-TOUR_TYPES ב-lib/supabase.ts לעקביות)
 const TOUR_TYPE_MAP: Record<string, { tour_type: string; city: 'lisbon' | 'porto' }> = {
+  'סיור יהדות בליסבון': { tour_type: 'יהדות', city: 'lisbon' },
   'ליסבון הקלאסית': { tour_type: 'קלאסי_1', city: 'lisbon' },
   'פורטו הקלאסית': { tour_type: 'פורטו_1', city: 'porto' },
   'סינטרה והסביבה': { tour_type: 'סינטרה', city: 'lisbon' },
@@ -177,7 +178,12 @@ export async function GET(req: NextRequest) {
       source: string;
       website_tour_id: string;
       status: string;
+      guide_id?: string;
     }> = [];
+
+    // סיור יהדות: עד להודעה חדשה רונה תמיד משובצת (הנחיית עומר 19.7.26).
+    // לא נכנס למנגנוני שכר — רק שיבוץ בלוח.
+    const RONA_GUIDE_ID = 'ba095472-99a6-4da6-8fa4-e8892001f808';
 
     for (const ws of websiteShifts) {
       const key = shiftKey(ws);
@@ -191,6 +197,7 @@ export async function GET(req: NextRequest) {
           source: 'website',
           website_tour_id: ws.website_tour_id,
           status: 'draft',
+          ...(ws.tour_type === 'יהדות' ? { guide_id: RONA_GUIDE_ID } : {}),
         });
       }
     }

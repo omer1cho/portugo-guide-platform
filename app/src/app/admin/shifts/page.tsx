@@ -54,7 +54,8 @@ const TRAINING_TOUR_TYPES = new Set(['תצפות', 'נסיון_דפים']);
 const TEAM_TOUR_TYPES = new Set(['פעילות_צוות']);
 
 // סוגים שמשתמשים בלוגיקת "פירוט ב-notes" (כמו פרטי) — סינון מדריכים סלחני (בלי qualified_tours).
-const FLEXIBLE_TOUR_TYPES = new Set([...PRIVATE_TOUR_TYPES, ...TRAINING_TOUR_TYPES, ...TEAM_TOUR_TYPES]);
+// 'יהדות' — סיור חדש (סונכרן מהאתר); אין לו הסמכות אצל מדריכים, אז מדלגים על סינון ההסמכה
+const FLEXIBLE_TOUR_TYPES = new Set([...PRIVATE_TOUR_TYPES, ...TRAINING_TOUR_TYPES, ...TEAM_TOUR_TYPES, 'יהדות']);
 
 // קידומת ההערה של שיבוצים שנוצרו ע"י silentApplyPortoRoster ("🤖 קבע · אם הדורו יוצא" וכו')
 const ROSTER_AUTOFILL_PREFIX = '🤖 קבע';

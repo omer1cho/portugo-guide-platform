@@ -437,6 +437,7 @@ export function tourTypeLabel(tourType: string): string {
     'תצפות': 'תצפות',
     'נסיון_דפים': 'ניסיון דפים',
     'פעילות_צוות': 'פעילות צוות',
+    'יהדות': 'סיור יהדות',
   };
   return map[tourType] || tourType;
 }
