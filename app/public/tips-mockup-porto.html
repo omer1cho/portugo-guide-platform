@@ -112,7 +112,7 @@
   .cats { padding: 26px 0 8px; scroll-margin-top: 76px; }
   .cats-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 10px;
   }
   .cat-tile {
@@ -512,7 +512,8 @@
   <!-- ===== Category tiles ===== -->
   <nav class="cats" id="cats" aria-label="קטגוריות">
     <div class="cats-grid">
-      <a class="cat-tile" href="#eat"><span class="cat-emoji">🍽️</span><span class="cat-label">מסעדות ובתי קפה</span></a>
+      <a class="cat-tile" href="#eat"><span class="cat-emoji">🍽️</span><span class="cat-label">מסעדות</span></a>
+      <a class="cat-tile" href="#cafes"><span class="cat-emoji">☕</span><span class="cat-label">בתי קפה</span></a>
       <a class="cat-tile" href="#views"><span class="cat-emoji">🌅</span><span class="cat-label">תצפיות שוות</span></a>
       <a class="cat-tile" href="#night"><span class="cat-emoji">🍻</span><span class="cat-label">חיי הלילה</span></a>
       <a class="cat-tile" href="#shop"><span class="cat-emoji">🛍️</span><span class="cat-label">שופינג</span></a>
@@ -530,7 +531,7 @@
       <div class="sub-head">
         <span class="sub-emoji">🍽️</span>
         <div>
-          <h3>מסעדות ובתי קפה</h3>
+          <h3>מסעדות</h3>
           <div class="sub-desc">אנחנו הישראלים אוהבים להכיר מקום דרך הבטן, אז נתחיל מכאן.</div>
         </div>
       </div>
@@ -556,6 +557,13 @@
             <span class="place-desc">ה-מסעדה לדגים בפורטו: מגוון רחב של דגים ופירות ים טריים. מקום זעיר, מזמינים מראש הרבה זמן קודם.</span>
           </span>
         </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Dom+Peixe+Matosinhos" target="_blank" rel="noopener">
+          <span class="place-emoji">🎣</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Dom Peixe</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">מסעדת דגים מעולה במטוזיניוש, שכונת הדייגים של פורטו. משתלב נהדר עם יום חוף.</span>
+          </span>
+        </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Cafeina+Restaurante+Porto" target="_blank" rel="noopener">
           <span class="place-emoji">🥩</span>
           <span class="place-body">
@@ -577,18 +585,32 @@
             <span class="place-desc">מסעדה איטלקית משובחת, המציעה מנות מתוחכמות בעיצוב קפדני.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=daTerra+Porto" target="_blank" rel="noopener">
-          <span class="place-emoji">🌱</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=A+Despensa+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🍝</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>DaTerra</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">מסעדה טבעונית שגם אוכלי הבשר נהנים בה! טעים ובריא במיוחד, ואל תוותרו על הקינוחים.</span>
+            <span class="place-top"><span class="place-name"><bdi>A Despensa</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">איטלקית קטנה ומצוינת: פסטות טריות ואווירה אינטימית.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Zenith+Brunch+Porto" target="_blank" rel="noopener">
-          <span class="place-emoji">🥞</span>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Cult+do+Pita+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🧆</span>
           <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Zenith</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">בית קפה מודרני המגיש ארוחות בוקר, עם אופציות טבעוניות וחלופות מגוונות.</span>
+            <span class="place-top"><span class="place-name"><bdi>Cult do Pita</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">אין כמו לפרגן לח'ברה שלנו! פיתות במילוי ישראלי מפנק, טעם של בית.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Ramen+Me+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🍜</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Ramen Me</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">האסיאתית של פורטו: ראמן מהביל ומנחם, בדיוק מה שצריך ביום סגריר.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Honest+Greens+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🌱</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Honest Greens</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">טרי, בריא ומגוון, עם שפע אפשרויות צמחוניות וטבעוניות.</span>
           </span>
         </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Casa+Guedes+Porto" target="_blank" rel="noopener">
@@ -598,18 +620,44 @@
             <span class="place-desc">מוסד מקומי ותיק: כריך חזיר צלוי עם גבינת סרה נמסה. זול, פשוט וממכר.</span>
           </span>
         </a>
-        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Castro+Atelier+de+Pasteis+de+Nata+Porto" target="_blank" rel="noopener">
-          <span class="place-emoji">🧁</span>
-          <span class="place-body">
-            <span class="place-top"><span class="place-name"><bdi>Castro</bdi></span><span class="place-map">פתחו במפה</span></span>
-            <span class="place-desc">הפשטל דה נאטה הכי טוב בפורטו, חם ופריך מהתנור. שווה את התור.</span>
-          </span>
-        </a>
         <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Mercado+do+Bolhao+Porto" target="_blank" rel="noopener">
           <span class="place-emoji">🧺</span>
           <span class="place-body">
             <span class="place-top"><span class="place-name">שוק <bdi>Bolhão</bdi></span><span class="place-map">פתחו במפה</span></span>
             <span class="place-desc">השוק המרכזי ההיסטורי, ששופץ וחזר להיות מהמקומות התוססים בעיר. הדוכנים מפנקים בטעימות!</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ====== בתי קפה וארוחות בוקר ====== -->
+    <div class="subsection" id="cafes">
+      <div class="sub-head">
+        <span class="sub-emoji">☕</span>
+        <div>
+          <h3>בתי קפה וארוחות בוקר</h3>
+        </div>
+      </div>
+      <div class="places">
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Zenith+Brunch+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🥞</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Zenith</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בית קפה מודרני המגיש ארוחות בוקר, עם אופציות טבעוניות וחלופות מגוונות.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Comfort+Cakes+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🍰</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Comfort Cakes</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">ארוחת בוקר מפנקת ועוגות מהממות. פינוק אמיתי של בוקר.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Castro+Atelier+de+Pasteis+de+Nata+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🧁</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Castro</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">הפשטל דה נאטה הכי טוב בפורטו, חם ופריך מהתנור. שווה את התור.</span>
           </span>
         </a>
       </div>
@@ -684,6 +732,20 @@
           <span class="place-body">
             <span class="place-top"><span class="place-name"><bdi>Xico Queijo</bdi></span><span class="place-map">פתחו במפה</span></span>
             <span class="place-desc">בר יינות וקוקטיילים שמתמחה גם במגשי גבינות. פתוח עד 2:00 בלילה, סגור בימי שני.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Rooftop+Bar+The+Social+Hub+Porto" target="_blank" rel="noopener">
+          <span class="place-emoji">🍹</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>The Social Hub Rooftop</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">רופטופ עם נוף פנורמי על העיר, מהמקומות השווים לפתוח בהם ערב.</span>
+          </span>
+        </a>
+        <a class="place reveal" href="https://www.google.com/maps/search/?api=1&query=Bosco+Porto+bar" target="_blank" rel="noopener">
+          <span class="place-emoji">🌿</span>
+          <span class="place-body">
+            <span class="place-top"><span class="place-name"><bdi>Bosco</bdi></span><span class="place-map">פתחו במפה</span></span>
+            <span class="place-desc">בר קוקטיילים ירוק ואופנתי, מהחדשים והמדוברים בעיר.</span>
           </span>
         </a>
       </div>
