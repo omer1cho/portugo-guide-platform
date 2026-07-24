@@ -6,6 +6,17 @@ const nextConfig: NextConfig = {
       // דפי הטיפים בברקוד - כתובות נקיות וקבועות (עליהן מודפסים הברקודים)
       { source: "/tips/lisbon", destination: "/tips/lisbon.html" },
       { source: "/tips/porto", destination: "/tips/porto.html" },
+      // בדומיין הייעודי portugo-tips.vercel.app הכתובת מתקצרת ל-/lisbon ו-/porto
+      {
+        source: "/lisbon",
+        destination: "/tips/lisbon.html",
+        has: [{ type: "host", value: "portugo-tips.vercel.app" }],
+      },
+      {
+        source: "/porto",
+        destination: "/tips/porto.html",
+        has: [{ type: "host", value: "portugo-tips.vercel.app" }],
+      },
     ];
   },
   async redirects() {
