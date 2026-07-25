@@ -31,6 +31,7 @@ const ITEMS: Item[] = [
   { key: 'classic-lisbon', label: 'ליסבון הקלאסית', sel: { tourSlug: 'classic-private', variant: 'regular', card: 'classic-lisbon' }, canCar: true },
   { key: 'belem', label: 'בלם', sel: { tourSlug: 'belem-private', card: 'belem' }, canCar: true },
   { key: 'culinary', label: 'קולינרי (ליסבון)', sel: { tourSlug: 'culinary-private', card: 'culinary' } },
+  { key: 'jewish', label: 'יהדות (ליסבון)', sel: { tourSlug: 'jewish-private', card: 'jewish' } },
   { key: 'sintra', label: 'סינטרה', sel: { tourSlug: 'sintra-arrabida-private', card: 'sintra' } },
   { key: 'arrabida', label: 'אראבידה', sel: { tourSlug: 'sintra-arrabida-private', card: 'arrabida' } },
   { key: 'obidos', label: 'אובידוש', sel: { tourSlug: 'obidos-private', card: 'obidos' } },
@@ -41,6 +42,8 @@ const ITEMS: Item[] = [
   // שילובים
   { key: 'combo-classic-belem', label: 'שילוב: קלאסי + בלם (יום מלא)', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-belem' }, canCar: true, carType: 'full' },
   { key: 'combo-classic-culinary', label: 'שילוב: קלאסי + קולינרי', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-culinary' } },
+  { key: 'combo-jewish-culinary', label: 'שילוב: יהדות + קולינרי', sel: { tourSlug: 'jewish-private', comboSlug: 'combo-jewish-culinary' } },
+  { key: 'combo-jewish-belem', label: 'שילוב: יהדות + בלם', sel: { tourSlug: 'jewish-private', comboSlug: 'combo-jewish-belem' } },
   { key: 'combo-classic-tastings', label: 'שילוב: פורטו קלאסית + טעימות', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-tastings' } },
 ];
 

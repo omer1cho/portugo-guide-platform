@@ -28,6 +28,7 @@ const TOUR_SLUG_TO_DATA_TOUR: Record<string, string> = {
   'belem-private': 'belem',
   'culinary-tastings-private': 'culinary', // תאימות לאחור — הצעות מלפני הפיצול
   'culinary-private': 'culinary',
+  'jewish-private': 'jewish',
   'tastings-private': 'porto-tastings',
   'sintra-arrabida-private': 'sintra',
   'obidos-private': 'obidos',
@@ -47,6 +48,8 @@ const COMBO_SLUG_TO_DATA_TOUR: Record<string, string> = {
 const COMBO_SLUG_TO_DATA_TOUR_NAME: Record<string, string> = {
   'combo-classic-culinary': 'שילוב: קולינרי + קלאסית',
   'combo-classic-culinary-short': 'שילוב: קולינרי + קלאסית',
+  'combo-jewish-culinary': 'שילוב: יהדות + קולינרי',
+  'combo-jewish-belem': 'שילוב: יהדות + בלם',
 };
 
 /** מחזיר את מזהה הכרטיס במוקאפ (data-tour) או null, ואת שם-הכרטיס (data-tour-name) אם רלוונטי. */
@@ -551,7 +554,7 @@ export async function GET(
   (function(){
     function visByTour(dt){ var c=document.querySelector('[data-tour="'+dt+'"]'); return !!c && c.style.display!=='none'; }
     function visByName(dn){ var f=false; document.querySelectorAll('[data-tour-name]').forEach(function(c){ if(c.getAttribute('data-tour-name')===dn && c.style.display!=='none') f=true; }); return f; }
-    var lisbonWalk = visByTour('classic-lisbon')||visByTour('belem')||visByTour('culinary')||visByTour('combo-classic-belem')||visByName('שילוב: קולינרי + קלאסית');
+    var lisbonWalk = visByTour('classic-lisbon')||visByTour('belem')||visByTour('culinary')||visByTour('jewish')||visByTour('combo-classic-belem')||visByName('שילוב: קולינרי + קלאסית')||visByName('שילוב: יהדות + קולינרי')||visByName('שילוב: יהדות + בלם');
     var lisbonDay = visByTour('sintra')||visByTour('arrabida')||visByTour('obidos');
     var porto = visByTour('porto-classic')||visByTour('tastings')||visByTour('douro')||visByTour('combo-porto-classic-tastings');
     document.querySelectorAll('.tour-photo').forEach(function(p){

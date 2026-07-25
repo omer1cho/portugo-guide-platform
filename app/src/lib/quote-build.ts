@@ -80,6 +80,7 @@ const CARD_NAMES: Record<string, string> = {
   'porto-classic': 'פורטו הקלאסית',
   'belem': 'בלם',
   'culinary': 'קולינרי',
+  'jewish': 'סיור יהדות',
   'porto-tastings': 'טעימות פורטו',
   'sintra': 'סינטרה',
   'arrabida': 'אראבידה',
@@ -92,7 +93,7 @@ export function tourDisplayName(tour: QuoteTourSel): string {
   if (tour.comboSlug) {
     const t = getPrivateTour(tour.tourSlug);
     const combo = t?.combos?.find((c) => c.slug === tour.comboSlug);
-    if (combo) return combo.name.replace(/^שילוב [א-ד]:?\s*/, '').replace(/^שילוב [א-ד]-מקוצר:?\s*/, '');
+    if (combo) return combo.name.replace(/^שילוב [א-ת]:?\s*/, '').replace(/^שילוב [א-ת]-מקוצר:?\s*/, '');
   }
   if (tour.card && CARD_NAMES[tour.card]) return CARD_NAMES[tour.card];
   const t = getPrivateTour(tour.tourSlug);

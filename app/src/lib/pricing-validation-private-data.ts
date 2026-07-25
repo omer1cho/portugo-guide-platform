@@ -526,6 +526,91 @@ const DOURO_PRIVATE: PrivateTour = {
 // כל הסיורים הפרטיים
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// כרטיס 8: יהדות פרטי (ליסבון)
+// מקור: memory/project_judaism_tour_pricing.md — גרסה א' סופית, אושרה 25/7/26.
+// סיור רגלי כשעתיים. שכר מדריך = טבלת בלם.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const JEWISH_REGULAR_ROWS: PrivateTierRow[] = [
+  { minSize: 2, maxSize: 2, pricePerPerson: 50 },
+  { minSize: 3, maxSize: 4, pricePerPerson: 45 },
+  { minSize: 5, maxSize: 7, pricePerPerson: 40 },
+  { minSize: 8, maxSize: 10, pricePerPerson: 38 },
+  { minSize: 11, maxSize: 14, pricePerPerson: 35 },
+  { minSize: 15, maxSize: 18, pricePerPerson: 32 },
+  { minSize: 19, maxSize: 23, pricePerPerson: 30 },
+  { minSize: 24, maxSize: 28, pricePerPerson: 28 },
+  { minSize: 29, maxSize: 32, pricePerPerson: 25 },
+  { minSize: 33, maxSize: 35, pricePerPerson: 22 },
+];
+
+// שילובי יהדות = סכום שני הסיורים במדרגות המשולבות (אין מחיר מיוחד — הנחיית עומר 25.7.26).
+const COMBO_JEWISH_CULINARY: ComboTierRow[] = [
+  { minSize: 2, maxSize: 2, parts: [{ name: 'יהדות', price: 50 }, { name: 'קולינרי', price: 85 }], totalPerPerson: 135 },
+  { minSize: 3, maxSize: 4, parts: [{ name: 'יהדות', price: 45 }, { name: 'קולינרי', price: 80 }], totalPerPerson: 125 },
+  { minSize: 5, maxSize: 7, parts: [{ name: 'יהדות', price: 40 }, { name: 'קולינרי', price: 75 }], totalPerPerson: 115 },
+  { minSize: 8, maxSize: 10, parts: [{ name: 'יהדות', price: 38 }, { name: 'קולינרי', price: 72 }], totalPerPerson: 110 },
+  { minSize: 11, maxSize: 11, parts: [{ name: 'יהדות', price: 35 }, { name: 'קולינרי', price: 72 }], totalPerPerson: 107 },
+  { minSize: 12, maxSize: 14, parts: [{ name: 'יהדות', price: 35 }, { name: 'קולינרי', price: 70 }], totalPerPerson: 105 },
+  { minSize: 15, maxSize: 15, parts: [{ name: 'יהדות', price: 32 }, { name: 'קולינרי', price: 70 }], totalPerPerson: 102 },
+  { minSize: 16, maxSize: 18, parts: [{ name: 'יהדות', price: 32 }, { name: 'קולינרי', price: 67 }], totalPerPerson: 99 },
+];
+
+const COMBO_JEWISH_BELEM: ComboTierRow[] = [
+  { minSize: 2, maxSize: 2, parts: [{ name: 'יהדות', price: 50 }, { name: 'בלם', price: 35 }], totalPerPerson: 85 },
+  { minSize: 3, maxSize: 4, parts: [{ name: 'יהדות', price: 45 }, { name: 'בלם', price: 32 }], totalPerPerson: 77 },
+  { minSize: 5, maxSize: 7, parts: [{ name: 'יהדות', price: 40 }, { name: 'בלם', price: 28 }], totalPerPerson: 68 },
+  { minSize: 8, maxSize: 10, parts: [{ name: 'יהדות', price: 38 }, { name: 'בלם', price: 25 }], totalPerPerson: 63 },
+  { minSize: 11, maxSize: 11, parts: [{ name: 'יהדות', price: 35 }, { name: 'בלם', price: 25 }], totalPerPerson: 60 },
+  { minSize: 12, maxSize: 14, parts: [{ name: 'יהדות', price: 35 }, { name: 'בלם', price: 22 }], totalPerPerson: 57 },
+  { minSize: 15, maxSize: 15, parts: [{ name: 'יהדות', price: 32 }, { name: 'בלם', price: 22 }], totalPerPerson: 54 },
+  { minSize: 16, maxSize: 18, parts: [{ name: 'יהדות', price: 32 }, { name: 'בלם', price: 20 }], totalPerPerson: 52 },
+  { minSize: 19, maxSize: 22, parts: [{ name: 'יהדות', price: 30 }, { name: 'בלם', price: 20 }], totalPerPerson: 50 },
+  { minSize: 23, maxSize: 23, parts: [{ name: 'יהדות', price: 30 }, { name: 'בלם', price: 18 }], totalPerPerson: 48 },
+  { minSize: 24, maxSize: 28, parts: [{ name: 'יהדות', price: 28 }, { name: 'בלם', price: 18 }], totalPerPerson: 46 },
+  { minSize: 29, maxSize: 30, parts: [{ name: 'יהדות', price: 25 }, { name: 'בלם', price: 18 }], totalPerPerson: 43 },
+  { minSize: 31, maxSize: 32, parts: [{ name: 'יהדות', price: 25 }, { name: 'בלם', price: 16 }], totalPerPerson: 41 },
+  { minSize: 33, maxSize: 35, parts: [{ name: 'יהדות', price: 22 }, { name: 'בלם', price: 16 }], totalPerPerson: 38 },
+];
+
+const JEWISH_PRIVATE: PrivateTour = {
+  slug: 'jewish-private',
+  name: 'יהדות פרטי (ליסבון)',
+  priceInfo: 'סיור רגלי כשעתיים · טווח 2-35 משתתפים',
+  priceInfoExtra:
+    'גרסה א\' סופית (25.7.26): "מיוחד" — מעל בלם בכל גודל קבוצה (פער 6€ גם בקצה), הרבה מתחת לקולינרי (אין טעימות). שכר מדריך = טבלת בלם.',
+  maxParticipants: 35,
+  regularPrice: {
+    label: 'מחיר רגיל',
+    rows: JEWISH_REGULAR_ROWS,
+  },
+  combos: [
+    {
+      slug: 'combo-jewish-culinary',
+      name: 'שילוב ה: יהדות + קולינרי',
+      city: 'ליסבון',
+      maxParticipants: 18,
+      rows: COMBO_JEWISH_CULINARY,
+    },
+    {
+      slug: 'combo-jewish-belem',
+      name: 'שילוב ו: יהדות + בלם',
+      city: 'ליסבון',
+      maxParticipants: 35,
+      rows: COMBO_JEWISH_BELEM,
+    },
+  ],
+  children: {
+    perTier: [
+      { ageLabel: 'עד 6', rule: { kind: 'free', note: 'שקוף בקבוצה' } },
+      { ageLabel: '7-12', rule: { kind: 'halfOfRegular', round: 'nearest' } },
+      { ageLabel: '13+', rule: { kind: 'fullPrice' } },
+    ],
+    note: 'כמו בלם: ילד עד 6 שקוף בקבוצה — לא משפיע על קטגוריית גודל. ילד 7-12 נספר ומשלם חצי מהמחיר/אדם של אותה קטגוריה. אושר ע"י עומר 25.7.26.',
+  },
+};
+
 export const PRIVATE_TOURS: PrivateTour[] = [
   CLASSIC_PRIVATE,
   BELEM_PRIVATE,
@@ -534,6 +619,7 @@ export const PRIVATE_TOURS: PrivateTour[] = [
   SINTRA_ARRABIDA_PRIVATE,
   OBIDOS_PRIVATE,
   DOURO_PRIVATE,
+  JEWISH_PRIVATE,
 ];
 
 export const PRIVATE_VERSION = 2;
