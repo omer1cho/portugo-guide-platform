@@ -1001,5 +1001,103 @@
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 </script>
 
+<script>
+/* אנליטיקה פנימית - בלי עוגיות ובלי מידע אישי.
+   סופרת כניסות, הקלקות (מקומות/קטגוריות/סיורים/ביקורות/סרגל),
+   עומק גלילה וזמן שהייה. נשלח ל-/api/tips-events. */
+(function () {
+  var PAGE = 'lisbon';
+  var API = '/api/tips-events';
+
+  var sid;
+  try {
+    sid = sessionStorage.getItem('pt_sid');
+    if (!sid) {
+      sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+          : Date.now().toString(36) + Math.random().toString(36).slice(2);
+      sessionStorage.setItem('pt_sid', sid);
+    }
+  } catch (e) {
+    sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  function send(events) {
+    try {
+      var payload = JSON.stringify({ page: PAGE, session_id: sid, events: events });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(API, new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true });
+      }
+    } catch (e) { /* מדידה לעולם לא מפילה את הדף */ }
+  }
+
+  // כניסה לדף
+  send([{ type: 'page_view', meta: {
+    ref: document.referrer || '',
+    lang: navigator.language || '',
+    mobile: /Mobi|Android/i.test(navigator.userAgent)
+  } }]);
+
+  // תיוג הקלקות לפי סוג הרכיב שהוקלק
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
+    if (!a) return;
+    var t = null, pick;
+    if (a.classList.contains('place')) {
+      pick = a.querySelector('.place-name');
+      t = 'מקום: ' + (pick ? pick.textContent.trim() : '?');
+    } else if (a.classList.contains('cat-tile')) {
+      pick = a.querySelector('.cat-label');
+      t = 'קטגוריה: ' + (pick ? pick.textContent.trim() : '?');
+    } else if (a.classList.contains('map-btn')) {
+      t = 'כפתור המפה המלאה';
+    } else if (a.classList.contains('tour')) {
+      pick = a.querySelector('.tour-name');
+      t = 'סיור: ' + (pick ? pick.textContent.trim() : '?');
+    } else if (a.classList.contains('submit-btn')) {
+      t = /facebook/i.test(a.href) ? 'המלצה בפייסבוק' : 'ביקורת בגוגל';
+    } else if (a.classList.contains('a-review')) {
+      t = 'סרגל תחתון: ספרו איך היה';
+    } else if (a.classList.contains('a-tours')) {
+      t = 'סרגל תחתון: לסיור הבא שלכם';
+    } else if (a.classList.contains('stay-card')) {
+      pick = a.querySelector('.sc-name');
+      t = 'נשארים בקשר: ' + (pick ? pick.textContent.trim() : '?');
+    } else if ((a.getAttribute('href') || '').indexOf('mailto:') === 0) {
+      t = 'מייל פידבק בונה';
+    } else if (a.closest('.back-top')) {
+      t = 'חזרה לכל הקטגוריות';
+    }
+    if (t) send([{ type: 'click', target: t, meta: { href: a.getAttribute('href') || '' } }]);
+  }, true);
+
+  // עומק גלילה מקסימלי + זמן שהייה - נשלחים ביציאה מהדף
+  var maxScroll = 0, t0 = Date.now(), leaveSent = false;
+  function scrollDepth() {
+    var total = document.documentElement.scrollHeight - window.innerHeight;
+    if (total <= 0) return 100;
+    return Math.min(100, Math.round((window.scrollY / total) * 100));
+  }
+  window.addEventListener('scroll', function () {
+    var p = scrollDepth();
+    if (p > maxScroll) maxScroll = p;
+  }, { passive: true });
+  function reportLeave() {
+    if (leaveSent) return;
+    leaveSent = true;
+    send([{ type: 'page_leave', meta: {
+      max_scroll: maxScroll,
+      seconds: Math.round((Date.now() - t0) / 1000)
+    } }]);
+  }
+  window.addEventListener('pagehide', reportLeave);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') reportLeave();
+    else if (document.visibilityState === 'visible') leaveSent = false;
+  });
+})();
+</script>
+
 </body>
 </html>
