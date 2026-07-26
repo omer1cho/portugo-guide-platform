@@ -126,7 +126,7 @@
 </div>
 
 <!-- ===== עמוד ליסבון ===== -->
-<div class="sheet">
+<div class="sheet" data-city="lisbon">
   <div class="card">
     <img class="logo" src="/logo.png" alt="פורטוגו">
     <div class="title">הטיפים שלנו בליסבון</div>
@@ -138,7 +138,7 @@
 </div>
 
 <!-- ===== עמוד פורטו ===== -->
-<div class="sheet">
+<div class="sheet" data-city="porto">
   <div class="card">
     <img class="logo" src="/logo.png" alt="פורטוגו">
     <div class="title">הטיפים שלנו בפורטו</div>
@@ -148,6 +148,16 @@
     <div class="photo-strip"><img src="/hero-quote-2.png" alt=""></div>
   </div>
 </div>
+
+<script>
+  // ?city=lisbon או ?city=porto מציג עמוד אחד בלבד (להפקת PDF נפרד לכל עיר)
+  const city = new URLSearchParams(location.search).get('city');
+  if (city) {
+    document.querySelectorAll('.sheet').forEach(s => {
+      if (s.dataset.city !== city) s.remove();
+    });
+  }
+</script>
 
 </body>
 </html>
