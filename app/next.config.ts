@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async headers() {
+    // דפי הטיפים נמשכים ע"י שירותי תצוגה מקדימה (ווטסאפ ווב וכו') מדפדפן -
+    // בלי CORS פתוח הם לא מצליחים לקרוא את תגיות ה-OG ומציגים קישור עירום
+    const cors = [{ key: "Access-Control-Allow-Origin", value: "*" }];
+    return [
+      { source: "/tips/:path*", headers: cors },
+      { source: "/lisbon", headers: cors },
+      { source: "/porto", headers: cors },
+      { source: "/tips-hero-founders.jpg", headers: cors },
+    ];
+  },
   async rewrites() {
     return [
       // דפי הטיפים בברקוד - כתובות נקיות וקבועות (עליהן מודפסים הברקודים)
