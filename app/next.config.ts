@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       { source: "/lisbon", headers: cors },
       { source: "/porto", headers: cors },
       { source: "/tips-hero-founders.jpg", headers: cors },
+      // הדשבורד הראשי (קובץ מקומי אצל עומר) מושך את נתוני האנליטיקה מכאן
+      { source: "/api/tips-events", headers: cors },
     ];
   },
   async rewrites() {
