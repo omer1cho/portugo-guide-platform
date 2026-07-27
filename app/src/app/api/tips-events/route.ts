@@ -94,8 +94,8 @@ export async function POST(req: NextRequest) {
 
 // =============================================================================
 // GET /api/tips-events?k=gogo-stats-2026
-// דף סטטיסטיקות פשוט בעברית לעומר - כניסות, הקלקות, גלילה וזמן בדף.
-// מוגן במפתח בכתובת. הנתונים אנונימיים לחלוטין (אין שום פרט אישי בטבלה).
+// ברירת מחדל: מפנה לדשבורד הנתונים (/tips/stats.html).
+// עם &format=json: מחזיר אגרגציה יומית לדשבורד - בלי שום פרט אישי.
 // =============================================================================
 
 const STATS_KEY = 'gogo-stats-2026';
@@ -112,8 +112,14 @@ type EventRow = {
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  if (url.searchParams.get('k') !== STATS_KEY) {
+  const key = url.searchParams.get('k');
+  if (key !== STATS_KEY) {
     return NextResponse.json({ ok: false }, { status: 404 });
+  }
+
+  // הכתובת ששמורה אצל עומר מפנה לדשבורד עצמו
+  if (url.searchParams.get('format') !== 'json') {
+    return NextResponse.redirect(new URL(`/tips/stats.html?k=${STATS_KEY}`, url.origin), 302);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -130,79 +136,65 @@ export async function GET(req: NextRequest) {
     .select('created_at, page, session_id, event_type, target, meta')
     .neq('session_id', 'gogo-test')
     .gte('created_at', since)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
     .limit(20000);
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
   const rows = (data ?? []) as EventRow[];
-  // "היום" לפי שעון פורטוגל - שם הסיורים קורים
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Lisbon' });
-  const isToday = (r: EventRow) =>
-    new Date(r.created_at).toLocaleDateString('en-CA', { timeZone: 'Europe/Lisbon' }) === todayStr;
 
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // אגרגציה יומית לפי שעון פורטוגל - שם הסיורים קורים
+  const dayOf = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Europe/Lisbon' });
 
-  function summarize(subset: EventRow[]) {
-    const perPage: Record<string, { views: number; visitors: Set<string>; scrolls: number[]; seconds: number[] }> = {};
-    const clicks: Record<string, number> = {};
-    for (const r of subset) {
-      const p = (perPage[r.page] ??= { views: 0, visitors: new Set(), scrolls: [], seconds: [] });
-      if (r.event_type === 'page_view') { p.views++; p.visitors.add(r.session_id); }
-      if (r.event_type === 'click' && r.target) clicks[r.target] = (clicks[r.target] ?? 0) + 1;
-      if (r.event_type === 'page_leave' && r.meta) {
-        if (typeof r.meta.max_scroll === 'number') p.scrolls.push(r.meta.max_scroll);
-        if (typeof r.meta.seconds === 'number' && r.meta.seconds < 3600) p.seconds.push(r.meta.seconds);
-      }
+  type DayAgg = {
+    d: string; page: string;
+    views: number; visitors: Set<string>; engaged: Set<string>;
+    scrollSum: number; scrollN: number; secSum: number; secN: number;
+    mobile: number; direct: number;
+  };
+  const dayAggs = new Map<string, DayAgg>();
+  const clickAggs = new Map<string, { d: string; page: string; target: string; n: number }>();
+
+  const dayAgg = (d: string, page: string): DayAgg => {
+    const k2 = `${d}|${page}`;
+    let a = dayAggs.get(k2);
+    if (!a) {
+      a = { d, page, views: 0, visitors: new Set(), engaged: new Set(), scrollSum: 0, scrollN: 0, secSum: 0, secN: 0, mobile: 0, direct: 0 };
+      dayAggs.set(k2, a);
     }
-    return { perPage, clicks };
+    return a;
+  };
+
+  for (const r of rows) {
+    const d = dayOf(r.created_at);
+    const a = dayAgg(d, r.page);
+    if (r.event_type === 'page_view') {
+      a.views++;
+      a.visitors.add(r.session_id);
+      if (r.meta?.mobile) a.mobile++;
+      if (!r.meta?.ref) a.direct++;
+    } else if (r.event_type === 'click' && r.target) {
+      a.engaged.add(r.session_id);
+      const ck = `${d}|${r.page}|${r.target}`;
+      const c = clickAggs.get(ck) ?? { d, page: r.page, target: r.target, n: 0 };
+      c.n++;
+      clickAggs.set(ck, c);
+    } else if (r.event_type === 'page_leave' && r.meta) {
+      if (typeof r.meta.max_scroll === 'number') { a.scrollSum += r.meta.max_scroll; a.scrollN++; }
+      if (typeof r.meta.seconds === 'number' && r.meta.seconds < 3600) { a.secSum += r.meta.seconds; a.secN++; }
+    }
   }
 
-  const avg = (a: number[]) => (a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null);
-
-  function sectionHtml(title: string, subset: EventRow[]) {
-    const { perPage, clicks } = summarize(subset);
-    const pagesHtml = Object.entries(perPage)
-      .map(([page, s]) => {
-        const scroll = avg(s.scrolls);
-        const secs = avg(s.seconds);
-        return `<tr><td>${esc(PAGE_LABELS[page] ?? page)}</td><td>${s.visitors.size}</td><td>${s.views}</td><td>${scroll === null ? '-' : scroll + '%'}</td><td>${secs === null ? '-' : Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0')}</td></tr>`;
-      })
-      .join('') || '<tr><td colspan="5" class="empty">אין נתונים עדיין</td></tr>';
-    const clicksHtml = Object.entries(clicks)
-      .sort((a, b) => b[1] - a[1])
-      .map(([t, n]) => `<tr><td>${esc(t)}</td><td>${n}</td></tr>`)
-      .join('') || '<tr><td colspan="2" class="empty">אין הקלקות עדיין</td></tr>';
-    return `
-    <h2>${esc(title)}</h2>
-    <table><thead><tr><th>דף</th><th>מבקרים</th><th>כניסות</th><th>גלילה ממוצעת</th><th>זמן ממוצע</th></tr></thead><tbody>${pagesHtml}</tbody></table>
-    <h3>על מה הקליקו</h3>
-    <table><thead><tr><th>מה</th><th>הקלקות</th></tr></thead><tbody>${clicksHtml}</tbody></table>`;
-  }
-
-  const html = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
-<title>סטטיסטיקות דפי הטיפים - פורטוגו</title>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; margin: 0; }
-  body { font-family: 'Assistant', sans-serif; background: #faf6ee; color: #23281f; padding: 28px 16px 60px; }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  h1 { color: #0a3d22; font-size: 26px; margin-bottom: 4px; }
-  .sub { color: #5b5f54; font-size: 14px; margin-bottom: 24px; }
-  h2 { color: #c4602f; font-size: 20px; margin: 28px 0 10px; }
-  h3 { color: #0a3d22; font-size: 16px; margin: 18px 0 8px; }
-  table { width: 100%; border-collapse: collapse; background: #fffdf8; border: 1px solid #e3ddcf; border-radius: 12px; overflow: hidden; }
-  th, td { padding: 9px 12px; text-align: right; font-size: 14.5px; border-bottom: 1px solid #efe9dc; }
-  th { background: #f3ecd9; color: #0a3d22; font-weight: 700; }
-  tr:last-child td { border-bottom: none; }
-  .empty { color: #8a8d82; }
-</style></head><body><div class="wrap">
-<h1>סטטיסטיקות דפי הטיפים</h1>
-<div class="sub">מתעדכן אוטומטית בכל רענון · הזמנים לפי שעון פורטוגל</div>
-${sectionHtml('היום (' + todayStr.split('-').reverse().join('.') + ')', rows.filter(isToday))}
-${sectionHtml('30 הימים האחרונים', rows)}
-</div></body></html>`;
-
-  return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  return NextResponse.json({
+    ok: true,
+    today: new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Lisbon' }),
+    pages: PAGE_LABELS,
+    days: [...dayAggs.values()].map(a => ({
+      d: a.d, page: a.page, views: a.views,
+      visitors: a.visitors.size, engaged: a.engaged.size,
+      scrollSum: a.scrollSum, scrollN: a.scrollN, secSum: a.secSum, secN: a.secN,
+      mobile: a.mobile, direct: a.direct,
+    })),
+    clicks: [...clickAggs.values()],
+  });
 }

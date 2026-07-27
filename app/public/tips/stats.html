@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>דשבורד דפי הטיפים - פורטוגו</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --green-900: #0d4d25; --green-800: #145c2e; --green-700: #1a7a3d;
+    --green-600: #22994d; --green-400: #4db870; --green-200: #a3d9b5; --green-50: #e0f2e7;
+    --red: #d4351c; --yellow: #f5c518;
+    --n900: #111827; --n700: #374151; --n500: #6b7280; --n300: #d1d5db; --n200: #e5e7eb; --n100: #f3f4f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { direction: rtl; }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--n100);
+    color: var(--n900);
+    padding: 32px 24px 64px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  header h1 { font-size: 28px; font-weight: 700; color: var(--green-800); }
+  header .sub { font-size: 13px; color: var(--n500); margin-top: 4px; margin-bottom: 24px; }
+
+  /* ===== פילטרים ===== */
+  .filters { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+  .pill-group {
+    display: inline-flex; background: #fff; border: 1px solid var(--n200);
+    border-radius: 10px; padding: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .pill {
+    border: none; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 13.5px; font-weight: 500; color: var(--n700);
+    padding: 8px 16px; border-radius: 8px; min-height: 38px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .pill:hover { background: var(--n100); }
+  .pill.active { background: var(--green-700); color: #fff; font-weight: 600; }
+
+  /* ===== KPI ===== */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 24px;
+  }
+  .kpi {
+    background: #fff; border-radius: 12px; padding: 20px;
+    border: 1px solid var(--n200); border-right: 4px solid var(--green-700);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    animation: cardIn 0.3s ease-out both;
+  }
+  .kpi:nth-child(1) { animation-delay: 0.05s; }
+  .kpi:nth-child(2) { animation-delay: 0.1s; }
+  .kpi:nth-child(3) { animation-delay: 0.15s; }
+  .kpi:nth-child(4) { animation-delay: 0.2s; }
+  .kpi:nth-child(5) { animation-delay: 0.25s; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .kpi .label { font-size: 12px; font-weight: 500; color: var(--n500); letter-spacing: 0.02em; }
+  .kpi .value { font-size: 30px; font-weight: 700; color: var(--green-700); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .subtext { font-size: 12px; color: var(--n500); margin-top: 2px; }
+
+  /* ===== כרטיסי תוכן ===== */
+  .card {
+    background: #fff; border-radius: 12px; border: 1px solid var(--n200);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04); padding: 24px; margin-bottom: 24px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; color: var(--green-800); margin-bottom: 18px; }
+  .chart-inner { position: relative; height: 280px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+  @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ===== טבלאות ===== */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 12px; text-align: right; font-size: 12px; font-weight: 600;
+    color: var(--green-800); letter-spacing: 0.04em; background: var(--green-50);
+    border-bottom: 2px solid var(--green-200);
+  }
+  td { padding: 9px 12px; font-size: 13px; color: var(--n700); border-bottom: 1px solid var(--n100); }
+  tbody tr:hover { background: var(--green-50); }
+  td.num { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--n900); width: 56px; }
+  .bar-cell { width: 34%; }
+  .mini-bar { height: 8px; background: var(--n100); border-radius: 4px; overflow: hidden; }
+  .mini-bar > div { height: 100%; background: var(--green-600); border-radius: 4px; }
+  .empty { color: var(--n500); text-align: center; padding: 24px 0; font-size: 13.5px; }
+
+  /* ===== שורת הקשר (מובייל/סריקות) ===== */
+  .context-chips { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+  .chip {
+    background: #fff; border: 1px solid var(--n200); border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; color: var(--n700);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .chip b { color: var(--green-700); font-variant-numeric: tabular-nums; }
+
+  footer { text-align: center; font-size: 11px; color: var(--n500); margin-top: 8px; }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 12px 48px; }
+    header h1 { font-size: 22px; }
+    .kpi .value { font-size: 24px; }
+    .chart-inner { height: 220px; }
+    .pill { padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>דשבורד דפי הטיפים</h1>
+    <div class="sub">כל הנתונים אנונימיים · הזמנים לפי שעון פורטוגל · מתעדכן בכל רענון</div>
+  </header>
+
+  <div class="filters">
+    <div class="pill-group" id="period-pills">
+      <button class="pill" data-period="1">היום</button>
+      <button class="pill active" data-period="7">7 ימים</button>
+      <button class="pill" data-period="30">30 יום</button>
+    </div>
+    <div class="pill-group" id="city-pills">
+      <button class="pill active" data-city="all">שתי הערים</button>
+      <button class="pill" data-city="lisbon">ליסבון</button>
+      <button class="pill" data-city="porto">פורטו</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="context-chips" id="context-chips"></div>
+
+  <div class="card">
+    <h3>מבקרים לפי יום · 14 הימים האחרונים</h3>
+    <div class="chart-inner"><canvas id="daily-chart"></canvas></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>על מה מקליקים · פילוח לפי סוג</h3>
+      <div class="chart-inner"><canvas id="types-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>ההמלצות המובילות</h3>
+      <div id="top-places"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>כל ההקלקות בתקופה</h3>
+    <div id="all-clicks"></div>
+  </div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(async function () {
+  const params = new URLSearchParams(location.search);
+  const KEY = params.get('k') || '';
+  let DATA;
+  try {
+    const res = await fetch('/api/tips-events?format=json&k=' + encodeURIComponent(KEY));
+    DATA = await res.json();
+    if (!DATA.ok) throw new Error();
+  } catch (e) {
+    document.querySelector('.wrap').innerHTML = '<div class="card"><div class="empty">לא הצלחנו לטעון את הנתונים. בדקי שהקישור מלא ותקין.</div></div>';
+    return;
+  }
+
+  const PAGE_LABELS = DATA.pages;
+  let period = 7;      // ימים אחורה (1 = היום בלבד)
+  let city = 'all';
+
+  // סיווג יעד הקלקה לסוג עברי
+  function classify(target) {
+    if (target.startsWith('מקום: ')) return 'המלצות (מקומות)';
+    if (target.startsWith('סיור: ')) return 'סיורים נוספים';
+    if (target === 'ביקורת בגוגל' || target === 'המלצה בפייסבוק') return 'ביקורות';
+    if (target.startsWith('כפתור המפה')) return 'המפה המלאה';
+    if (target.startsWith('קטגוריה: ')) return 'ניווט בקטגוריות';
+    if (target.startsWith('נשארים בקשר: ')) return 'נשארים בקשר';
+    if (target.startsWith('סרגל תחתון')) return 'הסרגל התחתון';
+    if (target.startsWith('מייל פידבק')) return 'פידבק במייל';
+    return 'אחר';
+  }
+
+  // רשימת הימים בתקופה הנבחרת (כולל היום)
+  function periodDays(n) {
+    const out = [];
+    const t = new Date(DATA.today + 'T12:00:00Z');
+    for (let i = 0; i < n; i++) {
+      const d = new Date(t); d.setUTCDate(t.getUTCDate() - i);
+      out.push(d.toISOString().slice(0, 10));
+    }
+    return new Set(out);
+  }
+
+  const inCity = r => city === 'all' || r.page === city;
+
+  function render() {
+    const daysSet = periodDays(period);
+    const days = DATA.days.filter(r => daysSet.has(r.d) && inCity(r));
+    const clicks = DATA.clicks.filter(r => daysSet.has(r.d) && inCity(r));
+
+    // ---- KPI ----
+    const visitors = days.reduce((s, r) => s + r.visitors, 0);
+    const engaged = days.reduce((s, r) => s + r.engaged, 0);
+    const totalClicks = clicks.reduce((s, r) => s + r.n, 0);
+    const tourClicks = clicks.filter(r => classify(r.target) === 'סיורים נוספים').reduce((s, r) => s + r.n, 0);
+    const reviewClicks = clicks.filter(r => classify(r.target) === 'ביקורות').reduce((s, r) => s + r.n, 0);
+    const secSum = days.reduce((s, r) => s + r.secSum, 0), secN = days.reduce((s, r) => s + r.secN, 0);
+    const scSum = days.reduce((s, r) => s + r.scrollSum, 0), scN = days.reduce((s, r) => s + r.scrollN, 0);
+    const avgSec = secN ? Math.round(secSum / secN) : null;
+    const avgScroll = scN ? Math.round(scSum / scN) : null;
+    const pct = (part, whole) => whole ? Math.round(100 * part / whole) + '%' : '-';
+
+    document.getElementById('kpis').innerHTML = `
+      <div class="kpi"><div class="label">מבקרים</div><div class="value">${visitors}</div><div class="subtext">${totalClicks} הקלקות סה"כ</div></div>
+      <div class="kpi"><div class="label">הקליקו על משהו</div><div class="value">${pct(engaged, visitors)}</div><div class="subtext">${engaged} מתוך ${visitors} מבקרים</div></div>
+      <div class="kpi"><div class="label">התעניינו בסיור נוסף</div><div class="value">${tourClicks}</div><div class="subtext">${pct(tourClicks, visitors)} מהמבקרים</div></div>
+      <div class="kpi"><div class="label">לחצו על ביקורת</div><div class="value">${reviewClicks}</div><div class="subtext">${pct(reviewClicks, visitors)} מהמבקרים</div></div>
+      <div class="kpi"><div class="label">זמן ממוצע בדף</div><div class="value">${avgSec === null ? '-' : Math.floor(avgSec / 60) + ':' + String(avgSec % 60).padStart(2, '0')}</div><div class="subtext">גלילה ממוצעת: ${avgScroll === null ? '-' : avgScroll + '%'}</div></div>`;
+
+    // ---- שבבי הקשר ----
+    const views = days.reduce((s, r) => s + r.views, 0);
+    const mobile = days.reduce((s, r) => s + r.mobile, 0);
+    const direct = days.reduce((s, r) => s + r.direct, 0);
+    document.getElementById('context-chips').innerHTML = `
+      <div class="chip">מהנייד: <b>${pct(mobile, views)}</b> מהכניסות</div>
+      <div class="chip">הגעה ישירה (סריקת ברקוד או קישור שמור): <b>${pct(direct, views)}</b></div>`;
+
+    // ---- המלצות מובילות ----
+    const placeCounts = {};
+    for (const c of clicks) if (c.target.startsWith('מקום: ')) placeCounts[c.target.slice(6)] = (placeCounts[c.target.slice(6)] || 0) + c.n;
+    const topPlaces = Object.entries(placeCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const maxPlace = topPlaces.length ? topPlaces[0][1] : 1;
+    document.getElementById('top-places').innerHTML = topPlaces.length
+      ? `<table><thead><tr><th>מקום</th><th>הקלקות</th><th class="bar-cell"></th></tr></thead><tbody>` +
+        topPlaces.map(([t, n]) => `<tr><td>${t}</td><td class="num">${n}</td><td class="bar-cell"><div class="mini-bar"><div style="width:${Math.round(100 * n / maxPlace)}%"></div></div></td></tr>`).join('') +
+        `</tbody></table>`
+      : '<div class="empty">אין הקלקות על מקומות בתקופה הזאת</div>';
+
+    // ---- כל ההקלקות ----
+    const allCounts = {};
+    for (const c of clicks) allCounts[c.target] = (allCounts[c.target] || 0) + c.n;
+    const all = Object.entries(allCounts).sort((a, b) => b[1] - a[1]);
+    const maxAll = all.length ? all[0][1] : 1;
+    document.getElementById('all-clicks').innerHTML = all.length
+      ? `<table><thead><tr><th>על מה הקליקו</th><th>סוג</th><th>הקלקות</th><th class="bar-cell"></th></tr></thead><tbody>` +
+        all.map(([t, n]) => `<tr><td>${t}</td><td style="color:var(--n500);font-size:12px">${classify(t)}</td><td class="num">${n}</td><td class="bar-cell"><div class="mini-bar"><div style="width:${Math.round(100 * n / maxAll)}%"></div></div></td></tr>`).join('') +
+        `</tbody></table>`
+      : '<div class="empty">אין הקלקות בתקופה הזאת</div>';
+
+    renderTypesChart(clicks);
+    document.getElementById('footer').textContent = 'עודכן ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ---- גרף יומי (תמיד 14 ימים, לא תלוי בפילטר התקופה) ----
+  Chart.defaults.font.family = "'Heebo', sans-serif";
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = '#6b7280';
+
+  const last14 = [...periodDays(14)].sort();
+  const byDay = p => last14.map(d => DATA.days.filter(r => r.d === d && r.page === p).reduce((s, r) => s + r.visitors, 0));
+  const dayLabels = last14.map(d => d.slice(8, 10) + '.' + d.slice(5, 7));
+
+  const dailyChart = new Chart(document.getElementById('daily-chart'), {
+    type: 'bar',
+    data: {
+      labels: dayLabels,
+      datasets: [
+        { label: 'ליסבון', data: byDay('lisbon'), backgroundColor: '#1a7a3d', borderRadius: 6, stack: 's' },
+        { label: 'פורטו', data: byDay('porto'), backgroundColor: '#f5c518', borderRadius: 6, stack: 's' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', rtl: true, textDirection: 'rtl', labels: { padding: 20, usePointStyle: true, pointStyleWidth: 8 } },
+        tooltip: { rtl: true, textDirection: 'rtl', backgroundColor: '#111827', padding: 12, cornerRadius: 8 },
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, border: { display: false } },
+        y: { stacked: true, position: 'right', grid: { color: 'rgba(0,0,0,0.04)' }, border: { display: false }, ticks: { precision: 0 } },
+      },
+    },
+  });
+
+  // ---- דונאט סוגי הקלקות ----
+  let typesChart = null;
+  function renderTypesChart(clicks) {
+    const counts = {};
+    for (const c of clicks) counts[classify(c.target)] = (counts[classify(c.target)] || 0) + c.n;
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const palette = ['#1a7a3d', '#f5c518', '#d4351c', '#4db870', '#e67e22', '#22994d', '#9b59b6', '#6b7280', '#a3d9b5'];
+    if (typesChart) typesChart.destroy();
+    typesChart = new Chart(document.getElementById('types-chart'), {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(e => e[0]),
+        datasets: [{ data: entries.map(e => e[1]), backgroundColor: palette.slice(0, entries.length), borderWidth: 0, spacing: 2 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', rtl: true, textDirection: 'rtl', labels: { padding: 14, usePointStyle: true, pointStyleWidth: 8 } },
+          tooltip: { rtl: true, textDirection: 'rtl', backgroundColor: '#111827', padding: 12, cornerRadius: 8 },
+        },
+      },
+    });
+  }
+
+  // ---- פילטרים ----
+  document.getElementById('period-pills').addEventListener('click', e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    period = Number(b.dataset.period);
+    document.querySelectorAll('#period-pills .pill').forEach(p => p.classList.toggle('active', p === b));
+    render();
+  });
+  document.getElementById('city-pills').addEventListener('click', e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    city = b.dataset.city;
+    document.querySelectorAll('#city-pills .pill').forEach(p => p.classList.toggle('active', p === b));
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
