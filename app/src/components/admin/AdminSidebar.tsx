@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'דשבורד ראשי', icon: '🏠' },
   { href: '/admin/guides', label: 'מדריכים', icon: '👥' },
   { href: '/admin/customers', label: 'ניתוח לקוחות', icon: '📊' },
+  { href: '/admin/tips-analytics', label: 'דפי הטיפים', icon: '📱' },
   { href: '/admin/shifts', label: 'לוח שיבוצים', icon: '🗓️' },
   { href: '/admin/cashflow', label: 'קשפלו חודשי', icon: '💸' },
   { href: '/admin/consultations', label: 'פניות ייעוץ', icon: '🌸' },
