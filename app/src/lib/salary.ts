@@ -278,6 +278,16 @@ const PRIVATE_TABLES: Array<[string, Tier[]]> = [
   ['דורו', PRIVATE_DOURO],
 ];
 
+/** טבלאות הלוקאפ של הפרטיים — לתצוגה בעמוד טבלאות השכר באדמין (קריאה בלבד). */
+export const PRIVATE_SALARY_TABLES: Array<{ label: string; tiers: Array<[number, number]> }> = [
+  { label: 'קלאסי פרטי (ליסבון/פורטו)', tiers: PRIVATE_CLASSIC },
+  { label: 'בלם פרטי', tiers: PRIVATE_BELEM },
+  { label: 'קולינרי פרטי', tiers: PRIVATE_CULINARY },
+  { label: 'סינטרה / אראבידה / אובידוש פרטי', tiers: PRIVATE_DAY_LISBON },
+  { label: 'טעימות פרטי', tiers: PRIVATE_TASTINGS },
+  { label: 'דורו פרטי', tiers: PRIVATE_DOURO },
+];
+
 function lookupTier(table: Tier[], people: number): number {
   for (const [maxP, sal] of table) {
     if (people <= maxP) return sal;
