@@ -283,7 +283,7 @@ function ClosingSection({ detail }: { detail: GuideMonthDetail }) {
     { label: 'משיכת משכורת', expected: e.take_from_box, actual: a.salary_withdrawn, icon: '💰' },
     { label: 'חיזוק מעטפת הוצאות', expected: e.expenses_refill, actual: a.expenses_refill, icon: '📩' },
     { label: 'חיזוק מעטפת עודף', expected: e.change_refill, actual: a.change_refill, icon: '🪙' },
-    { label: 'הפקדה לפורטוגו', expected: e.deposit_to_portugo, actual: a.to_portugo + a.pending_deposit, icon: '🏦' },
+    { label: 'הפקדה לפורטוגו', expected: e.deposit_to_portugo, actual: a.closing_deposit, icon: '🏦' },
     { label: 'השלמה מפורטוגו', expected: e.from_portugo, actual: a.from_portugo, icon: '💚' },
   ];
 

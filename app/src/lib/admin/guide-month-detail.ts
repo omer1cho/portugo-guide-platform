@@ -75,6 +75,8 @@ export type ActualClosing = {
   change_refill: number;
   to_portugo: number;             // הפקדות לפורטוגו (לא כולל pending)
   pending_deposit: number;        // מעטפת המתנה (to_portugo עם is_pending_deposit=true)
+  closing_deposit: number;        // הפקדות שנוצרו בסגירת חודש (pending או שכבר נסגרו) — להשוואה מול הצפוי
+  mid_month_deposit: number;      // הפקדות אמצע-חודש (העברות לרונה וכו') — יורדות מהקופה לפני הסגירה
   from_portugo: number;
   admin_topup_change: number;
   admin_topup_expenses: number;
@@ -281,6 +283,8 @@ export async function loadGuideMonthDetail(
     change_refill: 0,
     to_portugo: 0,
     pending_deposit: 0,
+    closing_deposit: 0,
+    mid_month_deposit: 0,
     from_portugo: 0,
     admin_topup_change: 0,
     admin_topup_expenses: 0,
@@ -300,6 +304,14 @@ export async function loadGuideMonthDetail(
     } else if (t.transfer_type === 'to_portugo') {
       if (t.is_pending_deposit) actual.pending_deposit += a;
       else actual.to_portugo += a;
+      // הפקדת סגירה נוצרת רק ב-/close-month עם notes "ממתין להפקדה — סגירת X";
+      // ה-notes נשמר גם אחרי שהמדריך מסמן "ביצעתי הפקדה" (רק הדגל יורד).
+      // כל שאר ה-to_portugo הן העברות אמצע-חודש.
+      if (t.is_pending_deposit || (t.notes || '').startsWith('ממתין להפקדה')) {
+        actual.closing_deposit += a;
+      } else {
+        actual.mid_month_deposit += a;
+      }
     } else if (t.transfer_type === 'from_portugo') {
       actual.from_portugo += a;
     } else if (t.transfer_type === 'admin_topup_change') {
@@ -377,7 +389,9 @@ export async function loadGuideMonthDetail(
   // לפשטות, ניקח את main_box "ברגע הסגירה" כ:
   //   total_cash_collected + change_given - to_portugo_in_month
   // (לפני הסגירה אין refills/salary_withdrawal — או שיש מעט מאוד שלא בסגירה)
-  const main_box_at_close = salary.total_cash_collected + change_given_in_month - actual.to_portugo - actual.pending_deposit;
+  // מנכים רק הפקדות אמצע-חודש: הפקדת הסגירה עצמה היא חלק מ"מה שצפוי" —
+  // אם ננכה גם אותה, הצפוי יתאפס אחרי שהמדריך סוגר ויווצר פער מדומה.
+  const main_box_at_close = salary.total_cash_collected + change_given_in_month - actual.mid_month_deposit;
 
   const EXPENSES_TARGET = guide.target_expenses_balance ?? 150;
   const CHANGE_TARGET = guide.target_change_balance ?? 100;
