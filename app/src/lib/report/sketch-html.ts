@@ -1,7 +1,7 @@
 /**
- * ה-HTML של סקיצת הדוח הדו-שבועי — גרסה 3 (חידודי עומר סבב 2, 2.8):
- * רווח מוערך אחרי עלויות (מודל תמחור: רכב/כרטיסים/אוכל/שכר) במקום הכנסה ברוטו;
- * דפי טיפים: מעורבות + תחומי עניין + שתי מטרות פעולה.
+ * ה-HTML של סקיצת הדוח הדו-שבועי — גרסה 4 (חידודי עומר סבב 3, 2.8):
+ * שורת סיכום מחזור/רווח (יולי: 21,569 → 11,096, 51%), תיקון: לחיצות סיורים
+ * בדפי הטיפים כן נמדדות (8 בשבוע הראשון), הערת ביטולים, הערת עלות רכב דורו.
  * נשלח דרך /api/report/sketch. יוחלף בתבנית דינמית כשהדוח האמיתי ייבנה.
  */
 export const REPORT_SKETCH_HTML = `<!DOCTYPE html>
@@ -11,8 +11,8 @@ export const REPORT_SKETCH_HTML = `<!DOCTYPE html>
 <div dir="rtl" style="font-family:'Segoe UI',Arial,sans-serif; background:#f3f4f6; padding:24px 12px; color:#1f2937;">
 
   <div style="max-width:640px; margin:0 auto 16px; background:#fffbeb; border:1px dashed #d97706; border-radius:10px; padding:12px 16px; font-size:13px; color:#92400e; text-align:right;">
-    סקיצה לאישור, גרסה 3. עודכן: רווח מוערך אחרי עלויות (רכב, כרטיסים, שכר מדריך) במקום הכנסה ברוטו,
-    ודפי הטיפים עם מעורבות ותחומי עניין ולא רק כפתורי פעולה. כל המספרים אמיתיים מהמערכת וממודל התמחור.
+    סקיצה לאישור, גרסה 4. עודכן: שורת סיכום מחזור מול רווח, תיקון נתוני לחיצות הסיורים בדפי הטיפים
+    (יש מדידה!), הערת ביטולי רגע אחרון, והערת שקיפות על עלות רכב דורו. כל המספרים אמיתיים מהמערכת וממודל התמחור.
   </div>
 
   <div style="max-width:640px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; border:1px solid #e5e7eb;">
@@ -82,7 +82,9 @@ export const REPORT_SKETCH_HTML = `<!DOCTYPE html>
         <tr><td style="padding:7px 0; font-weight:600;">פרטיים פורטו</td><td style="text-align:center;">2</td><td style="text-align:center;">8</td><td style="text-align:center;">340€</td><td style="text-align:center; color:#9ca3af;">190€</td><td style="text-align:center; font-weight:700;">150€</td><td style="text-align:center;">19€</td></tr>
         <tr><td style="padding:7px 0; font-weight:600;">בלם</td><td style="text-align:center;">3</td><td style="text-align:center;">8</td><td style="text-align:center;">140€</td><td style="text-align:center; color:#9ca3af;">104€</td><td style="text-align:center; font-weight:700;">36€</td><td style="text-align:center;">4.6€</td></tr>
         <tr><td style="padding:7px 0; font-weight:600; color:#b91c1c;">אובידוש</td><td style="text-align:center;">1</td><td style="text-align:center;">5</td><td style="text-align:center;">500€</td><td style="text-align:center; color:#9ca3af;">563€</td><td style="text-align:center; font-weight:700; color:#b91c1c;">-63€</td><td style="text-align:center; color:#b91c1c; font-weight:700;">-13€</td></tr>
+        <tr style="border-top:2px solid #e5e7eb;"><td style="padding:8px 0; font-weight:700;">סה"כ יולי</td><td style="text-align:center; font-weight:700;">92</td><td style="text-align:center; font-weight:700;">634</td><td style="text-align:center; font-weight:700;">21,569€</td><td style="text-align:center; color:#6b7280; font-weight:700;">10,473€</td><td style="text-align:center; font-weight:700; color:#166534;">11,096€</td><td style="text-align:center; color:#166534; font-weight:700;">51%</td></tr>
       </table>
+      <div style="font-size:11.5px; color:#9ca3af; margin-top:6px;">הקלאסי נספר לפי חלק החברה בלבד (ההפרשה), לא כל הקופה. רכב דורו חושב לפי 280€ (מחירון ז'ורז' לרכב עד 6); בקבוצות הגדולות של יולי העלות בפועל גבוהה יותר, מחיר ספק רכב גדול בפורטו עדיין חסר במודל.</div>
       <div style="margin-top:10px; font-size:13.5px; color:#111827; background:#f9fafb; border-radius:8px; padding:8px 12px; line-height:1.65;">
         <strong style="color:#166534;">מה זה אומר:</strong> הקלאסי מביא את ההמונים (397 איש) ברווח קטן לאיש, סיורי היום והפרטיים עושים את הכסף.
         והכי חשוב: ברכב ובמדריך כבר שילמנו — משתתף נוסף בסיור יום שיוצא ממילא משאיר כ-75€ רווח (בסינטרה: 95€ מחיר פחות 20€ כרטיס).
@@ -121,8 +123,8 @@ export const REPORT_SKETCH_HTML = `<!DOCTYPE html>
       <div style="border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; margin-bottom:12px;">
         <span style="display:inline-block; font-size:11px; font-weight:700; padding:2px 10px; border-radius:99px; background:#fef2f2; color:#b91c1c;">לתשומת לב</span>
         <div style="font-size:14.5px; font-weight:700; margin:8px 0 6px;">לסיורי רכב יש רצפה כלכלית: כ-6 משתתפים</div>
-        <div style="font-size:13.5px; line-height:1.65; color:#4b5563;">הרכב והמדריך עולים כ-400 עד 470€ עוד לפני שעלה משתתף אחד. אובידוש של 5 משתתפים יצא בהפסד של 63€. מתחת ל-6 משתתפים, סיור יום עם רכב מפסיד או מגרד אפס.</div>
-        <div style="margin-top:8px; font-size:13.5px; color:#111827; background:#f9fafb; border-radius:8px; padding:8px 12px;"><strong style="color:#166534;">לשקול:</strong> מדיניות מינימום 6 לסיורי רכב, או איחוד תאריכים כשההרשמה נמוכה. הדוח יסמן כל סיור מתוכנן שנמצא מתחת לרצפה.</div>
+        <div style="font-size:13.5px; line-height:1.65; color:#4b5563;">הרכב והמדריך עולים כ-400 עד 470€ עוד לפני שעלה משתתף אחד. אובידוש של 5 משתתפים יצא בהפסד של 63€. מתחת ל-6 משתתפים, סיור יום עם רכב מפסיד או מגרד אפס. לפעמים זה קורה בגלל ביטולי רגע אחרון, לא בגלל תכנון.</div>
+        <div style="margin-top:8px; font-size:13.5px; color:#111827; background:#f9fafb; border-radius:8px; padding:8px 12px;"><strong style="color:#166534;">לשקול:</strong> הדוח יעקוב כמה סיורי רכב ירדו מתחת לרצפה וכמה זה עלה בכל חודש. כשיצטברו נתונים, זה הבסיס להחלטה על מדיניות ביטולים (למשל דמי ביטול ב-24 השעות האחרונות) או איחוד תאריכים.</div>
       </div>
 
       <div style="border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px;">
@@ -155,8 +157,8 @@ export const REPORT_SKETCH_HTML = `<!DOCTYPE html>
         <tr>
           <td width="50%" style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.7; text-align:right; vertical-align:top;">
             <div style="font-weight:700; font-size:14px; margin-bottom:4px;">הרשמה לסיור נוסף</div>
-            אין עדיין בלוק "ממשיכים איתנו" בדף, אז אי אפשר למדוד המרה.<br>
-            <span style="color:#b45309; font-weight:600;">החור המרכזי, וגם ההזדמנות (75€ למומר).</span>
+            8 לחיצות על סיורים (קולינרי 2, "לסיור הבא שלכם" 2, סינטרה, אראבידה, דורו ובלם 1 כל אחד).<br>
+            <span style="color:#b45309; font-weight:600;">כ-3.5% מהמבקרים. הבלוק קיים אבל שקט מדי.</span>
           </td>
           <td width="50%" style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.7; text-align:right; vertical-align:top;">
             <div style="font-weight:700; font-size:14px; margin-bottom:4px;">פידבקים וביקורות</div>
@@ -167,7 +169,7 @@ export const REPORT_SKETCH_HTML = `<!DOCTYPE html>
       </table>
 
       <div style="margin-top:10px; font-size:13.5px; color:#111827; background:#f9fafb; border-radius:8px; padding:8px 12px; line-height:1.65;">
-        <strong style="color:#166534;">לשקול:</strong> (1) בלוק "ממשיכים איתנו" בראש הדף עם סינטרה, קולינרי ודורו + הטבת החבילה, עם מדידת לחיצות שתהפוך ל-KPI קבוע כאן.
+        <strong style="color:#166534;">לשקול:</strong> (1) להרים את בלוק הסיורים לראש הדף עם הטבת החבילה. הלחיצות כבר נמדדות והן יהיו KPI קבוע כאן; כדי לראות גם סגירות, נוסיף סימון למי שמגיע מהדף לאתר, ואפשרות "דף הטיפים" בשדה מקור ההגעה.
         (2) העלאת כפתור הביקורת בגוגל + הודעת וואטסאפ מהמדריך בערב הסיור עם קישור ישיר.
         (3) העניין העצום במסעדות הוא נכס: גם תוכן להרחיב, וגם בסיס לשיחת שיתוף פעולה עם 2, 3 מסעדות מובילות.
       </div>
