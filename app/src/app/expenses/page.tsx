@@ -97,6 +97,9 @@ function ExpensesContent() {
   const [cardBalance, setCardBalance] = useState(0);
   // מקור התשלום של ההוצאה הנוכחית בטופס
   const [paymentSource, setPaymentSource] = useState<PaymentSource>('expenses_box');
+  // יתרת מעטפת ההוצאות (מצטברת, כמו ב-/cash-boxes) — להתרעה כשהוצאה מכניסה אותה למינוס.
+  // null = עדיין לא נטענה; לא חוסמים שמירה, רק מתריעים.
+  const [envelopeBalance, setEnvelopeBalance] = useState<number | null>(null);
 
   useEffect(() => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -110,6 +113,7 @@ function ExpensesContent() {
     loadExpenses(id);
     loadCatalog();
     loadCardState(id);
+    loadEnvelopeBalance(id);
     // טעינת סטטוס סגירת משכורת כדי לדעת אם להציג כפתור הוספה
     checkSalaryClosed(supabase, id, year, month).then(setSalaryClosed);
   }, [router, year, month]);
@@ -167,6 +171,61 @@ function ExpensesContent() {
     }
     // אם הקולומה לא קיימת — cardExpSum נשאר 0 → balance = cardLoadSum (סביר ל-fallback)
     setCardBalance(cardLoadSum - cardExpSum);
+  }
+
+  /**
+   * יתרת מעטפת ההוצאות — אותה נוסחה כמו ב-/cash-boxes:
+   * פתיחה + חיזוקים + תוספות אדמין − הוצאות מהמעטפה − הטענות כרטיס,
+   * מ-SYSTEM_START_DATE ועד סוף החודש הנבחר.
+   */
+  async function loadEnvelopeBalance(id: string) {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    const { data: guideRow } = await supabase
+      .from('guides')
+      .select('opening_expenses_balance')
+      .eq('id', id)
+      .single();
+
+    const trRes = await supabase
+      .from('transfers')
+      .select('amount, transfer_type')
+      .eq('guide_id', id)
+      .in('transfer_type', ['expenses_refill', 'admin_topup_expenses', 'card_load'])
+      .gte('transfer_date', SYSTEM_START_DATE)
+      .lte('transfer_date', end);
+    let refills = 0;
+    let cardLoads = 0;
+    (trRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
+      if (t.transfer_type === 'card_load') cardLoads += t.amount || 0;
+      else refills += t.amount || 0;
+    });
+
+    // הוצאות שיצאו מהמעטפה (לא מכרטיס טיים אאוט).
+    // fallback בלי payment_source אם המיגרציה עוד לא רצה.
+    let exps = 0;
+    const withPS = await supabase
+      .from('expenses')
+      .select('amount, payment_source')
+      .eq('guide_id', id)
+      .gte('expense_date', SYSTEM_START_DATE)
+      .lte('expense_date', end);
+    if (withPS.error) {
+      const fb = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('guide_id', id)
+        .gte('expense_date', SYSTEM_START_DATE)
+        .lte('expense_date', end);
+      exps = (fb.data || []).reduce((s: number, e: { amount: number }) => s + (e.amount || 0), 0);
+    } else {
+      (withPS.data || []).forEach((e: { amount: number; payment_source?: string | null }) => {
+        if (e.payment_source !== 'food_market_card') exps += e.amount || 0;
+      });
+    }
+
+    setEnvelopeBalance((guideRow?.opening_expenses_balance || 0) + refills - exps - cardLoads);
   }
 
   async function loadExpenses(id: string) {
@@ -260,6 +319,21 @@ function ExpensesContent() {
     return Math.abs(a - expectedAmount) > 0.01;
   }, [expectedAmount, amount]);
 
+  // התרעת מינוס: כמה יישאר במעטפת ההוצאות אחרי ההוצאה הזו.
+  // מוצגת רק אם התוצאה שלילית. לא חוסמת שמירה (בניגוד לכרטיס טיים אאוט).
+  // בעריכה: הסכום הישן של אותה הוצאה כבר ירד מהיתרה, אז מחזירים אותו לחישוב.
+  const envelopeAfterExpense = useMemo(() => {
+    if (envelopeBalance === null || paymentSource !== 'expenses_box') return null;
+    const a = parseFloat(amount);
+    if (!a || a <= 0) return null;
+    const oldFromBox =
+      editingExpense && editingExpense.payment_source !== 'food_market_card'
+        ? editingExpense.amount || 0
+        : 0;
+    const after = envelopeBalance + oldFromBox - a;
+    return after < -0.001 ? after : null;
+  }, [envelopeBalance, amount, paymentSource, editingExpense]);
+
   const resetForm = () => {
     setShowForm(false);
     setFormError('');
@@ -310,7 +384,10 @@ function ExpensesContent() {
       return;
     }
     setExpenseToDelete(null);
-    if (guideId) loadExpenses(guideId);
+    if (guideId) {
+      loadExpenses(guideId);
+      loadEnvelopeBalance(guideId); // מחיקה מחזירה כסף למעטפה
+    }
   };
 
   const handleSave = async () => {
@@ -478,6 +555,7 @@ function ExpensesContent() {
     resetForm();
     loadExpenses(guideId);
     loadCardState(guideId); // עדכון יתרת הכרטיס אחרי שמירה
+    loadEnvelopeBalance(guideId); // עדכון יתרת המעטפה אחרי שמירה
   };
 
   // ─── סיכומים מפוצלים: מקופת הוצאות / מהכרטיס / סה"כ ───
@@ -705,6 +783,19 @@ function ExpensesContent() {
                     ⚠️ הסכום שונה מהחישוב ({expectedAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€).
                     <br />
                     בבקשה <span className="font-bold">תעדכני את פורטוגו</span> שמחיר הפריט השתנה — את.ה יכול.ה לשמור את הסכום בפועל ולהמשיך.
+                  </div>
+                )}
+                {envelopeAfterExpense !== null && envelopeBalance !== null && (
+                  <div className="mt-2 bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm text-amber-900">
+                    ⚠️ ההוצאה גדולה ממה שיש במעטפת ההוצאות (יש כרגע{' '}
+                    <span className="font-bold">{envelopeBalance.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>).
+                    <br />
+                    אפשר לשמור, אבל המעטפה תרד למינוס ({envelopeAfterExpense.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€).
+                    כדאי קודם{' '}
+                    <Link href="/cash-boxes" className="font-bold underline">
+                      לחזק אותה מהקופה הראשית
+                    </Link>
+                    , ואז לחזור להזין את ההוצאה.
                   </div>
                 )}
               </div>
