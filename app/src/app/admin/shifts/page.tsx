@@ -175,9 +175,19 @@ function fmtDayLabel(d: Date): string {
   return `${dow} · ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-/** המגבלה הקבועה של מדריך ליום-בשבוע של תאריך נתון (weekly_constraints), או null */
+/** המגבלה הקבועה של מדריך ליום-בשבוע של תאריך נתון (weekly_constraints), או null.
+ * תומך בתיחום תאריכים בתוך הטקסט: "חצי יום @עד:2026-08-31" מפסיק להופיע אחרי
+ * התאריך, "לא עובדת @מ:2026-09-01" מופיע רק מהתאריך והלאה. הסיומת לא מוצגת בשלט
+ * (בעריכה במודאל היא כן נראית — כך מעדכנים אותה). */
 function guideConstraintFor(g: Guide, d: Date): string | null {
-  const t = g.weekly_constraints?.[String(d.getDay())]?.trim();
+  let t = g.weekly_constraints?.[String(d.getDay())]?.trim();
+  if (!t) return null;
+  const iso = toIsoDate(d);
+  const until = t.match(/@עד:(\d{4}-\d{2}-\d{2})/);
+  const from = t.match(/@מ:(\d{4}-\d{2}-\d{2})/);
+  if (until && iso > until[1]) return null;
+  if (from && iso < from[1]) return null;
+  t = t.replace(/@עד:\d{4}-\d{2}-\d{2}/g, '').replace(/@מ:\d{4}-\d{2}-\d{2}/g, '').trim();
   return t || null;
 }
 
