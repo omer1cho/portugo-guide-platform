@@ -51,6 +51,10 @@ function CloseMonthContent() {
   const [receiptInvoiceAmount, setReceiptInvoiceAmount] = useState('');
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [receiptError, setReceiptError] = useState('');
+  // אזהרת תאריך חשוד: התאריך שהוזן נופל בתוך חודש העבודה (או לפניו) — כמעט תמיד
+  // זה תאריך השירות (Data da colocação) שהועתק בטעות במקום emitida em.
+  // לחיצת שמירה שנייה אחרי האזהרה כן עוברת (יש קבלות שבאמת מופקות בתוך החודש).
+  const [receiptDateWarning, setReceiptDateWarning] = useState(false);
 
   const loadData = React.useCallback(async () => {
     const id = localStorage.getItem('portugo_guide_id');
@@ -377,6 +381,12 @@ function CloseMonthContent() {
       setReceiptError('צריך להזין את הסכום שכתוב על הקבלה');
       return;
     }
+    // בלם תאריך השירות: תאריך בתוך חודש העבודה (או לפניו) חשוד — עוצרים פעם אחת.
+    const lastDayOfWorkMonth = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
+    if (receiptInvoiceDate <= lastDayOfWorkMonth && !receiptDateWarning) {
+      setReceiptDateWarning(true);
+      return;
+    }
     setReceiptError('');
     setReceiptUploading(true);
 
@@ -414,6 +424,7 @@ function CloseMonthContent() {
     setReceiptFile(null);
     setReceiptInvoiceDate('');
     setReceiptInvoiceAmount('');
+    setReceiptDateWarning(false);
   }
 
   return (
@@ -955,10 +966,23 @@ function CloseMonthContent() {
               </p>
               <DateField
                 value={receiptInvoiceDate}
-                onChange={(e) => setReceiptInvoiceDate(e.target.value)}
+                onChange={(e) => {
+                  setReceiptInvoiceDate(e.target.value);
+                  setReceiptDateWarning(false);
+                }}
                 placeholder="בחרו תאריך"
                 style={{ border: '1px solid #d1d5db', borderRadius: 12, padding: '10px 12px', fontSize: 15 }}
               />
+              {receiptDateWarning && (
+                <div className="mt-2 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg p-3 text-sm">
+                  ⚠️ התאריך שהזנת נמצא בתוך חודש העבודה. ברוב הקבלות זה תאריך
+                  השירות (<span dir="ltr">Data da colocação</span>), לא תאריך ההפקה.
+                  <br />
+                  בדקי שוב בקבלה: התאריך הנכון מודפס ליד{' '}
+                  <span dir="ltr" className="font-bold">emitida em</span> למעלה, ובדרך כלל
+                  הוא בחודש שאחרי. אם בדקת וזה באמת התאריך המודפס שם, לחצי שוב על השליחה.
+                </div>
+              )}
             </div>
 
             <div className="mb-4">
@@ -999,6 +1023,7 @@ function CloseMonthContent() {
                   setReceiptInvoiceDate('');
                   setReceiptInvoiceAmount('');
                   setReceiptError('');
+                  setReceiptDateWarning(false);
                 }}
                 disabled={receiptUploading}
                 className="w-full bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all text-gray-700 rounded-xl py-3 font-medium text-sm"
