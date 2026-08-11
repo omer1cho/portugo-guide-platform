@@ -484,12 +484,19 @@ export function calculateMonthlySalary(
   for (const a of activities) workDaySet.add(a.activity_date);
   const work_days = workDaySet.size;
 
-  // Travel reimbursement — התעריפים מהגדרות המדריך (guides.travel_*_amount),
-  // עם ברירות המחדל ההיסטוריות. עדכון מחירי מטרו = עדכון בטבלת המדריכים, בלי קוד.
+  // Travel reimbursement — התעריפים מהגדרות המדריך (guides.travel_*_amount)
+  // חלים מאוגוסט 2026 והלאה בלבד (עדכון מטרו ליסבון 1.90, הוראת עומר 9.8.26).
+  // חודשים לפני כן מחושבים תמיד לפי התעריפים הישנים (30 חודשי / 3 יומי),
+  // כדי שתצוגת צפוי-מול-בפועל של חודשים סגורים לא תזוז רטרואקטיבית.
+  const travelSampleDate = tours[0]?.tour_date || activities[0]?.activity_date || '';
+  const useConfiguredTravel = travelSampleDate >= '2026-08-01';
   let travel = 0;
   if (guide && work_days > 0) {
-    if (guide.travel_type === 'monthly') travel = guide.travel_monthly_amount ?? 30;
-    else if (guide.travel_type === 'daily') travel = (guide.travel_daily_amount ?? 3) * work_days;
+    if (guide.travel_type === 'monthly') {
+      travel = useConfiguredTravel ? (guide.travel_monthly_amount ?? 30) : 30;
+    } else if (guide.travel_type === 'daily') {
+      travel = (useConfiguredTravel ? (guide.travel_daily_amount ?? 3) : 3) * work_days;
+    }
   }
 
   // Management component (Maya)
