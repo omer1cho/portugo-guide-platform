@@ -263,7 +263,7 @@ function HomeContent() {
       const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
       const [guideRes, toursRes, actRes, expRes, trRes, pendingRes, cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
-        supabase.from('guides').select('name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
+        supabase.from('guides').select('name, travel_type, travel_monthly_amount, travel_daily_amount, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance').eq('id', id).single(),
         supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
           .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
         supabase.from('activities').select('amount, activity_type, activity_date, notes')
@@ -285,7 +285,7 @@ function HomeContent() {
           .eq('guide_id', id).gte('expense_date', SYSTEM_START_DATE).lte('expense_date', end),
       ]);
 
-      const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'> | null) || null;
+      const guide = (guideRes.data as Pick<Guide, 'name' | 'travel_type' | 'travel_monthly_amount' | 'travel_daily_amount' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance'> | null) || null;
 
       let totalPeople = 0;
       let totalCollected = 0;
@@ -484,13 +484,13 @@ function HomeContent() {
       const guideRes = await supabase
         .from('guides')
         .select(
-          'name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person',
+          'name, travel_type, travel_monthly_amount, travel_daily_amount, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person',
         )
         .eq('id', id)
         .single();
       const g = (guideRes.data as Pick<
         Guide,
-        'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'
+        'name' | 'travel_type' | 'travel_monthly_amount' | 'travel_daily_amount' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'
       > | null) || null;
       if (!g) return;
 

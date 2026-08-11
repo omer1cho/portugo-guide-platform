@@ -25,6 +25,8 @@ export type GuideMonthSummary = {
     | 'name'
     | 'city'
     | 'travel_type'
+    | 'travel_monthly_amount'
+    | 'travel_daily_amount'
     | 'has_mgmt_bonus'
     | 'mgmt_bonus_amount'
     | 'has_vat'
@@ -117,7 +119,7 @@ export async function loadMonthSnapshot(
   // אחרת נסנן ל-is_guide=true (כולל אדמינים שגם מדריכים, כמו רונה).
   // Fallback ל-is_admin=false אם is_guide עדיין לא רץ ב-DB.
   async function fetchGuides() {
-    const baseSelect = 'id, name, city, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, is_admin, is_active, qualified_tours';
+    const baseSelect = 'id, name, city, travel_type, travel_monthly_amount, travel_daily_amount, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, is_admin, is_active, qualified_tours';
 
     if (includeAdmins) {
       let q = supabase.from('guides').select(baseSelect).eq('is_active', true).order('name');

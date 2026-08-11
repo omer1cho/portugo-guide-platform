@@ -30,7 +30,7 @@ function CloseMonthContent() {
   const month = searchParams.get('month') ? parseInt(searchParams.get('month')!) - 1 : now.getMonth();
 
   const [loading, setLoading] = useState(true);
-  const [guide, setGuide] = useState<Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'target_change_balance' | 'target_expenses_balance'> | null>(null);
+  const [guide, setGuide] = useState<Pick<Guide, 'id' | 'name' | 'travel_type' | 'travel_monthly_amount' | 'travel_daily_amount' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'target_change_balance' | 'target_expenses_balance'> | null>(null);
   const [salary, setSalary] = useState<SalaryBreakdown | null>(null);
   const [externalActivities, setExternalActivities] = useState<{ description: string; amount: number }[]>([]);
   const [cash, setCash] = useState<CashState>({ mainBalance: 0, changeBalance: 0, expensesBalance: 0, salaryWithdrawn: 0 });
@@ -69,7 +69,7 @@ function CloseMonthContent() {
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     const [guideRes, toursRes, actRes, expRes, trRes, cumTrRes, cumChangeGivenRes, cumExpRes] = await Promise.all([
-      supabase.from('guides').select('id, name, travel_type, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance, target_change_balance, target_expenses_balance').eq('id', id).single(),
+      supabase.from('guides').select('id, name, travel_type, travel_monthly_amount, travel_daily_amount, has_mgmt_bonus, mgmt_bonus_amount, has_vat, classic_transfer_per_person, opening_change_balance, opening_expenses_balance, target_change_balance, target_expenses_balance').eq('id', id).single(),
       supabase.from('tours').select('id, tour_date, tour_type, category, notes, bookings(people, kids, price, tip, change_given)')
         .eq('guide_id', id).gte('tour_date', start).lte('tour_date', end),
       supabase.from('activities').select('amount, activity_type, activity_date, notes')
@@ -88,7 +88,7 @@ function CloseMonthContent() {
         .eq('guide_id', id).gte('expense_date', SYSTEM_START_DATE).lte('expense_date', end),
     ]);
 
-    const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance' | 'target_change_balance' | 'target_expenses_balance'>) || null;
+    const g = (guideRes.data as Pick<Guide, 'id' | 'name' | 'travel_type' | 'travel_monthly_amount' | 'travel_daily_amount' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'opening_change_balance' | 'opening_expenses_balance' | 'target_change_balance' | 'target_expenses_balance'>) || null;
     setGuide(g);
     const openingChange = g?.opening_change_balance || 0;
     const openingExpenses = g?.opening_expenses_balance || 0;

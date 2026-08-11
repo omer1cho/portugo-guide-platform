@@ -37,6 +37,10 @@ export type Guide = {
   name: string;
   city: 'lisbon' | 'porto';
   travel_type: 'monthly' | 'daily';
+  /** תעריף חופשי חודשי (€). ברירת מחדל 30 אם לא מוגדר. */
+  travel_monthly_amount?: number | null;
+  /** תעריף נסיעות ליום עבודה (€). ברירת מחדל 3. עודכן ל-3.80 בליסבון (מטרו 1.90 לכיוון, 8/26). */
+  travel_daily_amount?: number | null;
   has_vat: boolean;
   has_mgmt_bonus: boolean;
   mgmt_bonus_amount: number;

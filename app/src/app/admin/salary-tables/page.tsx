@@ -32,6 +32,8 @@ type GuideRow = {
   is_active: boolean | null;
   classic_transfer_per_person: number | null;
   travel_type: string | null;
+  travel_monthly_amount: number | null;
+  travel_daily_amount: number | null;
   has_vat: boolean | null;
   has_mgmt_bonus: boolean | null;
   mgmt_bonus_amount: number | null;
@@ -72,7 +74,7 @@ export default function SalaryTablesPage() {
     async function load() {
       const { data } = await supabase
         .from('guides')
-        .select('id, name, city, is_active, classic_transfer_per_person, travel_type, has_vat, has_mgmt_bonus, mgmt_bonus_amount')
+        .select('id, name, city, is_active, classic_transfer_per_person, travel_type, travel_monthly_amount, travel_daily_amount, has_vat, has_mgmt_bonus, mgmt_bonus_amount')
         .eq('is_active', true)
         .order('name');
       setGuides((data || []) as GuideRow[]);
@@ -233,9 +235,9 @@ export default function SalaryTablesPage() {
           <p><strong>אשל יומי:</strong> 15€ ליום עבודה מלא (סיור יום מלא, או שני סיורים באותו יום). מחושב אוטומטית.</p>
           <p><strong>הברזה בכיכר:</strong> 8€ · <strong>פעילות הכשרה (חניך.ה):</strong> 10€ · <strong>פעילות חיצונית:</strong> סכום ידני.</p>
           <p>
-            <strong>נסיעות 30€/חודש:</strong> {monthlyTravel.map((g) => g.name).join(', ') || '—'}
+            <strong>חופשי חודשי:</strong> {monthlyTravel.map((g) => `${g.name} (${eur(g.travel_monthly_amount ?? 30)})`).join(', ') || '—'}
             {' · '}
-            <strong>נסיעות 3€/יום עבודה:</strong> {dailyTravel.map((g) => g.name).join(', ') || '—'}
+            <strong>נסיעות ליום עבודה:</strong> {dailyTravel.map((g) => `${g.name} (${eur(g.travel_daily_amount ?? 3)})`).join(', ') || '—'}
           </p>
           <p>
             <strong>רכיב ניהול:</strong> {mgmtGuides.map((g) => `${g.name} (${eur(g.mgmt_bonus_amount || 0)}/חודש)`).join(', ') || '—'}

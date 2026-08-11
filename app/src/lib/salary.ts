@@ -350,7 +350,7 @@ function isFullDayPrivate(notes: string = ''): boolean {
 // ============================================================================
 
 export function calculateMonthlySalary(
-  guide: Pick<Guide, 'name' | 'travel_type' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'> | null,
+  guide: Pick<Guide, 'name' | 'travel_type' | 'travel_monthly_amount' | 'travel_daily_amount' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person'> | null,
   tours: SalaryTour[],
   activities: SalaryActivity[],
 ): SalaryBreakdown {
@@ -484,11 +484,12 @@ export function calculateMonthlySalary(
   for (const a of activities) workDaySet.add(a.activity_date);
   const work_days = workDaySet.size;
 
-  // Travel reimbursement
+  // Travel reimbursement — התעריפים מהגדרות המדריך (guides.travel_*_amount),
+  // עם ברירות המחדל ההיסטוריות. עדכון מחירי מטרו = עדכון בטבלת המדריכים, בלי קוד.
   let travel = 0;
   if (guide && work_days > 0) {
-    if (guide.travel_type === 'monthly') travel = 30;
-    else if (guide.travel_type === 'daily') travel = 3 * work_days;
+    if (guide.travel_type === 'monthly') travel = guide.travel_monthly_amount ?? 30;
+    else if (guide.travel_type === 'daily') travel = (guide.travel_daily_amount ?? 3) * work_days;
   }
 
   // Management component (Maya)
