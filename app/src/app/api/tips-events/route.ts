@@ -131,17 +131,25 @@ export async function GET(req: NextRequest) {
   });
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from('tips_events')
-    .select('created_at, page, session_id, event_type, target, meta')
-    .neq('session_id', 'gogo-test')
-    .gte('created_at', since)
-    .order('created_at', { ascending: true })
-    .limit(20000);
 
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  // Supabase חותך כל תשובה ל-1,000 שורות (Max Rows) בלי קשר ל-limit שמבקשים.
+  // עם מיון עולה זה גרם לדשבורד "לקפוא" על 1,000 האירועים הישנים (הבאג של 1.8.26).
+  // לכן קוראים בדפים של 1,000 עד שנגמר.
+  const PAGE_SIZE = 1000;
+  const rows: EventRow[] = [];
+  for (let fromIdx = 0; fromIdx <= 60000; fromIdx += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('tips_events')
+      .select('created_at, page, session_id, event_type, target, meta')
+      .not('session_id', 'like', 'gogo-%')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+      .range(fromIdx, fromIdx + PAGE_SIZE - 1);
 
-  const rows = (data ?? []) as EventRow[];
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    rows.push(...((data ?? []) as EventRow[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
 
   // אגרגציה יומית לפי שעון פורטוגל - שם הסיורים קורים
   const dayOf = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Europe/Lisbon' });
