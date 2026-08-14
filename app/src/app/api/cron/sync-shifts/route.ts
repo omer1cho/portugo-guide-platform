@@ -63,59 +63,53 @@ function shiftKey(s: { shift_date: string; shift_time: string; tour_type: string
   return `${s.shift_date}_${t}_${s.tour_type}_${s.city}`;
 }
 
+// מזהי הסיורים באתר (portugo-back) — אותה רשימה שהאתר עצמו שולח ל-API הסלוטים
+const WEBSITE_TOUR_IDS = ['1297', '49354', '150', '1616', '1609', '117', '1611', '1295', '146', '1618'];
+
+/**
+ * מאז עדכון האתר (8/2026) התאריכים כבר לא מוטמעים ב-__NEXT_DATA__ אלא נמשכים
+ * ב-runtime מ-API הסלוטים של portugo-back. מושכים מאותו מקור בדיוק כמו האתר.
+ * sold_out נכלל בכוונה — סיור שאזל עדיין יוצא וצריך מדריך.
+ */
 async function fetchWebsiteShifts(maxDaysAhead: number): Promise<WebsiteShift[]> {
-  const res = await fetch('https://portugo.co.il/tours-calendar', {
+  const today = new Date();
+  const from = today.toISOString().slice(0, 10);
+  const cutoff = new Date(today.getTime() + maxDaysAhead * 86400000);
+  const to = cutoff.toISOString().slice(0, 10);
+
+  const url =
+    `https://portugo-back.ussl.co.il/api/v1/slots?tourId=${WEBSITE_TOUR_IDS.join('%2C')}` +
+    `&from=${from}&to=${to}&status=available%2Clast_places%2Csold_out`;
+  const res = await fetch(url, {
     headers: { 'User-Agent': 'PortugoSync/1.0' },
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error(`Website fetch failed: ${res.status}`);
-  const html = await res.text();
-
-  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-  if (!match) throw new Error('__NEXT_DATA__ not found in HTML');
-
-  const blob = JSON.parse(match[1]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tours = (blob?.props?.pageProps?.tours?.nodes || []) as any[];
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const cutoff = new Date(today);
-  cutoff.setDate(cutoff.getDate() + maxDaysAhead);
+  if (!res.ok) throw new Error(`Slots API fetch failed: ${res.status}`);
+  const body = await res.json();
+  const slots = body?.data?.slots;
+  if (!Array.isArray(slots)) throw new Error('Slots API: unexpected shape (data.slots missing)');
 
   const out: WebsiteShift[] = [];
-  for (const tour of tours) {
-    const mapping = TOUR_TYPE_MAP[tour.title];
+  for (const slot of slots) {
+    const title = slot?.tour?.title as string | undefined;
+    const mapping = title ? TOUR_TYPE_MAP[title] : undefined;
     if (!mapping) continue;
 
-    const cdRaw = tour?.tour_availability?.computedDates;
-    if (!cdRaw) continue;
-    let dates: Record<string, Record<string, unknown>>;
-    try {
-      dates = JSON.parse(cdRaw);
-    } catch {
-      continue;
-    }
+    // displayDate: DD.MM.YYYY, displayTime: HH:MM — שעה מקומית (ליסבון), כמו במבנה הישן
+    const dd = String(slot.displayDate || '');
+    const [d, m, y] = dd.split('.');
+    if (!d || !m || !y) continue;
+    const shift_date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    const time = String(slot.displayTime || '');
+    if (!/^\d{2}:\d{2}/.test(time)) continue;
 
-    for (const [dateStr, times] of Object.entries(dates)) {
-      // MM/DD/YYYY → YYYY-MM-DD
-      const [m, d, y] = dateStr.split('/');
-      if (!m || !d || !y) continue;
-      const dt = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
-      if (isNaN(dt.getTime())) continue;
-      if (dt < today || dt > cutoff) continue;
-
-      const shift_date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      for (const time of Object.keys(times)) {
-        out.push({
-          shift_date,
-          shift_time: time.length === 5 ? `${time}:00` : time,
-          tour_type: mapping.tour_type,
-          city: mapping.city,
-          website_tour_id: String(tour.id),
-        });
-      }
-    }
+    out.push({
+      shift_date,
+      shift_time: time.length === 5 ? `${time}:00` : time,
+      tour_type: mapping.tour_type,
+      city: mapping.city,
+      website_tour_id: String(slot?.tour?.id ?? slot?.tourId ?? ''),
+    });
   }
   return out;
 }
@@ -154,6 +148,13 @@ export async function GET(req: NextRequest) {
     // 1. Fetch from website (180 days = 6 months ahead — covers full publishing horizon)
     const websiteShifts = await fetchWebsiteShifts(180);
     result.fetched_from_website = websiteShifts.length;
+
+    // בלם בטיחות 1: פיד ריק = כמעט בוודאות תקלה/שינוי באתר, לא ביטול אמיתי של הכל.
+    // עוצרים הכל לפני שנוגעים בשיבוצים. (הלקח מ-11.8.26: שינוי מבנה באתר רוקן את
+    // הפיד והסנכרון ביטל 35 שיבוצים מפורסמים.)
+    if (websiteShifts.length === 0) {
+      throw new Error('Slots feed returned 0 shifts — aborting sync (site change/outage suspected)');
+    }
 
     // 2. Get ALL existing shifts today or future — מכל המקורות!
     //    גם משמרת שעומר יצרה ידנית חוסמת יצירת כפילות מהאתר (באג נופר 10.7.26)
@@ -214,6 +215,19 @@ export async function GET(req: NextRequest) {
     }
 
     // 5. Handle missing-from-website (cancelled/changed at source)
+    // בלם בטיחות 2: אם מספר המועמדים לביטול חריג (יותר מ-10), משהו כנראה השתבש
+    // בפיד — מדלגים על שלב הביטולים כולו ומדווחים, במקום למחוק את הלוח.
+    const missingCandidates = [...existingMap.entries()].filter(
+      ([key, ex]) => !seenKeys.has(key) && ex.source === 'website',
+    );
+    const MASS_CANCEL_THRESHOLD = 10;
+    if (missingCandidates.length > MASS_CANCEL_THRESHOLD) {
+      result.errors.push(
+        `mass-cancel guard: ${missingCandidates.length} shifts missing from feed (threshold ${MASS_CANCEL_THRESHOLD}) — skipped cancel phase`,
+      );
+      return NextResponse.json({ success: false, guard_triggered: true, ...result }, { status: 200 });
+    }
+
     const todayStr = new Date().toISOString().slice(0, 10);
     for (const [key, exShift] of existingMap.entries()) {
       if (seenKeys.has(key)) continue;
