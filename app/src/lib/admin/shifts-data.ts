@@ -203,10 +203,23 @@ export async function loadAvailableGuides(): Promise<Guide[]> {
   throw first.error;
 }
 
-/** האם מדריך בחופש בתאריך נתון? */
-export function isGuideOnVacation(guide: Guide, isoDate: string): boolean {
+/** האם מדריך בחופש בתאריך נתון?
+ *  shiftTime (HH:MM או HH:MM:SS, אופציונלי): חופשה עם טווח שעות חוסמת רק
+ *  סיורים שמתחילים בתוך הטווח — כך אפשר לסגור חצי יום ולהשאיר את השאר פנוי.
+ *  בלי shiftTime (שאלה ברמת יום) חופשה חלקית עדיין נחשבת "בחופש" לתצוגה. */
+export function isGuideOnVacation(guide: Guide, isoDate: string, shiftTime?: string): boolean {
   if (!guide.vacations || guide.vacations.length === 0) return false;
-  return guide.vacations.some((v) => isoDate >= v.start && isoDate <= v.end);
+  return guide.vacations.some((v) => {
+    if (!(isoDate >= v.start && isoDate <= v.end)) return false;
+    const from = v.from_time?.slice(0, 5);
+    const until = v.until_time?.slice(0, 5);
+    if (!from && !until) return true; // יום שלם
+    if (!shiftTime) return true;      // שאלה ברמת יום — מציגים כחופשה
+    const t = shiftTime.slice(0, 5);
+    if (from && t < from) return false;
+    if (until && t > until) return false;
+    return true;
+  });
 }
 
 /** מחזיר את החופשה של המדריך בתאריך נתון, או null */

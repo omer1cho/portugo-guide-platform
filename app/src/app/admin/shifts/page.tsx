@@ -56,6 +56,9 @@ const TEAM_TOUR_TYPES = new Set(['פעילות_צוות']);
 // סוגים שמשתמשים בלוגיקת "פירוט ב-notes" (כמו פרטי) — סינון מדריכים סלחני (בלי qualified_tours).
 // 'יהדות' — סיור חדש (סונכרן מהאתר); אין לו הסמכות אצל מדריכים, אז מדלגים על סינון ההסמכה
 const FLEXIBLE_TOUR_TYPES = new Set([...PRIVATE_TOUR_TYPES, ...TRAINING_TOUR_TYPES, ...TEAM_TOUR_TYPES, 'יהדות']);
+// סוגים שלא יכולים להופיע כ"פירוט" של סיור פרטי. יהדות כן יכול (יהדות פרטי
+// משלם לפי טבלת בלם), ולכן הוא לא נמצא כאן למרות שהוא ב-FLEXIBLE.
+const NON_DETAIL_TOUR_TYPES = new Set([...PRIVATE_TOUR_TYPES, ...TRAINING_TOUR_TYPES, ...TEAM_TOUR_TYPES]);
 
 // קידומת ההערה של שיבוצים שנוצרו ע"י silentApplyPortoRoster ("🤖 קבע · אם הדורו יוצא" וכו')
 const ROSTER_AUTOFILL_PREFIX = '🤖 קבע';
@@ -264,10 +267,22 @@ function shortDate(iso: string): string {
   return `${parseInt(d, 10)}/${parseInt(m, 10)}`;
 }
 
+/** תיאור טווח השעות של חופשה חלקית, או null לחופשת יום שלם */
+function vacationHoursLabel(v: GuideVacation): string | null {
+  const from = v.from_time?.slice(0, 5);
+  const until = v.until_time?.slice(0, 5);
+  if (from && until) return `${from}-${until}`;
+  if (from) return `מ-${from}`;
+  if (until) return `עד ${until}`;
+  return null;
+}
+
 /** מציג חופשה בפורמט קומפקטי לתצוגה */
 function fmtVacation(v: GuideVacation): string {
   const range = v.start === v.end ? shortDate(v.start) : `${shortDate(v.start)}–${shortDate(v.end)}`;
-  return v.label ? `${range} (${v.label})` : range;
+  const hours = vacationHoursLabel(v);
+  const extras = [hours, v.label].filter(Boolean).join(', ');
+  return extras ? `${range} (${extras})` : range;
 }
 
 // ─── Porto permanent roster (קבע מאי-יולי לפי הקובץ של עומר) ───
@@ -348,7 +363,7 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
     const primary = guideByName.get(slot.guide_name);
     if (!primary) continue;
 
-    const primaryOnVacation = isGuideOnVacation(primary, s.shift_date);
+    const primaryOnVacation = isGuideOnVacation(primary, s.shift_date, s.shift_time);
 
     if (!s.guide_id && !primaryOnVacation) {
       try { await assignGuide(s.id, primary.id); actions++; } catch { /* ignore */ }
@@ -368,7 +383,7 @@ async function silentApplyPortoRoster(allShifts: Shift[], allGuides: Guide[], we
     if (!slot || !slot.secondary) continue;
     const sec = guideByName.get(slot.secondary.guide_name);
     if (!sec) continue;
-    if (isGuideOnVacation(sec, s.shift_date)) continue;
+    if (isGuideOnVacation(sec, s.shift_date, s.shift_time)) continue;
     // עומר מחקה ידנית את ה-secondary slot הזה — לא להחזיר אותו
     if (skipped.has(rosterSlotKey(s.shift_date, time, s.tour_type, 'porto'))) continue;
     const exists = allShifts.some(
@@ -515,7 +530,10 @@ function ShiftsContent() {
           const vacationsForDay = guides
             .map((g) => {
               const v = g.vacations?.find((vac) => isoDate >= vac.start && isoDate <= vac.end);
-              return v ? { guide: g, label: v.label || null } : null;
+              if (!v) return null;
+              // חופשה חלקית: מציגים את טווח השעות בשלט כדי שיהיה ברור מתי כן פנוי.ה
+              const label = [vacationHoursLabel(v), v.label].filter(Boolean).join(' · ') || null;
+              return { guide: g, label };
             })
             .filter((x): x is { guide: Guide; label: string | null } => x !== null);
           return (
@@ -1376,11 +1394,11 @@ function ShiftCard({ shift, guides, onChange }: { shift: Shift; guides: Guide[];
         const qt = g.qualified_tours || [];
         if (qt.length > 0 && !qt.includes(shift.tour_type)) return false;
       }
-      // מדריך בחופש בתאריך הזה — לא בdropdown
-      if (isGuideOnVacation(g, shift.shift_date)) return false;
+      // מדריך בחופש בתאריך+שעה הזו — לא בdropdown (חופשה חלקית חוסמת רק את הטווח שלה)
+      if (isGuideOnVacation(g, shift.shift_date, shift.shift_time)) return false;
       return true;
     });
-  }, [guides, shift.city, shift.tour_type, shift.shift_date]);
+  }, [guides, shift.city, shift.tour_type, shift.shift_date, shift.shift_time]);
 
   const currentGuide = guides.find((g) => g.id === shift.guide_id);
   const guideClr = guideColor(shift.guide_id, guides);
@@ -1912,11 +1930,13 @@ function GuideCardRow({
     }
     setSaving(true);
     try {
-      // ניקוי label ריק ל-undefined
+      // ניקוי label ריק ל-undefined; שדות שעה ריקים לא נשמרים (= יום שלם)
       const cleanedVacations = vacations.map((v) => ({
         start: v.start,
         end: v.end,
         ...(v.label?.trim() ? { label: v.label.trim() } : {}),
+        ...(v.from_time ? { from_time: v.from_time.slice(0, 5) } : {}),
+        ...(v.until_time ? { until_time: v.until_time.slice(0, 5) } : {}),
       }));
       // סגירות קבועות — שומרים רק ימים עם טקסט; אם אין בכלל, null
       const cleanedWc: Record<string, string> = {};
@@ -2048,6 +2068,22 @@ function GuideCardRow({
                     onChange={(e) => updateVacation(i, 'label', e.target.value)}
                     placeholder="תיאור (אופציונלי)"
                     style={{ ...inputStyle, padding: '4px 6px', fontSize: 12, flex: '2 1 140px' }}
+                  />
+                  <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }} title="חופשה חלקית: חוסמת רק סיורים שמתחילים בטווח השעות. ריק = יום שלם">
+                    🕐 בין
+                  </span>
+                  <input
+                    type="time"
+                    value={v.from_time || ''}
+                    onChange={(e) => updateVacation(i, 'from_time', e.target.value)}
+                    style={{ ...inputStyle, padding: '4px 6px', fontSize: 12, flex: '0 1 90px' }}
+                  />
+                  <span style={{ fontSize: 11, color: ADMIN_COLORS.gray500 }}>ל-</span>
+                  <input
+                    type="time"
+                    value={v.until_time || ''}
+                    onChange={(e) => updateVacation(i, 'until_time', e.target.value)}
+                    style={{ ...inputStyle, padding: '4px 6px', fontSize: 12, flex: '0 1 90px' }}
                   />
                   <button
                     type="button"
@@ -2186,7 +2222,9 @@ function ManualAddModal({
   // אפשרויות לסיור פרטי = כל הסיורים הרגילים בעיר (לא פרטי, לא הכשרות, לא צוות), + "אחר"
   const privateDetailOptions = useMemo(() => {
     const base = TOUR_TYPES[city]
-      .filter((t) => !FLEXIBLE_TOUR_TYPES.has(t.value))
+      // מסננים רק פרטי/הכשרות/צוות. יהדות כן מופיע כאן, כי יש סיור יהדות פרטי
+      // (שכר לפי טבלת בלם) — הוא רק פטור מסינון הסמכה, לא מרשימת הפירוט.
+      .filter((t) => !NON_DETAIL_TOUR_TYPES.has(t.value))
       .map((t) => ({ value: t.label, label: `${t.label} פרטי` }));
     return [...base, { value: '__other__', label: 'אחר (טקסט חופשי)' }];
   }, [city]);
@@ -2200,9 +2238,9 @@ function ManualAddModal({
       (g) =>
         g.city === city &&
         (skipQualificationFilter || !g.qualified_tours?.length || g.qualified_tours.includes(tourType)) &&
-        !isGuideOnVacation(g, date),
+        !isGuideOnVacation(g, date, time || undefined),
     );
-  }, [guides, city, tourType, date]);
+  }, [guides, city, tourType, date, time]);
 
   async function handleSave() {
     setErr('');

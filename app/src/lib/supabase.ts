@@ -85,6 +85,11 @@ export type GuideVacation = {
   start: string; // YYYY-MM-DD
   end: string;   // YYYY-MM-DD (כולל)
   label?: string;
+  /** חופשה חלקית ביום: חוסמת רק סיורים שמתחילים בין from_time ל-until_time.
+   *  בלי שניהם = יום שלם. רק from_time = "מהשעה הזו והלאה" (פנוי.ה בבוקר);
+   *  רק until_time = "עד השעה הזו" (פנוי.ה אחר הצהריים). פורמט HH:MM. */
+  from_time?: string | null;
+  until_time?: string | null;
 };
 
 export type Tour = {
@@ -175,6 +180,10 @@ export const TOUR_TYPES = {
     { value: 'אראבידה', label: 'אראבידה', category: 'fixed' as const },
     { value: 'אובידוש', label: 'אובידוש', category: 'fixed' as const },
     { value: 'קולינרי', label: 'קולינרי', category: 'fixed' as const },
+    // סיור יהדות: עד 31.10.26 רץ במודל הקלאסי (תשלום לפי שביעות רצון),
+    // ומ-1.11.26 הופך לסיור בשכר קבוע. ה-category האמיתי נקבע לפי תאריך
+    // הסיור דרך resolveTourCategory() — הערך כאן הוא ברירת המחדל בלבד.
+    { value: 'יהדות', label: 'סיור יהדות', category: 'classic' as const },
     { value: 'פרטי_1', label: 'סיור פרטי (ליסבון)', category: 'private' as const },
     { value: 'תצפות', label: '👁️ תצפות', category: 'training' as const },
     { value: 'נסיון_דפים', label: '📋 ניסיון דפים', category: 'training' as const },
@@ -190,6 +199,36 @@ export const TOUR_TYPES = {
     { value: 'פעילות_צוות', label: '🤝 פעילות צוות', category: 'team' as const },
   ],
 };
+
+/**
+ * סיור יהדות (ליסבון) — התאריך שבו הוא עובר ממחיר "על בסיס שביעות רצון"
+ * למחיר קבוע של 25€ לאדם (20€ בחבילה). החלטת עומר, 27.8.26.
+ *
+ * לפני התאריך: מודל הקלאסי — הכסף נכנס לקופה, הפרשה לפי ראש + בסיס.
+ * מהתאריך: סיור בשכר קבוע — שכר המדריך לפי טבלת בלם, טיפים ישירות למדריך.
+ *
+ * סיורים היסטוריים לא משתנים למפרע: ה-category נקבע לפי תאריך הסיור.
+ */
+export const JUDAISM_FIXED_PRICE_FROM = '2026-11-01';
+
+/** מחיר ללקוח בסיור יהדות רגיל, מ-1.11.26. ילדים: עד 6 חינם, 7-12 חצי, 13+ מלא. */
+export const JUDAISM_PRICE_PER_PERSON = 25;
+export const JUDAISM_PRICE_PER_PERSON_PACKAGE = 20;
+
+/**
+ * ה-category של סיור לפי סוג הסיור ותאריכו.
+ * כרגע רק סיור היהדות תלוי תאריך; לכל השאר מוחזר ה-category מ-TOUR_TYPES.
+ */
+export function resolveTourCategory(
+  tourType: string,
+  tourDate: string,
+  fallback: 'classic' | 'fixed' | 'private' | 'other',
+): 'classic' | 'fixed' | 'private' | 'other' {
+  if (tourType === 'יהדות') {
+    return (tourDate || '') >= JUDAISM_FIXED_PRICE_FROM ? 'fixed' : 'classic';
+  }
+  return fallback;
+}
 
 export const CUSTOMER_TYPES = [
   'זוג מבוגר',
