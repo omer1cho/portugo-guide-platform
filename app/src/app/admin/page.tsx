@@ -18,6 +18,7 @@ import { supabase } from '@/lib/supabase';
 import KpiCard from '@/components/admin/KpiCard';
 import GuideStatusCard from '@/components/admin/GuideStatusCard';
 import MonthSwitcher from '@/components/admin/MonthSwitcher';
+import CloseRequestsCard from '@/components/admin/CloseRequestsCard';
 
 function AdminMainContent() {
   const searchParams = useSearchParams();
@@ -133,6 +134,9 @@ function AdminMainContent() {
 
       {!loading && !error && snapshot && (
         <>
+          {/* ─── שער אישורי סגירת חודש — מוצג רק לעומר כשיש בקשות ─── */}
+          <CloseRequestsCard onChange={handleReload} />
+
           {/* ─── שכבה 1: 🚨 Inbox — מה צריך תשומת לב עכשיו ─── */}
           <InboxAlerts
             snapshot={snapshot}

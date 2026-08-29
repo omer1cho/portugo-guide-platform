@@ -56,6 +56,61 @@ function CloseMonthContent() {
   // לחיצת שמירה שנייה אחרי האזהרה כן עוברת (יש קבלות שבאמת מופקות בתוך החודש).
   const [receiptDateWarning, setReceiptDateWarning] = useState(false);
 
+  // ─── שער אישור סגירה (הנחיית עומר 14.8.26) ───
+  // מדריך.ה לא סוגר.ת חודש בלי אישור עומר. הבקשה נוצרת ב-/api/close-requests
+  // (ששולח לעומר מייל), עומר מאשרת בדשבורד האדמין. האישור נצמד למשכורת
+  // הצפויה של רגע הבקשה — אם השתנתה ביותר מ-1€, האישור פג ומבקשים שוב.
+  // אדמין (עומר עצמה דרך מתג המדריכים) עוקף את השער.
+  type CloseRequestRow = { id: string; status: string; expected_total: number; admin_note: string | null };
+  const [closeRequest, setCloseRequest] = useState<CloseRequestRow | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [requestingApproval, setRequestingApproval] = useState(false);
+  const [requestError, setRequestError] = useState('');
+
+  const loadCloseRequest = React.useCallback(async () => {
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id) return;
+    setIsAdminUser(localStorage.getItem('portugo_is_admin') === 'true');
+    const { data, error } = await supabase
+      .from('close_requests')
+      .select('id, status, expected_total, admin_note')
+      .eq('guide_id', id)
+      .eq('year', year)
+      .eq('month', month + 1)
+      .order('requested_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    // אם הטבלה עוד לא קיימת (המיגרציה לא רצה) — בלי שער, לא שוברים את המסך
+    setCloseRequest(error ? null : ((data as CloseRequestRow) || null));
+  }, [year, month]);
+
+  useEffect(() => { loadCloseRequest(); }, [loadCloseRequest]);
+
+  async function handleRequestApproval() {
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id || !salary) return;
+    setRequestingApproval(true);
+    setRequestError('');
+    try {
+      const res = await fetch('/api/close-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guide_id: id,
+          year,
+          month: month + 1,
+          expected_total: salary.cash_to_withdraw,
+        }),
+      });
+      if (!res.ok) throw new Error('הבקשה נכשלה');
+      await loadCloseRequest();
+    } catch (e) {
+      setRequestError(e instanceof Error ? e.message : 'משהו השתבש');
+    } finally {
+      setRequestingApproval(false);
+    }
+  }
+
   const loadData = React.useCallback(async () => {
     const id = localStorage.getItem('portugo_guide_id');
     if (!id) {
@@ -699,18 +754,86 @@ function CloseMonthContent() {
                 </div>
               )}
 
-              {/* Confirm-done button — records immediate actions (salary + refills) in one click */}
-              {!alreadyConfirmed && hasImmediateActions && (
-                <button
-                  onClick={() => {
-                    setConfirmError('');
-                    setShowConfirmModal(true);
-                  }}
-                  className="mt-3 block w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
-                >
-                  ✓ ביצעתי את הפעולות האלו
-                </button>
-              )}
+              {/* Confirm-done button — עובר דרך שער האישור של עומר */}
+              {!alreadyConfirmed && hasImmediateActions && (() => {
+                const approvalStale =
+                  closeRequest?.status === 'approved' &&
+                  salary != null &&
+                  Math.abs(Number(closeRequest.expected_total) - salary.cash_to_withdraw) > 1;
+                const gateApproved = closeRequest?.status === 'approved' && !approvalStale;
+
+                // אדמין או אישור בתוקף — הכפתור האמיתי
+                if (isAdminUser || gateApproved) {
+                  return (
+                    <>
+                      {gateApproved && (
+                        <div className="mt-3 bg-green-50 border border-green-200 text-green-800 rounded-lg p-3 text-sm font-semibold text-center">
+                          עומר אישרה את הסגירה ✓
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          setConfirmError('');
+                          setShowConfirmModal(true);
+                        }}
+                        className="mt-3 block w-full bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all text-white rounded-xl py-3 font-bold text-center"
+                      >
+                        ✓ ביצעתי את הפעולות האלו
+                      </button>
+                    </>
+                  );
+                }
+
+                // ממתין לאישור
+                if (closeRequest?.status === 'pending') {
+                  return (
+                    <div className="mt-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-4 text-sm text-center">
+                      <div className="font-bold mb-1">⏳ הבקשה נשלחה לעומר</div>
+                      ברגע שהיא תאשר, הכפתור ייפתח כאן. אפשר לרענן את הדף לבדיקה.
+                    </div>
+                  );
+                }
+
+                // אישור שפג כי המספרים השתנו
+                if (approvalStale) {
+                  return (
+                    <div className="mt-3">
+                      <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4 text-sm text-center mb-2">
+                        המשכורת הצפויה השתנתה מאז שעומר אישרה, אז צריך אישור מחודש.
+                      </div>
+                      <button
+                        onClick={handleRequestApproval}
+                        disabled={requestingApproval}
+                        className="block w-full bg-blue-700 hover:bg-blue-800 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold text-center"
+                      >
+                        {requestingApproval ? 'שולח...' : 'בקשו אישור מחדש מעומר'}
+                      </button>
+                    </div>
+                  );
+                }
+
+                // אין בקשה, או שנדחתה — מבקשים
+                return (
+                  <div className="mt-3">
+                    {closeRequest?.status === 'rejected' && (
+                      <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm text-center mb-2">
+                        <div className="font-bold">עומר ביקשה להמתין עם הסגירה</div>
+                        {closeRequest.admin_note && <div className="mt-1">"{closeRequest.admin_note}"</div>}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleRequestApproval}
+                      disabled={requestingApproval}
+                      className="block w-full bg-blue-700 hover:bg-blue-800 active:scale-98 disabled:bg-gray-400 transition-all text-white rounded-xl py-3 font-bold text-center"
+                    >
+                      {requestingApproval ? 'שולח...' : '🔒 בקשו מעומר אישור לסגירת החודש'}
+                    </button>
+                    {requestError && (
+                      <div className="mt-2 text-sm text-red-700 text-center">{requestError}</div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* After confirm: show what's left to do (deposit or celebration) */}
               {alreadyConfirmed && (
