@@ -63,6 +63,9 @@ function CloseMonthContent() {
   // אדמין (עומר עצמה דרך מתג המדריכים) עוקף את השער.
   type CloseRequestRow = { id: string; status: string; expected_total: number; admin_note: string | null };
   const [closeRequest, setCloseRequest] = useState<CloseRequestRow | null>(null);
+  // false = טבלת close_requests עוד לא קיימת (המיגרציה לא רצה) → אין שער,
+  // מציגים את כפתור הסגירה הרגיל במקום כפתור בקשה שייכשל.
+  const [gateAvailable, setGateAvailable] = useState(true);
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [requestingApproval, setRequestingApproval] = useState(false);
   const [requestError, setRequestError] = useState('');
@@ -80,8 +83,14 @@ function CloseMonthContent() {
       .order('requested_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    // אם הטבלה עוד לא קיימת (המיגרציה לא רצה) — בלי שער, לא שוברים את המסך
-    setCloseRequest(error ? null : ((data as CloseRequestRow) || null));
+    if (error) {
+      // טבלה חסרה או שגיאת קריאה — משביתים את השער לגמרי (הכפתור הרגיל יוצג)
+      setGateAvailable(false);
+      setCloseRequest(null);
+      return;
+    }
+    setGateAvailable(true);
+    setCloseRequest((data as CloseRequestRow) || null);
   }, [year, month]);
 
   useEffect(() => { loadCloseRequest(); }, [loadCloseRequest]);
@@ -762,8 +771,8 @@ function CloseMonthContent() {
                   Math.abs(Number(closeRequest.expected_total) - salary.cash_to_withdraw) > 1;
                 const gateApproved = closeRequest?.status === 'approved' && !approvalStale;
 
-                // אדמין או אישור בתוקף — הכפתור האמיתי
-                if (isAdminUser || gateApproved) {
+                // שער לא זמין (טבלה חסרה) / אדמין / אישור בתוקף — הכפתור האמיתי
+                if (!gateAvailable || isAdminUser || gateApproved) {
                   return (
                     <>
                       {gateApproved && (
