@@ -66,19 +66,27 @@ export default function CloseRequestsCard({ onChange }: { onChange?: () => void 
   async function decide(req: CloseRequest, status: 'approved' | 'rejected') {
     setBusy(req.id);
     setErr('');
-    const { error } = await supabase
-      .from('close_requests')
-      .update({
-        status,
-        admin_note: notes[req.id]?.trim() || null,
-        decided_at: new Date().toISOString(),
-      })
-      .eq('id', req.id);
-    setBusy(null);
-    if (error) {
-      setErr('משהו השתבש: ' + error.message);
+    // ההחלטה עוברת דרך השרת כדי שהמדריך.ה יקבל.תקבל מייל עדכון באותה פעולה
+    try {
+      const res = await fetch('/api/close-requests/decide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: req.id,
+          status,
+          admin_note: notes[req.id]?.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || 'ההחלטה לא נשמרה');
+      }
+    } catch (e) {
+      setBusy(null);
+      setErr('משהו השתבש: ' + (e instanceof Error ? e.message : ''));
       return;
     }
+    setBusy(null);
     await load();
     onChange?.();
   }
