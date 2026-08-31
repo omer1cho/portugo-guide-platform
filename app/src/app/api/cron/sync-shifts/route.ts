@@ -77,8 +77,11 @@ async function fetchWebsiteShifts(maxDaysAhead: number): Promise<WebsiteShift[]>
   const cutoff = new Date(today.getTime() + maxDaysAhead * 86400000);
   const to = cutoff.toISOString().slice(0, 10);
 
+  // ⚠️ 31.8.26: האתר עבר ל-cms.portugo.co.il. הכתובת הישנה (portugo-back.ussl.co.il)
+  // עדיין עונה אבל מגישה נתונים ישנים — סלוטים שנמחקו ממשיכים להופיע בה!
+  // (כך נוצר סיור רפאים: אראבידה 7.9). תמיד לאמת מול הבקשה שהאתר עצמו שולח.
   const url =
-    `https://portugo-back.ussl.co.il/api/v1/slots?tourId=${WEBSITE_TOUR_IDS.join('%2C')}` +
+    `https://cms.portugo.co.il/api/v1/slots?tourId=${WEBSITE_TOUR_IDS.join('%2C')}` +
     `&from=${from}&to=${to}&status=available%2Clast_places%2Csold_out`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'PortugoSync/1.0' },
