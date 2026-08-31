@@ -304,30 +304,34 @@ type PortoSlot = {
   /** שם מדריך נוסף שיווצר על אותו slot כשיבוץ-גיבוי (manual) */
   secondary?: { guide_name: string; notes: string };
 };
+// קבע ספטמבר 2026 (הוראות עומר 14.8+31.8): שקד ירדה מהקביעות (מזדמנת בלבד),
+// רביעי ושישי תלויי-דורו: דותן על הקלאסי כשהדורו יוצא, תום כשהדורו לא יוצא.
+// שישי עבר באתר ל-10:30.
 const PORTO_ROSTER: PortoSlot[] = [
   // ראשון
   { dayOfWeek: 0, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
-  // שני — בוקר תום, אחה"צ שקד (16:30). שעה מוצמדת כי יש שתי קלאסיות באותו יום.
+  // שני — בוקר תום
   { dayOfWeek: 1, tour_type: 'פורטו_1', time: '09:45', defaultTime: '09:45', guide_name: 'תום' },
-  { dayOfWeek: 1, tour_type: 'פורטו_1', time: '16:30', defaultTime: '16:30', guide_name: 'שקד' },
-  // שלישי — בוקר דותן, טעימות דותן, אחה"צ שקד (16:30)
+  // שלישי — בוקר דותן, טעימות דותן
   { dayOfWeek: 2, tour_type: 'פורטו_1', time: '09:45', defaultTime: '09:45', guide_name: 'דותן' },
   { dayOfWeek: 2, tour_type: 'טעימות',  defaultTime: '14:30', guide_name: 'דותן' },
-  { dayOfWeek: 2, tour_type: 'פורטו_1', time: '16:30', defaultTime: '16:30', guide_name: 'שקד' },
-  // רביעי — דורו תום; קלאסי בוקר 9:45 תלוי-דורו (דותן/תום); אחה"צ שקד (16:30)
+  // רביעי — דורו תום; הקלאסי 9:45 תלוי-דורו (דותן/תום)
   { dayOfWeek: 3, tour_type: 'דורו',     defaultTime: '08:20', guide_name: 'תום' },
   {
     dayOfWeek: 3, tour_type: 'פורטו_1', time: '09:45', defaultTime: '09:45',
     guide_name: 'דותן', notes: 'אם הדורו יוצא',
     secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
   },
-  { dayOfWeek: 3, tour_type: 'פורטו_1', time: '16:30', defaultTime: '16:30', guide_name: 'שקד' },
   // חמישי
   { dayOfWeek: 4, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'תום' },
   { dayOfWeek: 4, tour_type: 'טעימות',  defaultTime: '14:30', guide_name: 'תום' },
-  // שישי — תום קבוע על הדורו (אם לא יוצא, אין לו סיור). הקלאסי 9:45 קבוע לשקד. דותן ירד מימי שישי.
+  // שישי — דורו תום; הקלאסי 10:30 תלוי-דורו (דותן/תום)
   { dayOfWeek: 5, tour_type: 'דורו',     defaultTime: '08:20', guide_name: 'תום' },
-  { dayOfWeek: 5, tour_type: 'פורטו_1', defaultTime: '09:45', guide_name: 'שקד' },
+  {
+    dayOfWeek: 5, tour_type: 'פורטו_1', time: '10:30', defaultTime: '10:30',
+    guide_name: 'דותן', notes: 'אם הדורו יוצא',
+    secondary: { guide_name: 'תום', notes: 'אם הדורו לא יוצא' },
+  },
   // שבת — מתחלפים תום/דותן לפי שבוע, אז לא בקבע אוטומטי
 ];
 
