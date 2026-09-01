@@ -34,10 +34,22 @@ export default function CloseRequestsCard({ onChange }: { onChange?: () => void 
   const [err, setErr] = useState('');
 
   const load = useCallback(async () => {
-    // "רק אני מאשרת" — הכרטיס מוצג רק כשהמשתמש המחובר הוא עומר
-    const myId = localStorage.getItem('portugo_guide_id');
-    const myName = localStorage.getItem('portugo_guide_name');
-    if (!myId || myName !== 'עומר') {
+    // "רק אני מאשרת" — הזיהוי לפי חשבון ההתחברות האמיתי (auth), לא לפי
+    // localStorage: מתג המדריכים מחליף את portugo_guide_name זמנית, וזה גרם
+    // לכרטיס להיעלם אחרי צפייה כמדריך אחר (הבאג של גיא, 1.9).
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData?.user?.email?.toLowerCase();
+    if (!email) {
+      setIsOmer(false);
+      return;
+    }
+    const { data: omerRow } = await supabase
+      .from('guides')
+      .select('email')
+      .eq('name', 'עומר')
+      .maybeSingle();
+    const omerEmail = (omerRow?.email || '').toLowerCase();
+    if (!omerEmail || omerEmail !== email) {
       setIsOmer(false);
       return;
     }

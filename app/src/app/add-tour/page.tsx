@@ -12,6 +12,7 @@ import {
   TRAINING_LEAD_TOUR_OPTIONS,
   TRAINING_LEAD_TOUR_OPTIONS_BY_CITY,
   TOURS_WITH_EXPENSE_CATALOG,
+  resolveTourCategory,
   type TrainingLeadKind,
   type TrainingLeadTour,
   trainingLeadBase,
@@ -302,8 +303,16 @@ function AddTourContent() {
   const handleTourTypeChange = (val: string) => {
     setTourType(val);
     const t = availableTours.find((x) => x.value === val);
-    if (t) setTourCategory(t.category);
+    if (t) setTourCategory(resolveTourCategory(val, date, t.category) as 'classic' | 'fixed' | 'private');
   };
+
+  // סיור יהדות מחליף מודל לפי התאריך: עד 31.10.26 קלאסי (הכסף לקופה, הפרשה
+  // ובסיס), ומ-1.11.26 שכר קבוע לפי טבלת בלם. לכן צריך לחשב מחדש גם כשמשנים
+  // תאריך ולא רק כשבוחרים את סוג הסיור.
+  useEffect(() => {
+    if (tourType !== 'יהדות') return;
+    setTourCategory(resolveTourCategory('יהדות', date, 'classic') as 'classic' | 'fixed' | 'private');
+  }, [tourType, date]);
 
   const updateBooking = (idx: number, field: keyof Booking, val: string | number) => {
     const updated = [...bookings];
@@ -719,6 +728,33 @@ function AddTourContent() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   />
                   <p className="text-xs text-gray-500 mt-1">חשוב: זה משפיע על חישוב השכר</p>
+
+                  {/* הקלאסי הפרטי הוא היחיד שיש לו גרסה מקוצרת בטבלת השכר.
+                      הסימון נשמר כמילה "מקוצר" בתוך ה-notes, אותו פורמט שמחשבון
+                      השכר קורא — כך אין צורך בעמודה חדשה והרשומות הישנות ממשיכות לעבוד. */}
+                  {notes.includes('קלאסי') && (
+                    <label className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notes.includes('מקוצר')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNotes((prev) => (prev.includes('מקוצר') ? prev : `${prev.trim()} מקוצר`));
+                          } else {
+                            setNotes((prev) => prev.split('מקוצר').join('').replace(/\s+/g, ' ').trim());
+                          }
+                        }}
+                        className="mt-1 w-5 h-5 accent-amber-600"
+                      />
+                      <span className="text-sm">
+                        <span className="font-semibold text-amber-900">זה היה סיור מקוצר</span>
+                        <span className="block text-xs text-amber-800 mt-0.5">
+                          סמני רק אם העברת את הגרסה הקצרה של הקלאסי. יש לה טבלת שכר נפרדת,
+                          נמוכה יותר. בלי סימון יחושב התעריף המלא.
+                        </span>
+                      </span>
+                    </label>
+                  )}
                 </div>
               )}
             </div>

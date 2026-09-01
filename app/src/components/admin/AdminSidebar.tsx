@@ -39,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/catalog', label: 'קטלוג הוצאות', icon: '📋', comingSoon: true },
   { href: '/admin/pricing-validation', label: 'רווחיות סיורים', icon: '💰' },
   { href: '/admin/salary-tables', label: 'טבלאות שכר', icon: '💶' },
+  { href: '/admin/salary-audit', label: 'בדיקת פערי שכר', icon: '🔍' },
   { href: '/admin/quotes', label: 'הצעות מחיר', icon: '🧾' },
 ];
 

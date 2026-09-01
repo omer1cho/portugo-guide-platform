@@ -73,7 +73,8 @@ function CloseMonthContent() {
   const loadCloseRequest = React.useCallback(async () => {
     const id = localStorage.getItem('portugo_guide_id');
     if (!id) return;
-    setIsAdminUser(localStorage.getItem('portugo_is_admin') === 'true');
+    // הערך הנשמר הוא '1'/'0' (כמו ב-lib/auth.ts), לא 'true'
+    setIsAdminUser(localStorage.getItem('portugo_is_admin') === '1');
     const { data, error } = await supabase
       .from('close_requests')
       .select('id, status, expected_total, admin_note')

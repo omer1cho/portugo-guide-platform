@@ -123,7 +123,7 @@ export function calculatePerTourBreakdown(
       };
     }
     if (tour.category === 'private') {
-      const base = calcPrivateSalary(totalPeople, tour.notes || '');
+      const base = calcPrivateSalary(totalPeople, tour.notes || '', tour.tour_date);
       return {
         tour_date: tour.tour_date,
         tour_type: tour.tour_type,
@@ -211,6 +211,12 @@ export function calcFixedSalary(tourType: string, people: number): number {
   if (tourType.startsWith('בלם')) {
     return people <= 3 ? 30 : 30 + people;
   }
+  // יהדות (ליסבון) — שכר זהה לבלם, גם ברגיל וגם בפרטי (אישור עומר 27.8.26).
+  // רלוונטי מ-1.11.26, כשהסיור עובר ממחיר "שביעות רצון" למחיר קבוע 25€ לאדם.
+  // עד אז הסיור מחושב במודל הקלאסי (category = 'classic').
+  if (tourType === 'יהדות') {
+    return people <= 3 ? 30 : 30 + people;
+  }
   if (tourType === 'סינטרה' || tourType === 'אראבידה' || tourType === 'אובידוש') {
     return people <= 7 ? 75 : 75 + people;
   }
@@ -240,19 +246,76 @@ export function calcFixedSalary(tourType: string, people: number): number {
 
 type Tier = [number, number]; // [maxPeople, salary]
 
+/**
+ * מועד התחילה של טבלאות הפרטיים המעודכנות (אישור עומר, 26.8.26).
+ * סיורים לפני התאריך הזה ממשיכים להיות מחושבים בטבלאות הישנות,
+ * כדי שחודשים שכבר נסגרו ושהוצאו עליהם קבלות לא ישתנו למפרע.
+ */
+const PRIVATE_TABLES_V2_FROM = '2026-08-01';
+
 const PRIVATE_CLASSIC: Tier[] = [
   [2, 50], [4, 55], [6, 60], [7, 65], [8, 70], [9, 75], [10, 80],
   [12, 80], [14, 85], [16, 90], [19, 95], [22, 100], [25, 105],
   [28, 110], [30, 115], [35, 120],
 ];
+/** קלאסי פרטי מ-8/26: הושלמו שתי המדרגות האחרונות שחסרו מול הטבלה המאושרת (36-40 ו-41-45). */
+const PRIVATE_CLASSIC_V2: Tier[] = [
+  ...PRIVATE_CLASSIC,
+  [40, 125], [45, 130],
+];
+
+/**
+ * ⭐ קלאסי פרטי **מקוצר** — עמודת "סיור מקוצר" שקיימת במסמכי המדריכים
+ * מאז 12/2025 ולא מומשה במערכת עד היום (אישור עומר 28.8.26).
+ * המדריך מסמן זאת בכתיבת המילה "מקוצר" בשדה סוג הסיור הפרטי.
+ *
+ * חל רק על הקלאסי. בשילוב (למשל "קלאסי מקוצר + בלם") רק חלק הקלאסי מקוצר.
+ *
+ * המסמך נעצר ב-35 איש. שתי המדרגות האחרונות (36-40 ו-41-45) הושלמו לפי אותו
+ * היגיון של הטבלה המלאה (הנחיית עומר 28.8.26): שם המדרגות מעל 35 הן ברוחב 5
+ * וקופצות ב-5€ (120 → 125 → 130), ולכן גם כאן 95 → 100 → 105. כך נשמר הפער
+ * הקבוע של 25€ בין המקוצר למלא, שהוא הפער במסמך מ-16 איש ומעלה.
+ */
+const PRIVATE_CLASSIC_SHORT: Tier[] = [
+  [2, 35], [4, 40], [6, 45], [8, 50], [10, 55], [12, 60], [15, 65],
+  [18, 70], [21, 75], [25, 80], [28, 85], [32, 90], [35, 95],
+  [40, 100], [45, 105],
+];
+
+/**
+ * מועד התחילה של המקוצר — 1.8.26, יחד עם שאר שינויי הטבלאות (הנחיית עומר 28.8.26).
+ *
+ * ⚠️ שימי לב: עד היום המערכת שילמה על סיור מקוצר את התעריף המלא, כי היא לא
+ * הכירה את המושג. בפועל אף מדריך לא סימן "מקוצר" (לא הייתה לזה אפשרות בטופס),
+ * ולכן אין סיורים קיימים שהתעריף שלהם יורד. אם בכל זאת נמצא סיור מאוגוסט עם
+ * המילה "מקוצר" בהערות — השכר עליו יקטן, ויש לבדוק אותו לפני סגירת החודש.
+ */
+const PRIVATE_SHORT_FROM = '2026-08-01';
 const PRIVATE_BELEM: Tier[] = [
   [4, 40], [6, 45], [8, 50], [10, 55], [13, 55], [16, 60],
   [20, 65], [25, 70], [30, 75], [35, 85],
+];
+/**
+ * בלם פרטי (וגם יהדות פרטי) מ-8/26: קבוצה של 30 איש שולמה 75€ בעוד שבמסמך
+ * שהמדריכים מחזיקים כתוב 80€. זו נקודת התת-תשלום היחידה שנמצאה בכל הטבלאות
+ * (סריקה 27.8.26), והיא מיושרת כלפי מעלה לפי המסמך (אישור עומר 28.8.26).
+ */
+const PRIVATE_BELEM_V2: Tier[] = [
+  [4, 40], [6, 45], [8, 50], [10, 55], [13, 55], [16, 60],
+  [20, 65], [25, 70], [29, 75], [30, 80], [35, 85],
 ];
 const PRIVATE_CULINARY: Tier[] = [
   [4, 45], [6, 50], [8, 55], [10, 60], [12, 60], [14, 65],
   [16, 70], [18, 75],
 ];
+/**
+ * ⚠️ היסטוריה: ב-26.8.26 קודדה כאן העלאה של הקולינרי ל"קלאסי ועוד 5".
+ * היא **בוטלה ב-28.8.26** ולא הופעלה מעולם. הנימוק: בסיור קלאסי קבוצתי
+ * למדריך יש פוטנציאל טיפים גבוה (חציון 75€, מקסימום 280€), ולכן התעריף
+ * של הקלאסי הפרטי מפצה על ויתור על ההזדמנות הזאת. הקולינרי הקבוצתי מכניס
+ * 46€ בחציון והפרטי כבר משלם 50€, כלומר הוא מתומחר נכון ביחס לחלופה שלו.
+ * מסקנה: הקולינרי הפרטי לא עולה על הקלאסי הפרטי, ולא היה צריך שינוי.
+ */
 const PRIVATE_DAY_LISBON: Tier[] = [
   [4, 80], [6, 85], [7, 90], [9, 95], [12, 100], [14, 105],
   [16, 110], [18, 115], [20, 120], [22, 125], [25, 125],
@@ -267,9 +330,11 @@ const PRIVATE_DOURO: Tier[] = [
   [19, 125], [22, 130], [25, 135],
 ];
 
-const PRIVATE_TABLES: Array<[string, Tier[]]> = [
+/** הטבלאות עד 7/26 כולל. */
+const PRIVATE_TABLES_V1: Array<[string, Tier[]]> = [
   ['קלאסי', PRIVATE_CLASSIC],
   ['בלם', PRIVATE_BELEM],
+  ['יהדות', PRIVATE_BELEM],
   ['קולינרי', PRIVATE_CULINARY],
   ['סינטרה', PRIVATE_DAY_LISBON],
   ['אראבידה', PRIVATE_DAY_LISBON],
@@ -278,10 +343,28 @@ const PRIVATE_TABLES: Array<[string, Tier[]]> = [
   ['דורו', PRIVATE_DOURO],
 ];
 
-/** טבלאות הלוקאפ של הפרטיים — לתצוגה בעמוד טבלאות השכר באדמין (קריאה בלבד). */
+/** הטבלאות מ-8/26 והלאה. */
+const PRIVATE_TABLES_V2: Array<[string, Tier[]]> = [
+  ['קלאסי', PRIVATE_CLASSIC_V2],
+  ['בלם', PRIVATE_BELEM_V2],
+  ['יהדות', PRIVATE_BELEM_V2],
+  ['קולינרי', PRIVATE_CULINARY],
+  ['סינטרה', PRIVATE_DAY_LISBON],
+  ['אראבידה', PRIVATE_DAY_LISBON],
+  ['אובידוש', PRIVATE_DAY_LISBON],
+  ['טעימות', PRIVATE_TASTINGS],
+  ['דורו', PRIVATE_DOURO],
+];
+
+function privateTablesFor(tourDate?: string): Array<[string, Tier[]]> {
+  return (tourDate || '') >= PRIVATE_TABLES_V2_FROM ? PRIVATE_TABLES_V2 : PRIVATE_TABLES_V1;
+}
+
+/** טבלאות הלוקאפ של הפרטיים — לתצוגה בעמוד טבלאות השכר באדמין (קריאה בלבד). התצוגה מראה תמיד את הטבלאות התקפות היום. */
 export const PRIVATE_SALARY_TABLES: Array<{ label: string; tiers: Array<[number, number]> }> = [
-  { label: 'קלאסי פרטי (ליסבון/פורטו)', tiers: PRIVATE_CLASSIC },
-  { label: 'בלם פרטי', tiers: PRIVATE_BELEM },
+  { label: 'קלאסי פרטי (ליסבון/פורטו)', tiers: PRIVATE_CLASSIC_V2 },
+  { label: 'קלאסי פרטי מקוצר (כותבים "מקוצר" בסוג הסיור)', tiers: PRIVATE_CLASSIC_SHORT },
+  { label: 'בלם פרטי / יהדות פרטי', tiers: PRIVATE_BELEM_V2 },
   { label: 'קולינרי פרטי', tiers: PRIVATE_CULINARY },
   { label: 'סינטרה / אראבידה / אובידוש פרטי', tiers: PRIVATE_DAY_LISBON },
   { label: 'טעימות פרטי', tiers: PRIVATE_TASTINGS },
@@ -295,18 +378,26 @@ function lookupTier(table: Tier[], people: number): number {
   return table[table.length - 1][1];
 }
 
+/** האם ההערות מסמנות סיור מקוצר, והאם התאריך כבר בתוקף המקוצר. */
+export function isShortPrivate(notes: string = '', tourDate?: string): boolean {
+  return (notes || '').includes('מקוצר') && (tourDate || '') >= PRIVATE_SHORT_FROM;
+}
+
 /** מנקה את ההערות ומחזיר את טבלאות המשנה שזוהו בהן (קלאסי, בלם...). */
-function matchPrivateTables(notes: string = ''): Tier[][] {
+function matchPrivateTables(notes: string = '', tourDate?: string): Tier[][] {
   const ignoreWords = ['פרטי', 'ישולם', 'לאביב', 'ליניב', 'לתום', 'למאיה', 'למני', 'לדותן', 'לעומר'];
   let cleaned = (notes || '').trim();
   for (const w of ignoreWords) {
     cleaned = cleaned.split(w).join('');
   }
 
+  // "מקוצר" מחליף את טבלת הקלאסי בלבד. בשילוב, שאר החלקים נשארים מלאים.
+  const short = isShortPrivate(notes, tourDate);
+
   const matched: Tier[][] = [];
-  for (const [keyword, table] of PRIVATE_TABLES) {
+  for (const [keyword, table] of privateTablesFor(tourDate)) {
     if (cleaned.includes(keyword)) {
-      matched.push(table);
+      matched.push(short && keyword === 'קלאסי' ? PRIVATE_CLASSIC_SHORT : table);
     }
   }
   return matched;
@@ -321,8 +412,8 @@ export function countPrivateSubTours(notes: string = ''): number {
 }
 
 /** Private salary from notes sub-type(s); sums multiple keywords. */
-export function calcPrivateSalary(people: number, notes: string = ''): number {
-  const matched = matchPrivateTables(notes);
+export function calcPrivateSalary(people: number, notes: string = '', tourDate?: string): number {
+  const matched = matchPrivateTables(notes, tourDate);
 
   if (matched.length >= 2) {
     return matched.reduce((sum, t) => sum + lookupTier(t, people), 0);
@@ -330,8 +421,12 @@ export function calcPrivateSalary(people: number, notes: string = ''): number {
   if (matched.length === 1) {
     return lookupTier(matched[0], people);
   }
-  // Fallback: classic private table
-  return lookupTier(PRIVATE_CLASSIC, people);
+  // Fallback: classic private table (מקוצר אם סומן)
+  if (isShortPrivate(notes, tourDate)) {
+    return lookupTier(PRIVATE_CLASSIC_SHORT, people);
+  }
+  const [, classicTable] = privateTablesFor(tourDate)[0];
+  return lookupTier(classicTable, people);
 }
 
 // ============================================================================
@@ -386,13 +481,19 @@ export function calculateMonthlySalary(
       let tourPeople = 0;
       let tourKids = 0;
       let tourCollected = 0;
+      // ה-KPI "ממוצע טיפ לאדם בקלאסי" נשאר נקי: סיור יהדות רץ במודל הקלאסי
+      // עד 11/26, אבל הוא סיור אחר (שעתיים) ולכן לא נספר בממוצע. הכסף והשכר
+      // שלו כן נספרים ככל קלאסי אחר.
+      const countsForClassicKpi = tour.tour_type !== 'יהדות';
       for (const b of tour.bookings || []) {
         tourPeople += b.people || 0;
         tourKids += b.kids || 0;
         tourCollected += b.price || 0;
         classic_tips += b.price || 0;
-        classic_collected += b.price || 0;
-        classic_people += b.people || 0;
+        if (countsForClassicKpi) {
+          classic_collected += b.price || 0;
+          classic_people += b.people || 0;
+        }
       }
       const { base, transfer } = calcClassicSalary(tourPeople, tourKids, transferPerPerson, tourCollected);
       classic_base += base;
@@ -405,7 +506,7 @@ export function calculateMonthlySalary(
       }
     } else if (tour.category === 'private') {
       const totalPeople = (tour.bookings || []).reduce((s, b) => s + (b.people || 0), 0);
-      private_salaries += calcPrivateSalary(totalPeople, tour.notes || '');
+      private_salaries += calcPrivateSalary(totalPeople, tour.notes || '', tour.tour_date);
       for (const b of tour.bookings || []) {
         non_classic_tips += b.tip || 0;
       }

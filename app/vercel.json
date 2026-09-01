@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-shifts",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/birthday-greetings",
+      "schedule": "0 6 * * *"
     }
   ]
 }

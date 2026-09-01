@@ -43,6 +43,7 @@ const CLASSIC_SIZES = [1, 2, 3, 4, 5, 8, 10, 12, 13, 16, 20, 22, 23, 28, 32, 33,
 const FIXED_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
 const FIXED_TOURS: Array<{ type: string; label: string }> = [
   { type: 'בלם_1', label: 'בלם' },
+  { type: 'יהדות', label: 'יהדות (מ-11/26)' },
   { type: 'סינטרה', label: 'סינטרה / אראבידה / אובידוש' },
   { type: 'קולינרי', label: 'קולינרי' },
   { type: 'טעימות', label: 'טעימות' },
