@@ -69,11 +69,11 @@ export async function GET(req: NextRequest) {
           html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.9;text-align:center;padding:24px;background:#f0fdf4;border-radius:16px;">
             <div style="font-size:44px;">🎉🎂🎈</div>
             <h2 style="margin:12px 0;color:#166534;">מזל טוב ${c.name}!</h2>
-            <p>שיהיה לך יום מתוק כמו פסטל דה נאטה טרי,<br>
+            <p>שיהיה לך יום מתוק כמו פשטל,<br>
             שנה של סיורים מלאים באנשים טובים,<br>
-            טיפים נדיבים, ושמש ליסבונית גם בימים האפורים.</p>
-            <p style="font-weight:bold;">איזה כיף שיש אותך בצוות 💚</p>
-            <p style="color:#666;">באהבה,<br>עומר וכל צוות פורטוגו</p>
+            טיפים נדיבים והמון שמש!</p>
+            <p style="font-weight:bold;">איזה כיף שאתה אתנו במשפחת פורטוגו 💚</p>
+            <p style="color:#666;">אוהבות!</p>
           </div>`,
         });
         sent++;
