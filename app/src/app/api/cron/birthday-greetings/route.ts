@@ -57,8 +57,12 @@ export async function GET(req: NextRequest) {
     auth: { user: gmailUser, pass: gmailPass },
   });
 
+  // לשון הברכה: נקבה לבנות הצוות (רשימת עומר 1.9.26), זכר לשאר
+  const FEMALE_GUIDES = new Set(['מאיה', 'נופר', 'דניאל', 'רונה', 'עומר', 'שקד']);
+
   let sent = 0;
   for (const c of celebrants) {
+    const isFem = FEMALE_GUIDES.has(c.name);
     // 1. ברכה אישית חמודה לחוגג.ת, מאיתנו
     if (c.email) {
       try {
@@ -72,7 +76,7 @@ export async function GET(req: NextRequest) {
             <p>שיהיה לך יום מתוק כמו פשטל,<br>
             שנה של סיורים מלאים באנשים טובים,<br>
             טיפים נדיבים והמון שמש!</p>
-            <p style="font-weight:bold;">איזה כיף שאתה אתנו במשפחת פורטוגו 💚</p>
+            <p style="font-weight:bold;">איזה כיף ש${isFem ? 'את' : 'אתה'} אתנו במשפחת פורטוגו 💚</p>
             <p style="color:#666;">אוהבות!</p>
           </div>`,
         });
