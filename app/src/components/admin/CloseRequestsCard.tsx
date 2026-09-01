@@ -61,7 +61,12 @@ export default function CloseRequestsCard({ onChange }: { onChange?: () => void 
     setGuideNames(map);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    // בקשה שמגיעה כשהדשבורד כבר פתוח צריכה להופיע בלי רענון ידני
+    const timer = setInterval(load, 60_000);
+    return () => clearInterval(timer);
+  }, [load]);
 
   async function decide(req: CloseRequest, status: 'approved' | 'rejected') {
     setBusy(req.id);
