@@ -57,9 +57,36 @@ export async function GET(req: NextRequest) {
     auth: { user: gmailUser, pass: gmailPass },
   });
 
-  const bcc = all.map((g) => g.email).filter((e): e is string => !!e);
   let sent = 0;
   for (const c of celebrants) {
+    // 1. ברכה אישית חמודה לחוגג.ת, מאיתנו
+    if (c.email) {
+      try {
+        await transporter.sendMail({
+          from: { name: 'עומר וכל צוות פורטוגו', address: gmailUser },
+          to: c.email,
+          subject: `🎂 מזל טוב ${c.name}! יום הולדת שמח מכולנו`,
+          html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.9;text-align:center;padding:24px;background:#f0fdf4;border-radius:16px;">
+            <div style="font-size:44px;">🎉🎂🎈</div>
+            <h2 style="margin:12px 0;color:#166534;">מזל טוב ${c.name}!</h2>
+            <p>שיהיה לך יום מתוק כמו פסטל דה נאטה טרי,<br>
+            שנה של סיורים מלאים באנשים טובים,<br>
+            טיפים נדיבים, ושמש ליסבונית גם בימים האפורים.</p>
+            <p style="font-weight:bold;">איזה כיף שיש אותך בצוות 💚</p>
+            <p style="color:#666;">באהבה,<br>עומר וכל צוות פורטוגו</p>
+          </div>`,
+        });
+        sent++;
+      } catch (e) {
+        console.error('[birthday-greetings] personal greeting failed for', c.name, e);
+      }
+    }
+
+    // 2. הכרזה לשאר הצוות (בלי החוגג.ת - הברכה האישית שלו.ה כבר בדרך)
+    const bcc = all
+      .filter((g) => g.id !== c.id)
+      .map((g) => g.email)
+      .filter((e): e is string => !!e);
     try {
       await transporter.sendMail({
         from: { name: 'פורטוגו', address: gmailUser },
@@ -75,7 +102,7 @@ export async function GET(req: NextRequest) {
       });
       sent++;
     } catch (e) {
-      console.error('[birthday-greetings] send failed for', c.name, e);
+      console.error('[birthday-greetings] team announcement failed for', c.name, e);
     }
   }
 
