@@ -475,6 +475,101 @@ export async function GET(
     card.querySelectorAll('.combo-note').forEach(function(n){ n.style.display = 'none'; });
   });
 
+  // 2.8) פירוט נפתח בכרטיסי שילוב (יום מלא): לכל שלב ("בוקר: ליסבון הקלאסית",
+  //      "צהריים: בלם") מוסיפים "מה כולל הסיור ▾" שפותח את התיאור המלא של אותו
+  //      סיור, משוכפל מהכרטיס הבודד שלו בחוברת (כותרת משנה + תיאור + "חשוב לדעת"
+  //      + משך הסיור). בלי קופי חדש. בחירת עומר 3.9.26 (אפשרות 1).
+  (function comboStepDetails(){
+    var css = document.createElement('style');
+    css.textContent = '.step-more{margin-top:6px}' +
+      '.step-more summary{cursor:pointer;color:var(--terra);font-weight:600;font-size:14px;list-style:none;display:inline-flex;align-items:center;gap:5px}' +
+      '.step-more summary::-webkit-details-marker{display:none}' +
+      '.step-more summary::after{content:"\\25BE";font-size:15px;transition:transform .2s}' +
+      '.step-more[open] summary::after{transform:rotate(180deg)}' +
+      '.step-more-body{margin-top:10px;padding:14px 16px;background:#fffdf8;border:1px solid #eee5d5;border-radius:10px;font-size:15px;line-height:1.75;color:var(--ink)}' +
+      '.step-more-body .card-tagline{margin:0 0 10px}' +
+      '.step-more-body .step-more-duration{margin-top:12px;font-size:13px;color:var(--ink-mute);font-weight:600}';
+    document.head.appendChild(css);
+
+    // זיהוי הסיור של כל שלב לפי הכותרת שלו (עמיד לכל השילובים, כולל גרסאות בוקר/צהריים)
+    function tourOfStep(label){
+      if (/ליסבון הקלאסית/.test(label)) return 'classic-lisbon';
+      if (/פורטו הקלאסית/.test(label)) return 'porto-classic';
+      if (/בלם/.test(label)) return 'belem';
+      if (/קולינרי/.test(label)) return 'culinary';
+      if (/יהדות/.test(label)) return 'jewish';
+      if (/טעימות/.test(label)) return 'porto-tastings';
+      return null;
+    }
+    function isVisible(el){ return !!el && el.style.display !== 'none'; }
+
+    document.querySelectorAll('.combo-card').forEach(function(combo){
+      if (!isVisible(combo)) return;
+      var comboHasCar = carComboCards.indexOf(combo.getAttribute('data-tour') || '') !== -1;
+      combo.querySelectorAll('.combo-plan-step').forEach(function(step){
+        if (step.classList.contains('break')) return;
+        var labelEl = step.querySelector('.step-label');
+        var content = step.querySelector('.step-content');
+        if (!labelEl || !content || content.querySelector('.step-more')) return;
+        var dt = tourOfStep(labelEl.textContent || '');
+        if (!dt) return;
+        var src = document.querySelector('.card[data-tour="' + dt + '"]');
+        if (!src) return;
+        var tagline = src.querySelector('.card-tagline');
+        var desc = src.querySelector('.card-description');
+        if (!desc) return;
+
+        var body = document.createElement('div');
+        body.className = 'step-more-body';
+        if (tagline) body.appendChild(tagline.cloneNode(true));
+        var d = desc.cloneNode(true);
+        // מאפסים הסתרות שנעשו בכרטיס המקור ומחילים מחדש לפי מצב הרכב של השילוב:
+        // ביום מלא עם רכב הערת הרכב רלוונטית, ביום רגלי היא מוסרת.
+        d.style.display = '';
+        d.querySelectorAll('.desc-note, .desc-note li').forEach(function(el){ el.style.display = ''; });
+        if (!comboHasCar) {
+          d.querySelectorAll('.desc-note li').forEach(function(li){ if (/רכב/.test(li.textContent)) li.style.display = 'none'; });
+          d.querySelectorAll('.desc-note').forEach(function(dn){
+            var any = false;
+            dn.querySelectorAll('li').forEach(function(li){ if (li.style.display !== 'none') any = true; });
+            if (!any) dn.style.display = 'none';
+          });
+        }
+        body.appendChild(d);
+        var dur = null;
+        src.querySelectorAll('.card-meta-strip .meta-item').forEach(function(mi){ if (/משך הסיור/.test(mi.textContent)) dur = mi; });
+        if (dur) {
+          var dEl = document.createElement('div');
+          dEl.className = 'step-more-duration';
+          dEl.textContent = (dur.textContent || '').replace(/\s+/g, ' ').trim();
+          body.appendChild(dEl);
+        }
+
+        var details = document.createElement('details');
+        details.className = 'step-more';
+        var sum = document.createElement('summary');
+        sum.textContent = 'מה כולל הסיור';
+        details.appendChild(sum);
+        details.appendChild(body);
+        content.appendChild(details);
+      });
+    });
+  })();
+
+  // 2.9) כותרת "סיורים רגליים בתוך העיר" — כשבתת-הסקציה יש סיור או יום מלא עם
+  //      רכב צמוד, הכותרת הופכת ל"סיורים בתוך העיר". אישור עומר 3.9.26.
+  function cardHasCar(c){
+    var dt = c.getAttribute('data-tour') || '';
+    return carCards.indexOf(dt) !== -1 || carComboCards.indexOf(dt) !== -1;
+  }
+  document.querySelectorAll('.subsection').forEach(function(sub){
+    var h = sub.querySelector('h3');
+    if (!h || !/סיורים רגליים בתוך העיר/.test(h.textContent)) return;
+    var anyCar = false;
+    sub.querySelectorAll('.card, .combo-card').forEach(function(c){ if (c.style.display !== 'none' && cardHasCar(c)) anyCar = true; });
+    if (anyCar) h.textContent = 'סיורים בתוך העיר';
+  });
+
   // 3) הסתרת מעטפות-אזור / כותרות-משנה / מפרידים שנותרו ריקים
   function hasVisibleCard(scope){
     var cards = scope.querySelectorAll('.card, .combo-card');
@@ -515,20 +610,22 @@ export async function GET(
     function partsIn(sectionId){
       var sec = document.getElementById(sectionId);
       if (!sec || sec.style.display === 'none') return null;
-      var walk = [], day = [];
+      var walk = [], day = [], anyCar = false;
       sec.querySelectorAll('.card, .combo-card').forEach(function(c){
         if (c.style.display === 'none') return;
         var n = cardName(c); if (!n) return;
         var dt = c.getAttribute('data-tour') || '';
         var arr = DAY_TRIPS[dt] ? day : walk;
+        // סיור/יום מלא עם רכב צמוד מסומן כך גם בתקציר (אישור עומר 3.9.26)
+        if (!DAY_TRIPS[dt] && cardHasCar(c)) { n += ' (עם רכב צמוד)'; anyCar = true; }
         if (arr.indexOf(n) === -1) arr.push(n);
       });
       if (!walk.length && !day.length) return null;
-      return { walk: walk, day: day };
+      return { walk: walk, day: day, anyCar: anyCar };
     }
     function subHtml(p){
       var s = '';
-      if (p.walk.length) s += '<b>סיורים רגליים בעיר:</b> ' + p.walk.join(' · ');
+      if (p.walk.length) s += '<b>' + (p.anyCar ? 'סיורים בעיר:' : 'סיורים רגליים בעיר:') + '</b> ' + p.walk.join(' · ');
       if (p.day.length) s += (s ? '<br>' : '') + '<b>טיולי יום מחוץ לעיר:</b> ' + p.day.join(' · ');
       return s;
     }
