@@ -484,7 +484,7 @@ export async function GET(
     css.textContent = '.step-more{margin-top:6px}' +
       '.step-more summary{cursor:pointer;color:var(--terra);font-weight:600;font-size:14px;list-style:none;display:inline-flex;align-items:center;gap:5px}' +
       '.step-more summary::-webkit-details-marker{display:none}' +
-      '.step-more summary::after{content:"\\25BE";font-size:15px;transition:transform .2s}' +
+      '.step-more summary::after{content:"▾";font-size:15px;transition:transform .2s}' +
       '.step-more[open] summary::after{transform:rotate(180deg)}' +
       '.step-more-body{margin-top:10px;padding:14px 16px;background:#fffdf8;border:1px solid #eee5d5;border-radius:10px;font-size:15px;line-height:1.75;color:var(--ink)}' +
       '.step-more-body .card-tagline{margin:0 0 10px}' +
