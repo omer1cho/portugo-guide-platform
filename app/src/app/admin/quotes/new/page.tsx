@@ -47,8 +47,9 @@ const ITEMS: Item[] = [
   { key: 'combo-classic-tastings', label: 'שילוב: פורטו קלאסית + טעימות', sel: { tourSlug: 'classic-private', comboSlug: 'combo-classic-tastings' } },
 ];
 
-// סיורים שאינם תואמים לרכב צמוד (קולינרי/טעימות) — מושבתים כשנבחר "הצעה עם רכב"
-const CAR_INCOMPATIBLE = new Set(['culinary', 'porto-tastings', 'combo-classic-culinary', 'combo-classic-tastings']);
+// סיורים רגליים שאין להם גרסת רכב (קולינרי/טעימות). בהצעה עם רכב הם נשארים
+// זמינים ומוצגים במחיר הרגיל לצד סיורי הרכב (הצעה מעורבת — הנחיית עומר 1.9.26).
+const WALKING_ONLY = new Set(['culinary', 'porto-tastings', 'combo-classic-culinary', 'combo-classic-tastings']);
 
 type Comp = { adults: number; ages: number[] };
 type Band = { min: number; max: number };
@@ -173,21 +174,11 @@ export default function NewQuotePage() {
     });
   }
   function toggleWithCar() {
-    setWithCar((v) => {
-      const next = !v;
-      if (next) {
-        // בהצעה עם רכב — קולינרי/טעימות אינם זמינים, מנקים אותם אם נבחרו
-        setSelectedKeys((s) => {
-          const n = new Set(s);
-          CAR_INCOMPATIBLE.forEach((k) => n.delete(k));
-          return n;
-        });
-      }
-      return next;
-    });
+    // הרכב חל רק על סיורים שיש להם גרסת רכב; סיורים רגליים נשארים כמו שהם
+    setWithCar((v) => !v);
   }
   function selectAll() {
-    setSelectedKeys(new Set(ITEMS.filter((it) => !(withCar && CAR_INCOMPATIBLE.has(it.key))).map((it) => it.key)));
+    setSelectedKeys(new Set(ITEMS.map((it) => it.key)));
   }
   function clearAll() {
     setSelectedKeys(new Set());
@@ -323,7 +314,7 @@ export default function NewQuotePage() {
             </label>
             {withCar && (
               <div style={{ fontSize: 13, color: C.inkSoft, marginTop: 8, background: C.band, borderRadius: 8, padding: '8px 10px' }}>
-                בהצעה עם רכב, ליסבון הקלאסית, בלם ופורטו הקלאסית מוצגים עם רכב צמוד, וקולינרי / טעימות אינם זמינים.
+                סיורי העיר (ליסבון הקלאסית / בלם / פורטו הקלאסית) יוצגו עם רכב צמוד. קולינרי וטעימות הם סיורים רגליים ויוצגו לצידם במחיר הרגיל.
               </div>
             )}
           </div>
@@ -340,20 +331,20 @@ export default function NewQuotePage() {
             <div style={{ display: 'grid', gap: 6 }}>
               {ITEMS.map((it) => {
                 const on = selectedKeys.has(it.key);
-                const disabled = withCar && CAR_INCOMPATIBLE.has(it.key);
+                const walking = withCar && WALKING_ONLY.has(it.key);
                 return (
-                  <div key={it.key} style={{ border: `1px solid ${on ? C.terra : C.border}`, borderRadius: 8, padding: '8px 10px', background: disabled ? '#f4f4f2' : on ? '#fff7f2' : '#fff', opacity: disabled ? 0.55 : 1 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 15 }}>
-                      <input type="checkbox" checked={on} disabled={disabled} onChange={() => toggleSel(it.key)} />
+                  <div key={it.key} style={{ border: `1px solid ${on ? C.terra : C.border}`, borderRadius: 8, padding: '8px 10px', background: on ? '#fff7f2' : '#fff' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15 }}>
+                      <input type="checkbox" checked={on} onChange={() => toggleSel(it.key)} />
                       <span>{it.label}</span>
                       {withCar && it.canCar && (
                         <span style={{ fontSize: 12, color: C.terra, marginInlineStart: 'auto', fontWeight: 600 }}>🚐 עם רכב</span>
                       )}
-                      {disabled && (
-                        <span style={{ fontSize: 11, color: C.inkMute, marginInlineStart: 'auto' }}>לא זמין עם רכב</span>
+                      {walking && (
+                        <span style={{ fontSize: 11, color: C.inkMute, marginInlineStart: 'auto' }}>🚶 רגלי, מחיר רגיל</span>
                       )}
                     </label>
-                    {on && !disabled && (
+                    {on && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
                         <span style={{ fontSize: 13, color: C.inkSoft }}>מחיר מיוחד לאדם:</span>
                         <input
