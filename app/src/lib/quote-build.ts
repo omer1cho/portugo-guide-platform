@@ -64,6 +64,7 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
       car: tour.car,
       city,
       adultPriceOverride: tour.priceOverride,
+      extras: tour.extras,
       composition: { adults: col.adults, childrenAges: col.childrenAges },
     });
     return {
