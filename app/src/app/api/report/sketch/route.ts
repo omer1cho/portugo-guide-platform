@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     await transporter.sendMail({
       from: { name: 'פורטוגו — דוח דו-שבועי', address: gmailUser },
       to: TO_EMAIL,
-      subject: 'דוגמה עדכנית (גרסה 6): הדוח הדו-שבועי של פורטוגו, 21.8 עד 3.9',
+      subject: 'דוגמה גרסה 7 (מסך אחד): הדוח הדו-שבועי של פורטוגו, 21.8 עד 3.9',
       html: REPORT_SKETCH_HTML,
     });
     return NextResponse.json({ ok: true, sentTo: TO_EMAIL });
