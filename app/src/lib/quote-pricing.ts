@@ -27,12 +27,13 @@ export type Composition = {
 };
 
 export type LineItem = {
-  label: 'מבוגר' | 'ילד' | 'פעוט';
+  label: 'מבוגר' | 'ילד' | 'פעוט' | 'מיוחד';
   count: number;
   unitPrice: number;   // €/אדם (כולל תוספת רכב אם רלוונטי)
   subtotal: number;    // unitPrice × count
   free: boolean;
   ageText?: string;    // לשורות ילד: "גיל 5" / "גילאי 7-9" (כדי להבדיל בין קטגוריות מחיר)
+  extraLabel?: string; // לשורת 'מיוחד': מי המשתתפים הנוספים ("מדריכים")
 };
 
 export type ScenarioResult = {
@@ -54,6 +55,9 @@ export type ScenarioInput = {
   /** מחיר מיוחד ידני לאדם (€). דורס את המחיר מהטבלה ומבטל תוספת רכב נפרדת —
    *  זהו המחיר הסופי למבוגר. ילדים/פעוטות מחושבים ממנו לפי הכללים הרגילים. */
   adultPriceOverride?: number;
+  /** משתתפים נוספים במחיר מיוחד (מדריכים/מלווים). לא משפיעים על מדרגת המחיר
+   *  של הקבוצה ולא על חלוקת הרכב — שורה נפרדת שנכנסת לסה"כ. */
+  extras?: { count: number; pricePerPerson: number; label: string };
   composition: Composition;
 };
 
@@ -227,6 +231,15 @@ export function computeScenario(input: ScenarioInput): ScenarioResult {
     }
     return { label: g.label, count: g.count, unitPrice: g.unit, subtotal: g.unit * g.count, free: g.unit === 0, ageText };
   });
+  // משתתפים נוספים במחיר מיוחד (למשל 2 מדריכים ב-45€): שורה נפרדת, מחוץ למדרגה
+  const ex = input.extras;
+  if (ex && ex.count > 0 && ex.pricePerPerson >= 0) {
+    const unit = Math.round(ex.pricePerPerson);
+    lines.push({
+      label: 'מיוחד', count: ex.count, unitPrice: unit, subtotal: unit * ex.count,
+      free: unit === 0, extraLabel: ex.label,
+    });
+  }
   const total = lines.reduce((s, l) => s + l.subtotal, 0);
   return { categorySize: size, bodies, lines, carPerPerson, total, warning: tour.warning };
 }

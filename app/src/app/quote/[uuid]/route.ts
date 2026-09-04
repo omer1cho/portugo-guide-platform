@@ -10,6 +10,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { buildColumns, eur, compositionLabel, type DisplayColumn } from '@/lib/quote-build';
 import type { QuoteSelection, QuoteColumn, QuoteTourSel } from '@/lib/quote-types';
+import type { LineItem } from '@/lib/quote-pricing';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -117,10 +118,14 @@ function simplePage(title: string, body: string): Response {
 
 // ─── בניית HTML של בלוק מחיר (אותם class-ים כמו במוקאפ) ───
 
-function lineRow(label: 'מבוגר' | 'ילד' | 'פעוט', free: boolean, unit: number, ageText?: string): string {
+function lineRow(l: LineItem): string {
+  const { label, free, unitPrice: unit, ageText } = l;
   // 13+ נספרים כאדם מלא אך אינם "מבוגר" → "אדם". "ילד/ה" ניטרלי מגדרית.
-  const dl = label === 'מבוגר' ? 'אדם' : label === 'ילד' ? 'ילד/ה' : 'פעוט';
-  const unitWord = `ל${dl}${ageText ? ` ${ageText}` : ''}`;
+  // שורת 'מיוחד' = משתתפים נוספים במחיר מיוחד: "45€ לאדם · 2 מדריכים".
+  const dl = label === 'מבוגר' ? 'אדם' : label === 'ילד' ? 'ילד/ה' : label === 'פעוט' ? 'פעוט' : 'אדם';
+  const unitWord = label === 'מיוחד'
+    ? `לאדם · ${l.count} ${htmlEscape(l.extraLabel || 'משתתפים נוספים')}`
+    : `ל${dl}${ageText ? ` ${ageText}` : ''}`;
   if (free) {
     return `<div class="pf-row"><span class="pf-free">ללא עלות</span> <span class="pf-unit">${unitWord}</span></div>`;
   }
@@ -129,7 +134,7 @@ function lineRow(label: 'מבוגר' | 'ילד' | 'פעוט', free: boolean, uni
 
 /** בלוק מחיר לעמודה יחידה (.price-family). */
 function priceFamilyHtml(col: DisplayColumn): string {
-  const rows = col.result.lines.map((l) => lineRow(l.label, l.free, l.unitPrice, l.ageText)).join('\n              ');
+  const rows = col.result.lines.map((l) => lineRow(l)).join('\n              ');
   const total = `<div class="pf-total"><span class="pf-total-label">סה"כ לקבוצתכם</span><span class="pf-total-amt">${eur(col.result.total)}</span></div>`;
   return `<div class="price-family">
               <div class="price-family-cap">המחיר עבור הקבוצה שלכם</div>
@@ -156,7 +161,7 @@ function priceRangeHtml(cols: DisplayColumn[], rawCols: QuoteColumn[]): string {
         ? `<span class="price-range-sub">${htmlEscape(col.subLabel)}</span>`
         : '';
       const rows = col.result.lines
-        .map((l) => lineRow(l.label, l.free, l.unitPrice, l.ageText))
+        .map((l) => lineRow(l))
         .join('\n                ');
       const total = col.showTotal
         ? `\n                <div class="pf-total"><span class="pf-total-label">סה"כ</span><span class="pf-total-amt">${eur(col.result.total)}</span></div>`

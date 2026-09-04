@@ -22,11 +22,14 @@ const C = {
 
 function displayLabel(label: LineItem['label']): string {
   // 13+ נספרים כאדם מלא אך אינם "מבוגר" → "אדם". "ילד/ה" ניטרלי מגדרית.
-  return label === 'מבוגר' ? 'אדם' : label === 'ילד' ? 'ילד/ה' : 'פעוט';
+  return label === 'מבוגר' ? 'אדם' : label === 'ילד' ? 'ילד/ה' : label === 'פעוט' ? 'פעוט' : 'אדם';
 }
 
 function lineText(l: LineItem): React.ReactNode {
-  const unitLabel = `ל${displayLabel(l.label)}${l.ageText ? ` ${l.ageText}` : ''}`;
+  // שורת 'מיוחד' = משתתפים נוספים במחיר מיוחד: "45€ לאדם · 2 מדריכים"
+  const unitLabel = l.label === 'מיוחד'
+    ? `לאדם · ${l.count} ${l.extraLabel || 'משתתפים נוספים'}`
+    : `ל${displayLabel(l.label)}${l.ageText ? ` ${l.ageText}` : ''}`;
   if (l.free) {
     return (
       <>

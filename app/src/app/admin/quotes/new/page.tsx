@@ -52,6 +52,8 @@ const ITEMS: Item[] = [
 const WALKING_ONLY = new Set(['culinary', 'porto-tastings', 'combo-classic-culinary', 'combo-classic-tastings']);
 
 type Comp = { adults: number; ages: number[] };
+type ExtraDraft = { count: string; price: string; label: string };
+const EMPTY_EXTRA: ExtraDraft = { count: '', price: '', label: '' };
 type Band = { min: number; max: number };
 type Mode = 'one' | 'two' | 'band';
 
@@ -74,6 +76,8 @@ export default function NewQuotePage() {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [withCar, setWithCar] = useState(false);
   const [overrides, setOverrides] = useState<Record<string, string>>({}); // key → מחיר מיוחד לאדם (טקסט)
+  // key → משתתפים נוספים במחיר מיוחד (כמות / מחיר לאדם / מי הם), טקסט גולמי מהשדות
+  const [extras, setExtras] = useState<Record<string, ExtraDraft>>({});
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -123,6 +127,7 @@ export default function NewQuotePage() {
     // סיורים → מפתחות נבחרים + רכב + מחירים מיוחדים
     const keys = new Set<string>();
     const ov: Record<string, string> = {};
+    const ex: Record<string, ExtraDraft> = {};
     let anyCar = false;
     for (const t of sel.tours || []) {
       const item = ITEMS.find((it) =>
@@ -132,10 +137,14 @@ export default function NewQuotePage() {
       keys.add(item.key);
       if (t.car) anyCar = true;
       if (t.priceOverride != null) ov[item.key] = String(t.priceOverride);
+      if (t.extras && t.extras.count > 0) {
+        ex[item.key] = { count: String(t.extras.count), price: String(t.extras.pricePerPerson), label: t.extras.label || '' };
+      }
     }
     setSelectedKeys(keys);
     setWithCar(anyCar);
     setOverrides(ov);
+    setExtras(ex);
   }
 
   const columns: QuoteColumn[] = useMemo(() => {
@@ -156,14 +165,26 @@ export default function NewQuotePage() {
       ITEMS.filter((it) => selectedKeys.has(it.key)).map((it) => {
         const raw = overrides[it.key];
         const ov = raw != null && raw.trim() !== '' ? Number(raw) : undefined;
+        // משתתפים נוספים במחיר מיוחד: נכנסים רק אם יש כמות חיובית ומחיר תקין
+        const exd = extras[it.key];
+        const exCount = exd ? Math.floor(Number(exd.count)) : 0;
+        const exPrice = exd && exd.price.trim() !== '' ? Number(exd.price) : NaN;
+        const exOk = exCount > 0 && !Number.isNaN(exPrice) && exPrice >= 0;
         return {
           ...it.sel,
           car: withCar && it.canCar ? (it.carType || 'half') : null,
           priceOverride: ov != null && !Number.isNaN(ov) ? ov : undefined,
+          extras: exOk
+            ? { count: exCount, pricePerPerson: exPrice, label: (exd?.label || '').trim() || 'משתתפים נוספים' }
+            : undefined,
         };
       }),
-    [selectedKeys, withCar, overrides],
+    [selectedKeys, withCar, overrides, extras],
   );
+
+  function setExtra(key: string, patch: Partial<ExtraDraft>) {
+    setExtras((e) => ({ ...e, [key]: { ...(e[key] || EMPTY_EXTRA), ...patch } }));
+  }
 
   function toggleSel(key: string) {
     setSelectedKeys((s) => {
@@ -355,6 +376,34 @@ export default function NewQuotePage() {
                           style={{ ...inputStyle, width: 90, padding: '5px 8px', fontSize: 14 }}
                         />
                         <span style={{ fontSize: 13, color: C.inkMute }}>€ (ריק = מחיר הטבלה)</span>
+                      </div>
+                    )}
+                    {on && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 13, color: C.inkSoft }}>נוספים במחיר מיוחד:</span>
+                        <input
+                          type="number" min={0} inputMode="numeric"
+                          placeholder="כמות"
+                          value={(extras[it.key] || EMPTY_EXTRA).count}
+                          onChange={(e) => setExtra(it.key, { count: e.target.value })}
+                          style={{ ...inputStyle, width: 70, padding: '5px 8px', fontSize: 14 }}
+                        />
+                        <span style={{ fontSize: 13, color: C.inkMute }}>×</span>
+                        <input
+                          type="number" min={0} inputMode="numeric"
+                          placeholder="€ לאדם"
+                          value={(extras[it.key] || EMPTY_EXTRA).price}
+                          onChange={(e) => setExtra(it.key, { price: e.target.value })}
+                          style={{ ...inputStyle, width: 90, padding: '5px 8px', fontSize: 14 }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="מי הם? (למשל: מדריכים)"
+                          value={(extras[it.key] || EMPTY_EXTRA).label}
+                          onChange={(e) => setExtra(it.key, { label: e.target.value })}
+                          style={{ ...inputStyle, width: 190, padding: '5px 8px', fontSize: 14 }}
+                        />
+                        <span style={{ fontSize: 12, color: C.inkMute }}>שורה נפרדת בהצעה, לא נספרים במדרגת המחיר</span>
                       </div>
                     )}
                   </div>
