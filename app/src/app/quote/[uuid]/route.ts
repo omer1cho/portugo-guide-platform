@@ -569,7 +569,7 @@ export async function GET(
         if (dur) {
           var dEl = document.createElement('div');
           dEl.className = 'step-more-duration';
-          dEl.textContent = (dur.textContent || '').replace(/\s+/g, ' ').trim();
+          dEl.textContent = (dur.textContent || '').replace(/\\s+/g, ' ').trim();
           body.appendChild(dEl);
         }
 
