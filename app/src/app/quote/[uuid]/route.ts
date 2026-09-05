@@ -493,7 +493,11 @@ export async function GET(
       var cov = document.createElement('div');
       cov.className = 'price-coverage';
       cov.style.gridTemplateColumns = '1fr';
-      cov.innerHTML = '<div class="coverage-block included"><div class="coverage-label">✓ כלול במחיר</div><ul class="coverage-list"><li>רכב צמוד לאורך כל היום, לרבות איסוף מהמלון והחזרה.</li></ul></div>';
+      // מספר השעות נלקח מכותרת היום המלא ("סה"כ כ-7 שעות"), כמו בכרטיס הבודד ("לכ-3 שעות"). תיקון עומר 5.9.26.
+      var durEl = card.querySelector('.combo-duration');
+      var hm = durEl ? (durEl.textContent || '').match(/כ-(\\d+)\\s*שעות/) : null;
+      var hours = hm ? hm[1] : '7';
+      cov.innerHTML = '<div class="coverage-block included"><div class="coverage-label">✓ כלול במחיר</div><ul class="coverage-list"><li>רכב צמוד לכ-' + hours + ' שעות, לרבות איסוף מהמלון והחזרה.</li></ul></div>';
       var price = card.querySelector('.price-family, .price-range');
       if (price && price.parentNode) price.parentNode.insertBefore(cov, price.nextSibling);
     }
