@@ -53,7 +53,7 @@
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     font-size: 18px;
-    padding-bottom: 84px; /* room for sticky action bar */
+    padding-bottom: 132px; /* room for sticky action bar + social strip */
   }
   bdi { direction: ltr; unicode-bidi: isolate; }
 
@@ -485,7 +485,7 @@
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--border);
     box-shadow: 0 -4px 16px rgba(35,40,31,0.08);
-    padding: 10px clamp(14px, 4vw, 32px) calc(10px + env(safe-area-inset-bottom));
+    padding: 0 clamp(14px, 4vw, 32px) calc(10px + env(safe-area-inset-bottom));
   }
   .action-bar-inner {
     max-width: 920px; margin: 0 auto;
@@ -513,6 +513,25 @@
     border: 2px solid var(--green);
   }
   .action-bar .a-tours:hover { background: var(--green-deep); border-color: var(--green-deep); }
+  /* ===== שורת הרשתות: פס עדין בראש הסרגל ===== */
+  .action-social {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    background: var(--band);
+    margin: 0 calc(-1 * clamp(14px, 4vw, 32px)) 10px;
+    padding: 7px 16px;
+  }
+  .action-social .as-label { font-size: 14.5px; font-weight: 700; color: var(--forest); white-space: nowrap; }
+  .action-social .as-icons { display: flex; gap: 12px; }
+  .action-bar .action-social a.a-social {
+    flex: 0 0 auto; min-height: 0; border-radius: 50%;
+    width: 34px; height: 34px; color: #fff;
+    box-shadow: 0 2px 6px rgba(35,40,31,0.15);
+    transition: transform 0.15s;
+  }
+  .action-bar .action-social a.a-social:hover { transform: translateY(-2px); }
+  .a-social.ig { background: linear-gradient(45deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%); }
+  .a-social.fb { background: #1877f2; }
+  .action-social svg { width: 18px; height: 18px; fill: currentColor; display: block; }
 
   /* ===== Mobile ===== */
   @media (max-width: 720px) {
@@ -994,6 +1013,13 @@
 
 <!-- ===== Sticky bottom action bar ===== -->
 <div class="action-bar">
+  <div class="action-social">
+    <span class="as-label">הטיפים שלנו ממשיכים כאן</span>
+    <span class="as-icons">
+      <a class="a-social ig" data-net="אינסטגרם" href="https://www.instagram.com/portugo_portugal_tours/" target="_blank" rel="noopener" aria-label="האינסטגרם של פורטוגו"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 2.2c-3.1 0-3.5 0-4.7.1-1.1 0-1.5.2-1.8.3-.4.2-.7.3-1 .6-.3.3-.5.6-.6 1-.1.3-.3.7-.3 1.8-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c0 1.1.2 1.5.3 1.8.2.4.3.7.6 1 .3.3.6.5 1 .6.3.1.7.3 1.8.3 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1 0 1.5-.2 1.8-.3.4-.2.7-.3 1-.6.3-.3.5-.6.6-1 .1-.3.3-.7.3-1.8.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c0-1.1-.2-1.5-.3-1.8-.2-.4-.3-.7-.6-1-.3-.3-.6-.5-1-.6-.3-.1-.7-.3-1.8-.3-1.2-.1-1.6-.1-4.7-.1zm0 3.4a4.2 4.2 0 1 1 0 8.4 4.2 4.2 0 0 1 0-8.4zm0 2.2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm4.4-3.1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg></a>
+      <a class="a-social fb" data-net="פייסבוק" href="https://www.facebook.com/534199530106390" target="_blank" rel="noopener" aria-label="עמוד הפייסבוק של פורטוגו"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.5c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.3v3.2h2.8V22h3.4z"/></svg></a>
+    </span>
+  </div>
   <div class="action-bar-inner">
     <a class="a-review" href="#review">ספרו איך היה 💚</a>
     <a class="a-tours" href="#tours">לסיור הבא שלכם ✨</a>
@@ -1068,6 +1094,8 @@
       t = 'סרגל תחתון: ספרו איך היה';
     } else if (a.classList.contains('a-tours')) {
       t = 'סרגל תחתון: לסיור הבא שלכם';
+    } else if (a.classList.contains('a-social')) {
+      t = 'סרגל תחתון: ' + (a.getAttribute('data-net') || '?');
     } else if (a.classList.contains('stay-card')) {
       pick = a.querySelector('.sc-name');
       t = 'נשארים בקשר: ' + (pick ? pick.textContent.trim() : '?');
