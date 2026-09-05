@@ -207,7 +207,44 @@ export async function loadAvailableGuides(): Promise<Guide[]> {
  *  shiftTime (HH:MM או HH:MM:SS, אופציונלי): חופשה עם טווח שעות חוסמת רק
  *  סיורים שמתחילים בתוך הטווח — כך אפשר לסגור חצי יום ולהשאיר את השאר פנוי.
  *  בלי shiftTime (שאלה ברמת יום) חופשה חלקית עדיין נחשבת "בחופש" לתצוגה. */
+/**
+ * מפרק טקסט סגירה שבועית לקטעים (מופרדים ב-"|"), ומחזיר רק את הקטעים שתקפים
+ * לתאריך הנתון לפי הסיומות @מ:YYYY-MM-DD / @עד:YYYY-MM-DD, בלי הסיומות.
+ * דוגמה: 'בלי קלאסי אחה"צ @עד:2026-09-12 | חופש קבוע @מ:2026-09-13'.
+ */
+export function activeConstraintSegments(guide: Guide, isoDate: string): string[] {
+  const dow = String(new Date(`${isoDate}T00:00:00`).getDay());
+  const raw = guide.weekly_constraints?.[dow]?.trim();
+  if (!raw) return [];
+  return raw
+    .split('|')
+    .map((seg) => seg.trim())
+    .filter(Boolean)
+    .filter((seg) => {
+      const until = seg.match(/@עד:(\d{4}-\d{2}-\d{2})/);
+      const from = seg.match(/@מ:(\d{4}-\d{2}-\d{2})/);
+      if (until && isoDate > until[1]) return false;
+      if (from && isoDate < from[1]) return false;
+      return true;
+    })
+    .map((seg) => seg.replace(/@עד:\d{4}-\d{2}-\d{2}/g, '').replace(/@מ:\d{4}-\d{2}-\d{2}/g, '').trim())
+    .filter(Boolean);
+}
+
+/**
+ * חופש קבוע שבועי: קטע סגירה שמתחיל במילה "חופש" (למשל "חופש קבוע · עבודה שנייה").
+ * מתנהג כמו חופשה של יום שלם: חוסם שיבוץ, מופיע בשורת החופשות הצהובה, ולא בשלט האפור.
+ * מחזיר את התווית (בלי המילה "חופש") או null. הנחיית עומר 5.9.26 (אביב, שני-רביעי מ-13.9).
+ */
+export function recurringVacationLabel(guide: Guide, isoDate: string): string | null {
+  const seg = activeConstraintSegments(guide, isoDate).find((s) => /^חופש/.test(s));
+  if (!seg) return null;
+  return seg.replace(/^חופש\s*(קבוע)?\s*[·:\-]?\s*/, '').trim() || 'חופש קבוע';
+}
+
 export function isGuideOnVacation(guide: Guide, isoDate: string, shiftTime?: string): boolean {
+  // חופש קבוע שבועי = יום שלם
+  if (recurringVacationLabel(guide, isoDate)) return true;
   if (!guide.vacations || guide.vacations.length === 0) return false;
   return guide.vacations.some((v) => {
     if (!(isoDate >= v.start && isoDate <= v.end)) return false;

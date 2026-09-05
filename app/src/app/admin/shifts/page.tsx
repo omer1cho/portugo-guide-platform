@@ -32,6 +32,8 @@ import {
   updateGuideAvailability,
   updateGuideVacations,
   isGuideOnVacation,
+  activeConstraintSegments,
+  recurringVacationLabel,
   weekStartOf,
   toIsoDate,
   addDays,
@@ -183,15 +185,10 @@ function fmtDayLabel(d: Date): string {
  * התאריך, "לא עובדת @מ:2026-09-01" מופיע רק מהתאריך והלאה. הסיומת לא מוצגת בשלט
  * (בעריכה במודאל היא כן נראית — כך מעדכנים אותה). */
 function guideConstraintFor(g: Guide, d: Date): string | null {
-  let t = g.weekly_constraints?.[String(d.getDay())]?.trim();
-  if (!t) return null;
-  const iso = toIsoDate(d);
-  const until = t.match(/@עד:(\d{4}-\d{2}-\d{2})/);
-  const from = t.match(/@מ:(\d{4}-\d{2}-\d{2})/);
-  if (until && iso > until[1]) return null;
-  if (from && iso < from[1]) return null;
-  t = t.replace(/@עד:\d{4}-\d{2}-\d{2}/g, '').replace(/@מ:\d{4}-\d{2}-\d{2}/g, '').trim();
-  return t || null;
+  // כמה כללים לאותו יום מופרדים ב-"|", כל אחד עם תיחום תאריכים משלו.
+  // קטעי "חופש..." הם חופש קבוע ומוצגים בשורת החופשות הצהובה, לא בשלט האפור.
+  const segs = activeConstraintSegments(g, toIsoDate(d)).filter((s) => !/^חופש/.test(s));
+  return segs.length ? segs.join(' · ') : null;
 }
 
 function fmtWeekRange(weekStart: Date): string {
@@ -534,7 +531,11 @@ function ShiftsContent() {
           const vacationsForDay = guides
             .map((g) => {
               const v = g.vacations?.find((vac) => isoDate >= vac.start && isoDate <= vac.end);
-              if (!v) return null;
+              if (!v) {
+                // חופש קבוע שבועי (למשל אביב בעבודה השנייה שני-רביעי) — שלט צהוב כמו חופשה
+                const rec = recurringVacationLabel(g, isoDate);
+                return rec ? { guide: g, label: rec } : null;
+              }
               // חופשה חלקית: מציגים את טווח השעות בשלט כדי שיהיה ברור מתי כן פנוי.ה
               const label = [vacationHoursLabel(v), v.label].filter(Boolean).join(' · ') || null;
               return { guide: g, label };

@@ -478,6 +478,25 @@ export async function GET(
       }
     });
     card.querySelectorAll('.combo-note').forEach(function(n){ n.style.display = 'none'; });
+    // 2.7b) ביום מלא עם רכב הכרטיס לא נשא שום ציון של הרכב (רק המחיר כלל אותו), בניגוד
+    //       לכרטיס בודד עם רכב שמציג אייקון + "כלול במחיר". מוסיפים את אותם שני אלמנטים,
+    //       באותו ניסוח של הכרטיס הבודד, מותאם ליום מלא. הערת עומר 5.9.26 (הצעת אומרי).
+    if (!card.querySelector('.card-meta-strip')) {
+      var strip = document.createElement('div');
+      strip.className = 'card-meta-strip';
+      strip.innerHTML = '<div class="meta-item"><svg class="meta-icon"><use href="#icon-bus"/></svg><span><strong>סיור עם רכב צמוד</strong></span></div>' +
+        '<div class="meta-item"><svg class="meta-icon"><use href="#icon-guide"/></svg><span><strong>מדריך דובר עברית</strong></span></div>';
+      var plan = card.querySelector('.combo-plan');
+      if (plan && plan.parentNode) plan.parentNode.insertBefore(strip, plan.nextSibling);
+    }
+    if (!card.querySelector('.price-coverage')) {
+      var cov = document.createElement('div');
+      cov.className = 'price-coverage';
+      cov.style.gridTemplateColumns = '1fr';
+      cov.innerHTML = '<div class="coverage-block included"><div class="coverage-label">✓ כלול במחיר</div><ul class="coverage-list"><li>רכב צמוד לאורך כל היום, לרבות איסוף מהמלון והחזרה.</li></ul></div>';
+      var price = card.querySelector('.price-family, .price-range');
+      if (price && price.parentNode) price.parentNode.insertBefore(cov, price.nextSibling);
+    }
   });
 
   // 2.8) פירוט נפתח בכרטיסי שילוב (יום מלא): לכל שלב ("בוקר: ליסבון הקלאסית",
