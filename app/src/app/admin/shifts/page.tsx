@@ -41,6 +41,7 @@ import {
   shortTime,
   type Shift,
 } from '@/lib/admin/shifts-data';
+import { supabase } from '@/lib/supabase';
 import type { Guide, GuideVacation } from '@/lib/supabase';
 import { TOUR_TYPES } from '@/lib/supabase';
 import { getCalendarEventsForDate } from '@/lib/calendar-events';
@@ -588,6 +589,43 @@ function ShiftsContent() {
     }
   }
 
+  /**
+   * מתעד את פעולת הפרסום ביומן, ומקבל מהשרת ספירה בלתי תלויה של המצב בפועל.
+   * הספירה של השרת היא הבדיקה האמיתית: הדפדפן יכול לחשוב שהצליח בזמן
+   * שבמסד הנתונים שום דבר לא זז (בדיוק התקלה של 4.9.26).
+   * best-effort — אם משהו נכשל כאן, הפעולה עצמה כבר קרתה.
+   */
+  async function logPublishAction(
+    action: 'publish' | 'republish' | 'unpublish',
+    rowsAffected: number,
+    emailsSent: number | null,
+  ): Promise<{ draftAfter: number; publishedAfter: number; publishedWithoutStamp: number } | null> {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch('/api/shifts/publish-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          weekStart: toIsoDate(weekStart),
+          city: cityFilter,
+          rowsAffected,
+          emailsSent,
+          actorEmail: data.session?.user?.email || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) return null;
+      return {
+        draftAfter: json.draftAfter,
+        publishedAfter: json.publishedAfter,
+        publishedWithoutStamp: json.publishedWithoutStamp,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   /** שמות מדריכים לפי מזהים — להודעות אישור ידידותיות */
   function guideNamesByIds(ids: string[]): string {
     const names = ids
@@ -605,9 +643,31 @@ function ShiftsContent() {
       // בפרסום של טיוטות בודדות שנוספו אחר-כך → מייל רק למדריכים שלהן.
       const changed = await getChangedGuideIds(weekStart, cityFilter).catch(() => null);
       const n = await publishWeek(weekStart, cityFilter);
+
+      // לא השתנתה אף שורה — לא שולחים מיילים ולא אומרים "פורסם"
+      if (n === 0) {
+        await logPublishAction('publish', 0, 0);
+        alert(
+          `⚠️ שימי לב: לא פורסם אף שיבוץ!
+
+הסטטוס במסד הנתונים לא השתנה, ולכן לא נשלחו מיילים למדריכים.
+רענני את הדף ונסי שוב. אם זה חוזר, תגידי לגוגו, הפעולה נרשמה ביומן.`,
+        );
+        reload();
+        return;
+      }
+
       const sent = await notifyGuidesOfPublish(changed);
       const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה — אפשר לנסות "פרסמי מחדש")' : `\nנשלחו ${sent} מיילים למדריכים`;
-      alert(`פורסמו ${n} שיבוצים${mailMsg}`);
+      const check = await logPublishAction('publish', n, sent);
+      // אימות עצמאי מהשרת: אם נשארו טיוטות בשבוע, לומר את זה במפורש
+      const leftover =
+        check && check.draftAfter > 0
+          ? `
+
+⚠️ נשארו ${check.draftAfter} שיבוצים בטיוטה בשבוע הזה, הם לא נראים למדריכים.`
+          : '';
+      alert(`פורסמו ${n} שיבוצים${mailMsg}${leftover}`);
       reload();
     } catch (e) {
       alert('פרסום נכשל: ' + (e instanceof Error ? e.message : ''));
@@ -643,7 +703,22 @@ function ShiftsContent() {
       }
 
       const n = await republishWeek(weekStart, cityFilter);
+
+      // לא השתנתה אף שורה — אין בשבוע הזה שיבוצים מפורסמים לעדכן
+      if (n === 0) {
+        await logPublishAction('republish', 0, 0);
+        alert(
+          `⚠️ שימי לב: לא עודכן אף שיבוץ!
+
+אין בשבוע הזה שיבוצים מפורסמים. אם השבוע עדיין בטיוטה, צריך "פרסמי שבוע" ולא "פרסמי מחדש".
+לא נשלחו מיילים.`,
+        );
+        reload();
+        return;
+      }
+
       const sent = await notifyGuidesOfPublish(recipients);
+      await logPublishAction('republish', n, sent);
       const mailMsg = sent === null ? '\n(שליחת המיילים נכשלה)' : `\nנשלחו ${sent} מיילים`;
       alert(`עודכנו ${n} שיבוצים — הבאנר יחזור למדריכים${mailMsg}`);
       reload();
@@ -663,6 +738,7 @@ function ShiftsContent() {
     setPublishing(true);
     try {
       const n = await unpublishWeek(weekStart, cityFilter);
+      await logPublishAction('unpublish', n, 0);
       alert(`בוטל פרסום של ${n} שיבוצים — חזרו ל-draft`);
       reload();
     } catch (e) {
