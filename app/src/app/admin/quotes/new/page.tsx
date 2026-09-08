@@ -237,24 +237,14 @@ export default function NewQuotePage() {
         setSavedMsg('ההצעה עודכנה. הלינק שכבר נשלח ללקוח מציג עכשיו את הגרסה המעודכנת.');
         setLink(quoteLink(editId));
       } else {
-        // יצירת הצעה חדשה
-        // "נוצר ע"י" לפי חשבון ההתחברות האמיתי (עומר/רונה), לא לפי localStorage:
-        // מתג המדריכים באדמין מחליף את portugo_guide_name זמנית, וזה גרם לשמות
-        // של מדריכים להופיע כיוצרי הצעות (הערת עומר 4.9.26).
-        let createdBy = '';
-        try {
-          const { data: userData } = await supabase.auth.getUser();
-          const email = (userData?.user?.email || '').toLowerCase();
-          if (email) {
-            const { data: g } = await supabase.from('guides').select('name').ilike('email', email).maybeSingle();
-            createdBy = (g?.name || '').trim();
-          }
-          if (!createdBy) createdBy = localStorage.getItem('portugo_guide_name') || '';
-        } catch {}
+        // יצירת הצעה חדשה. "נוצר ע\"י" נקבע בשרת לפי חשבון ההתחברות שבטוקן,
+        // כדי שהדפדפן (ומתג המדריכים באדמין) לא יוכלו להשפיע עליו.
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
         const res = await fetch('/api/quotes/create', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customerName: customerName.trim(), selection, createdBy }),
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
+          body: JSON.stringify({ customerName: customerName.trim(), selection }),
         });
         const data = await res.json();
         if (!data.ok) { setErr(data.error || 'שגיאה בשמירה'); setSaving(false); return; }

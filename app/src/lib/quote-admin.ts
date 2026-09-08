@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export type AdminResult =
-  | { supabase: SupabaseClient; email: string }
+  | { supabase: SupabaseClient; email: string; name: string }
   | { error: NextResponse };
 
 export async function requireAdminSupabase(req: NextRequest): Promise<AdminResult> {
@@ -36,12 +36,15 @@ export async function requireAdminSupabase(req: NextRequest): Promise<AdminResul
 
   const { data: guide } = await supabase
     .from('guides')
-    .select('is_admin')
+    .select('is_admin, name')
     .ilike('email', userData.user.email)
     .single();
   if (!guide?.is_admin) {
     return { error: NextResponse.json({ ok: false, error: 'אין הרשאה' }, { status: 403 }) };
   }
 
-  return { supabase, email: userData.user.email };
+  // השם מגיע מטבלת guides לפי חשבון ההתחברות. זה המקור היחיד ל"נוצר ע\"י":
+  // אי אפשר לזייף אותו מהדפדפן, והוא לא מושפע ממתג המדריכים באדמין.
+  const name = String((guide as { name?: string }).name || '').trim() || userData.user.email;
+  return { supabase, email: userData.user.email, name };
 }
