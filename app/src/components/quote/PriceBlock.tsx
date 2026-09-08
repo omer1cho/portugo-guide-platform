@@ -4,6 +4,9 @@
  *
  * עמודה אחת → בלוק קבלה יחיד ("המחיר עבור הקבוצה שלכם" + סה"כ לקבוצתכם).
  * שתי עמודות → תצוגת מדרגות זו לצד זו ("המחיר לפי מספר המשתתפים").
+ *
+ * showComposition = שורת בדיקה עם ההרכב (מבוגרים + גילאי ילדים) ליד המחיר.
+ * מופעל רק במסך ההזנה של עומר — לעולם לא בעמוד הלקוח.
  */
 import type { DisplayColumn } from '@/lib/quote-build';
 import { eur } from '@/lib/quote-build';
@@ -46,17 +49,48 @@ function lineText(l: LineItem): React.ReactNode {
   );
 }
 
+/** שורת בדיקת ההרכב במסך ההזנה — לא מוצגת ללקוח. */
+function CompositionCheck({ text, center }: { text: string; center?: boolean }) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        margin: center ? '0 auto 8px' : '0 0 10px',
+        padding: '4px 10px',
+        borderRadius: 999,
+        background: '#eef3ec',
+        border: '1px dashed #b9c7b4',
+        fontSize: 13,
+        fontWeight: 600,
+        color: '#3f5c3a',
+      }}
+    >
+      <span aria-hidden>👥</span>
+      <span>{text}</span>
+    </div>
+  );
+}
+
 function ErrorNote({ msg }: { msg: string }) {
   return <div style={{ color: C.terra, fontSize: 14, padding: '8px 0' }}>⚠ {msg}</div>;
 }
 
-export default function PriceBlock({ columns }: { columns: DisplayColumn[] }) {
+export default function PriceBlock({
+  columns,
+  showComposition = false,
+}: {
+  columns: DisplayColumn[];
+  showComposition?: boolean;
+}) {
   // ── עמודה אחת: בלוק קבלה יחיד ──
   if (columns.length === 1) {
     const col = columns[0];
     if (col.result.error) {
       return (
         <div style={{ marginBottom: 22 }}>
+          {showComposition && col.compositionText && <CompositionCheck text={col.compositionText} />}
           <ErrorNote msg={col.result.error} />
         </div>
       );
@@ -66,6 +100,7 @@ export default function PriceBlock({ columns }: { columns: DisplayColumn[] }) {
         <div style={{ fontSize: 13, color: C.inkMute, fontWeight: 600, marginBottom: 12 }}>
           המחיר עבור הקבוצה שלכם
         </div>
+        {showComposition && col.compositionText && <CompositionCheck text={col.compositionText} />}
         {col.result.lines.map((l, i) => (
           <div
             key={i}
@@ -125,6 +160,11 @@ export default function PriceBlock({ columns }: { columns: DisplayColumn[] }) {
                 </span>
               )}
             </div>
+            {showComposition && col.compositionText && (
+              <div style={{ textAlign: 'center' }}>
+                <CompositionCheck text={col.compositionText} center />
+              </div>
+            )}
             {col.result.error ? (
               <ErrorNote msg={col.result.error} />
             ) : (

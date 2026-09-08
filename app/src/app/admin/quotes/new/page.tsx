@@ -470,7 +470,7 @@ export default function NewQuotePage() {
                   {tourDisplayName(tour)}
                   {tour.car ? <span style={{ fontSize: 13, color: C.terra, fontWeight: 600 }}> · עם רכב צמוד</span> : null}
                 </h3>
-                <PriceBlock columns={buildColumns(tour, columns)} />
+                <PriceBlock columns={buildColumns(tour, columns)} showComposition />
               </div>
             ))
           )}

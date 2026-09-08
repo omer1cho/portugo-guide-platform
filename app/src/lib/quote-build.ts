@@ -28,7 +28,8 @@ export function compositionLabel(adults: number, childrenAges: number[]): string
 
 export type DisplayColumn = {
   headLabel: string;       // כותרת העמודה
-  subLabel?: string;       // שורת הרכב (אם יש ילדים)
+  subLabel?: string;       // שורת הרכב (אם יש ילדים) — מוצג גם ללקוח
+  compositionText?: string; // הרכב מלא (מבוגרים + גילאי ילדים) — לתצוגה המקדימה בלבד, לא ללקוח
   result: ScenarioResult;
   showTotal: boolean;      // band = false, exact = true
 };
@@ -70,6 +71,7 @@ export function buildColumns(tour: QuoteTourSel, columns: QuoteColumn[]): Displa
     return {
       headLabel: `בקבוצה של ${totalPeople} משתתפים`,
       subLabel: hasChildren ? compositionLabel(col.adults, col.childrenAges) : undefined,
+      compositionText: compositionLabel(col.adults, col.childrenAges),
       result,
       showTotal: true,
     };
