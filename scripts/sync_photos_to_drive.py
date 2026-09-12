@@ -15,13 +15,26 @@
     python sync_photos_to_drive.py --drive "H:/My Drive/מאגר תמונות פורטוגו"
     python sync_photos_to_drive.py --drive "..." --from 2026-09-01     # רק מספטמבר
     python sync_photos_to_drive.py --drive "..." --dry-run             # רק להראות מה יקרה
+    python sync_photos_to_drive.py --drive "..." --log                 # לכתוב יומן לקובץ (לריצה אוטומטית)
 """
 
 import argparse
+import datetime
 import json
 import os
 import sys
 import urllib.request
+
+LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weekly_photo_sync.log')
+_log_file = None
+
+
+def say(msg):
+    """מדפיס למסך, וגם ליומן כשרצים אוטומטית."""
+    print(msg)
+    if _log_file:
+        _log_file.write(msg + chr(10))
+        _log_file.flush()
 
 MANIFEST_URL = "https://portugo-guide-platform.vercel.app/api/photo-manifest?k=gogo-photos-2026"
 
@@ -38,8 +51,8 @@ FOLDER_BY_TOUR_TYPE = {
     "קולינרי": "קולינרי",
     "טעימות": "טעימות בפורטו",
     "יינות": "טעימות בפורטו",
-    "דורו": "דורו ",          # שימי לב: בדרייב יש רווח בסוף השם
-    "יהדות": "ליסבון הקלאסית",
+    "דורו": "דורו",
+    "יהדות": "סיור יהדות",
 }
 
 # סיור פרטי: אין תיקייה "פרטי" בדרייב. ברירת המחדל היא "פרטיים חריגים",
@@ -51,9 +64,9 @@ PRIVATE_KEYWORDS = [
     ("אובידוש", "אובידוש והסביבה"),
     ("קולינרי", "קולינרי"),
     ("טעימות", "טעימות בפורטו"),
-    ("דורו", "דורו "),
+    ("דורו", "דורו"),
     ("בלם", "בלם"),
-    ("יהדות", "ליסבון הקלאסית"),
+    ("יהדות", "סיור יהדות"),
     ("קלאסי", "ליסבון הקלאסית"),
 ]
 
@@ -84,18 +97,27 @@ def main():
     ap.add_argument("--from", dest="from_date", default="",
                     help="להעתיק רק מתאריך זה והלאה (YYYY-MM-DD)")
     ap.add_argument("--dry-run", action="store_true", help="רק להראות מה יקרה, בלי להעתיק")
+    ap.add_argument("--log", action="store_true", help="לכתוב יומן לקובץ weekly_photo_sync.log")
     args = ap.parse_args()
+
+    global _log_file
+    if args.log:
+        _log_file = open(LOG_PATH, 'a', encoding='utf-8')
+        say('')
+        say('===== ' + datetime.datetime.now().strftime('%d/%m/%Y %H:%M') + ' =====')
 
     root = args.drive
     if not os.path.isdir(root):
-        raise SystemExit("לא נמצאה התיקייה בדרייב: " + root)
+        say("הדרייב של פורטוגו לא מחובר כרגע, אז לא הועבר כלום. אפשר לפתוח את גוגל דרייב ולהריץ שוב.")
+        return 1
 
     groups_root = os.path.join(root, "קבוצות")
     if not os.path.isdir(groups_root):
-        raise SystemExit('לא נמצאה תיקיית "קבוצות" בתוך: ' + root)
+        say('לא נמצאה תיקיית "קבוצות" בתוך: ' + root)
+        return 1
 
     photos = fetch_manifest(args.from_date)
-    print("נמצאו %d תמונות במערכת" % len(photos))
+    say("נמצאו %d תמונות במערכת" % len(photos))
 
     copied = skipped = failed = 0
     unknown = {}
@@ -116,7 +138,7 @@ def main():
             continue
 
         if args.dry_run:
-            print("[יועתק] %s -> %s\\%s" % (name, folder, year))
+            say("[יועתק] %s -> %s\\%s" % (name, folder, year))
             copied += 1
             continue
 
@@ -132,17 +154,18 @@ def main():
             os.replace(tmp, dest)
             copied += 1
             if copied % 25 == 0:
-                print("  הועתקו %d..." % copied)
+                say("  הועתקו %d..." % copied)
         except Exception as e:
             failed += 1
-            print("  נכשל: %s (%s)" % (name, e))
+            say("  נכשל: %s (%s)" % (name, e))
 
-    print("\nסיכום: הועתקו %d, כבר היו בדרייב %d, נכשלו %d" % (copied, skipped, failed))
+    say("סיכום: הועתקו %d, כבר היו בדרייב %d, נכשלו %d" % (copied, skipped, failed))
     if unknown:
-        print("סוגי סיור בלי תיקייה מוגדרת: %s" % unknown)
+        say("סוגי סיור בלי תיקייה מוגדרת: %s" % unknown)
     if not args.dry_run and copied:
-        print('גוגל דרייב מסנכרן עכשיו ברקע. אפשר לעקוב בסמל הדרייב בשורת המשימות.')
+        say('גוגל דרייב מסנכרן עכשיו ברקע. אפשר לעקוב בסמל הדרייב בשורת המשימות.')
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
