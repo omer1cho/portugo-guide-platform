@@ -67,16 +67,22 @@ PRIVATE_KEYWORDS = [
     ("דורו", "דורו"),
     ("בלם", "בלם"),
     ("יהדות", "סיור יהדות"),
-    ("קלאסי", "ליסבון הקלאסית"),
 ]
 
 
 def target_folder(tour_type, category, notes):
     """מחזיר את שם תיקיית היעד בדרייב, או None אם לא ידוע."""
     if tour_type in ("פרטי_1", "פרטי_2") or category == "private":
+        notes = notes or ""
         for keyword, folder in PRIVATE_KEYWORDS:
-            if keyword in (notes or ""):
+            if keyword in notes:
                 return folder
+        # קלאסי פרטי: העיר קובעת. פרטי_2 = פורטו, פרטי_1 = ליסבון
+        # (אומת מול המדריכים 14.9.26). "פורטו" בהערות גובר תמיד.
+        if "קלאסי" in notes:
+            if tour_type == "פרטי_2" or "פורטו" in notes:
+                return "פורטו"
+            return "ליסבון הקלאסית"
         return PRIVATE_DEFAULT_FOLDER
     return FOLDER_BY_TOUR_TYPE.get(tour_type)
 
@@ -119,7 +125,7 @@ def main():
     photos = fetch_manifest(args.from_date)
     say("נמצאו %d תמונות במערכת" % len(photos))
 
-    copied = skipped = failed = 0
+    copied = skipped = failed = moved = 0
     unknown = {}
 
     for p in photos:
@@ -135,6 +141,22 @@ def main():
 
         if os.path.exists(dest) and os.path.getsize(dest) > 0:
             skipped += 1
+            continue
+
+        # אם אותה תמונה כבר יושבת בתיקייה אחרת (ניתוב שגוי בעבר) — מעבירים אותה
+        misplaced = None
+        for other in os.listdir(groups_root):
+            cand = os.path.join(groups_root, other, year, name)
+            if other != folder and os.path.isfile(cand):
+                misplaced = cand
+                break
+        if misplaced:
+            if args.dry_run:
+                say("[יועבר] %s: %s -> %s" % (name, misplaced.split(os.sep)[-3], folder))
+            else:
+                os.makedirs(dest_dir, exist_ok=True)
+                os.replace(misplaced, dest)
+            moved += 1
             continue
 
         if args.dry_run:
@@ -159,7 +181,7 @@ def main():
             failed += 1
             say("  נכשל: %s (%s)" % (name, e))
 
-    say("סיכום: הועתקו %d, כבר היו בדרייב %d, נכשלו %d" % (copied, skipped, failed))
+    say("סיכום: הועתקו %d, הועברו לתיקייה הנכונה %d, כבר היו בדרייב %d, נכשלו %d" % (copied, moved, skipped, failed))
     if unknown:
         say("סוגי סיור בלי תיקייה מוגדרת: %s" % unknown)
     if not args.dry_run and copied:
