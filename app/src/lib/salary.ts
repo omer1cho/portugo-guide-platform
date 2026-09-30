@@ -251,6 +251,14 @@ type Tier = [number, number]; // [maxPeople, salary]
  * סיורים לפני התאריך הזה ממשיכים להיות מחושבים בטבלאות הישנות,
  * כדי שחודשים שכבר נסגרו ושהוצאו עליהם קבלות לא ישתנו למפרע.
  */
+/**
+ * חודשים שבהם רכיב הניהול החודשי לא משולם, לפי שם מדריך ('YYYY-MM').
+ * מאיה ספטמבר 2026: הוראת עומר 30.9.26. באוקטובר הרכיב חוזר מעצמו.
+ */
+const MGMT_BONUS_SKIPPED_MONTHS: Record<string, string[]> = {
+  'מאיה': ['2026-09'],
+};
+
 const PRIVATE_TABLES_V2_FROM = '2026-08-01';
 
 const PRIVATE_CLASSIC: Tier[] = [
@@ -601,7 +609,11 @@ export function calculateMonthlySalary(
   }
 
   // Management component (Maya)
-  const management = guide?.has_mgmt_bonus ? (guide.mgmt_bonus_amount || 0) : 0;
+  // חודשים שבהם הרכיב לא משולם למרות שהוא מוגדר אצל המדריכה. לפי חודש, כמו
+  // הנסיעות למעלה, כדי שחודשים אחרים (סגורים או עתידיים) לא יזוזו.
+  const monthKey = travelSampleDate.slice(0, 7);
+  const mgmtSkipped = !!guide && (MGMT_BONUS_SKIPPED_MONTHS[guide.name] || []).includes(monthKey);
+  const management = guide?.has_mgmt_bonus && !mgmtSkipped ? (guide.mgmt_bonus_amount || 0) : 0;
 
   const total_with_tips =
     classic_income +
