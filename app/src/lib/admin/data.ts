@@ -51,6 +51,8 @@ export type GuideMonthSummary = {
   main_box_now: number;
   /** סה"כ ממתין להפקדה (חוצה חודשים — נצבר עד שהמדריך מפקיד פיזית) */
   pending_total: number;
+  /** הפקדות ממתינות בפירוט — לחישוב מאיזה חודש ומה הגיל של כל סכום */
+  pending_items: { amount: number; transfer_date: string; notes: string | null }[];
   /** סטטוס הקבלה החודשית — אם יש שורה ב-receipt_acknowledgements לחודש הזה */
   receipt_ack: {
     acknowledged_at: string | null;
@@ -210,10 +212,11 @@ export async function loadMonthSnapshot(
     // Pending deposits — חוצה חודשים, לא תלוי בחודש הנבחר
     supabase
       .from('transfers')
-      .select('guide_id, amount')
+      .select('guide_id, amount, transfer_date, notes')
       .in('guide_id', guideIds)
       .eq('transfer_type', 'to_portugo')
-      .eq('is_pending_deposit', true),
+      .eq('is_pending_deposit', true)
+      .order('transfer_date'),
     // אישורי קבלה לחודש הנבחר
     supabase
       .from('receipt_acknowledgements')
@@ -258,7 +261,12 @@ export async function loadMonthSnapshot(
     transfer_date: string;
     notes: string | null;
   }[];
-  const pendings = (pendingRes.data || []) as { guide_id: string; amount: number }[];
+  const pendings = (pendingRes.data || []) as {
+    guide_id: string;
+    amount: number;
+    transfer_date: string;
+    notes: string | null;
+  }[];
   const acks = (acksRes.data || []) as {
     guide_id: string;
     acknowledged_at: string | null;
@@ -387,6 +395,11 @@ export async function loadMonthSnapshot(
       missing_photos_list,
       main_box_now,
       pending_total,
+      pending_items: myPendings.map((p) => ({
+        amount: p.amount || 0,
+        transfer_date: p.transfer_date,
+        notes: p.notes,
+      })),
       receipt_ack: myAck
         ? {
             acknowledged_at: myAck.acknowledged_at,

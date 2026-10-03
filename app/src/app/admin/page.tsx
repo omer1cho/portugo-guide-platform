@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ADMIN_COLORS, fmtEuro, monthName, cityLabel } from '@/lib/admin/theme';
 import { loadMonthSnapshot, loadOutstandingMonthlyReceipts, type MonthSnapshot, type OutstandingReceipt } from '@/lib/admin/data';
 import { supabase } from '@/lib/supabase';
+import { pendingDaysWaiting, pendingSourceLabel, pendingWaitingText, isPendingStale } from '@/lib/pending-age';
 import KpiCard from '@/components/admin/KpiCard';
 import GuideStatusCard from '@/components/admin/GuideStatusCard';
 import MonthSwitcher from '@/components/admin/MonthSwitcher';
@@ -462,10 +463,15 @@ function InboxAlerts({
   // הפקדות מחכות
   if (snapshot.totals.pending_total > 0) {
     const guidesWithPending = snapshot.guides.filter((g) => g.pending_total > 0);
+    const oldestDays = Math.max(
+      0,
+      ...guidesWithPending.flatMap((g) => g.pending_items.map((p) => pendingDaysWaiting(p.transfer_date))),
+    );
+    const oldestText = isPendingStale(oldestDays) ? ` · הוותיק מחכה ${oldestDays} ימים` : '';
     alerts.push({
       kind: 'pending',
       icon: '💰',
-      text: `${guidesWithPending.length} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€`,
+      text: `${guidesWithPending.length} מדריכים עם כסף שמחכה להפקדה — סה״כ ${snapshot.totals.pending_total.toLocaleString('he-IL', { maximumFractionDigits: 0 })}€${oldestText}`,
       color: 'red',
       inlineContent: (
         <PendingInlineList guides={guidesWithPending} onChange={onChange} />
@@ -672,7 +678,10 @@ function PendingInlineList({
   guides: MonthSnapshot['guides'];
   onChange: () => void;
 }) {
-  const sorted = [...guides].sort((a, b) => b.pending_total - a.pending_total);
+  // המדריך שהכסף שלו מחכה הכי הרבה זמן — למעלה
+  const oldest = (g: MonthSnapshot['guides'][number]) =>
+    Math.max(0, ...g.pending_items.map((p) => pendingDaysWaiting(p.transfer_date)));
+  const sorted = [...guides].sort((a, b) => oldest(b) - oldest(a) || b.pending_total - a.pending_total);
 
   async function settleManually(guideId: string) {
     const { error } = await supabase
@@ -698,9 +707,6 @@ function PendingInlineList({
           <li
             key={g.guide.id}
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
               padding: '8px 12px',
               background: '#fef2f2',
               borderRadius: 6,
@@ -708,17 +714,39 @@ function PendingInlineList({
               color: ADMIN_COLORS.gray700,
             }}
           >
-            <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ color: '#991b1b', fontWeight: 600 }}>
-                {fmtEuro(g.pending_total)}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600 }}>{g.guide.name}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#991b1b', fontWeight: 600 }}>
+                  {fmtEuro(g.pending_total)}
+                </span>
+                <InlineConfirmButton
+                  label="✓ סמן.י כהופקד"
+                  confirmLabel="בטוח.ה?"
+                  onConfirm={() => settleManually(g.guide.id)}
+                />
               </span>
-              <InlineConfirmButton
-                label="✓ סמן.י כהופקד"
-                confirmLabel="בטוח.ה?"
-                onConfirm={() => settleManually(g.guide.id)}
-              />
-            </span>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '4px 0 0', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {g.pending_items.map((p, i) => {
+                const days = pendingDaysWaiting(p.transfer_date);
+                const stale = isPendingStale(days);
+                return (
+                  <li
+                    key={i}
+                    style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: ADMIN_COLORS.gray500 }}
+                  >
+                    <span>
+                      {pendingSourceLabel(p.notes, p.transfer_date)} · {fmtEuro(p.amount)}
+                    </span>
+                    <span style={{ color: stale ? '#b91c1c' : ADMIN_COLORS.gray500, fontWeight: stale ? 700 : 400 }}>
+                      {stale ? '⚠ ' : ''}
+                      {pendingWaitingText(days)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </li>
         ))}
       </ul>

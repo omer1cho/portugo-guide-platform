@@ -1,5 +1,6 @@
 'use client';
 
+import { pendingDaysWaiting, pendingSourceLabel, pendingWaitingText, isPendingStale } from '@/lib/pending-age';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -50,6 +51,7 @@ type Summary = {
   admin_topup_change: number;  // תוספת אדמין למעטפת עודף (לא מהקופה הראשית)
   admin_topup_expenses: number; // תוספת אדמין למעטפת הוצאות (לא מהקופה הראשית)
   pending_total: number;       // סה"כ ממתין להפקדה — חוצה חודשים
+  pending_oldest: { transfer_date: string; notes: string | null } | null; // הסכום שמחכה הכי הרבה זמן
   // יתרות מצטברות (עד סוף החודש הנבחר) — מעטפות עוברות מחודש לחודש
   cum_change_refill: number;
   cum_change_given: number;
@@ -156,6 +158,7 @@ function HomeContent() {
     opening_change: 0, opening_expenses: 0,
     admin_topup_change: 0, admin_topup_expenses: 0,
     pending_total: 0,
+    pending_oldest: null,
     cum_change_refill: 0, cum_change_given: 0,
     cum_expenses_refill: 0, cum_expenses: 0,
     cum_admin_topup_change: 0, cum_admin_topup_expenses: 0,
@@ -273,8 +276,9 @@ function HomeContent() {
         supabase.from('transfers').select('amount, transfer_type')
           .eq('guide_id', id).gte('transfer_date', start).lte('transfer_date', end),
         // Pending deposits — לא תלוי בחודש, מצטבר על פני זמן
-        supabase.from('transfers').select('amount')
-          .eq('guide_id', id).eq('transfer_type', 'to_portugo').eq('is_pending_deposit', true),
+        supabase.from('transfers').select('amount, transfer_date, notes')
+          .eq('guide_id', id).eq('transfer_type', 'to_portugo').eq('is_pending_deposit', true)
+          .order('transfer_date'),
         // יתרות מעטפות מצטברות — מ-SYSTEM_START_DATE עד סוף החודש הנבחר
         // (נתונים מלפני התאריך הם ארכיון, יתרת הפתיחה כבר מייצגת אותם)
         supabase.from('transfers').select('amount, transfer_type')
@@ -405,6 +409,7 @@ function HomeContent() {
         admin_topup_change: adminTopupChange,
         admin_topup_expenses: adminTopupExpenses,
         pending_total: pendingTotal,
+        pending_oldest: (pendingRes.data || [])[0] || null,
         cum_change_refill: cumChangeRefill,
         cum_change_given: cumChangeGiven,
         cum_expenses_refill: cumExpensesRefill,
@@ -859,6 +864,15 @@ function HomeContent() {
             <div className="flex justify-between items-center">
               <div>
                 <div className="font-bold text-red-700 text-base">💰 ממתין להפקדה</div>
+                {summary.pending_oldest && (() => {
+                  const days = pendingDaysWaiting(summary.pending_oldest.transfer_date);
+                  return (
+                    <div className={`text-xs mt-0.5 ${isPendingStale(days) ? 'text-red-800 font-bold' : 'text-red-700'}`}>
+                      {isPendingStale(days) ? '⚠ ' : ''}
+                      {pendingSourceLabel(summary.pending_oldest.notes, summary.pending_oldest.transfer_date)} · {pendingWaitingText(days)}
+                    </div>
+                  );
+                })()}
                 <div className="text-xs text-red-700 mt-0.5">לחץ.י כאן ברגע שהפקדת</div>
               </div>
               <div className="text-3xl font-bold text-red-700">

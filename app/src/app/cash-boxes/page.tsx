@@ -8,6 +8,7 @@ import { useAuthGuard } from '@/lib/auth';
 import { uploadTransferReceipt } from '@/lib/storage';
 import PhotoPicker from '@/components/PhotoPicker';
 import { canEditMonth } from '@/lib/month-policy';
+import { pendingDaysWaiting, pendingWaitingText, isPendingStale } from '@/lib/pending-age';
 
 type Totals = {
   collected: number;        // all cash collected (any tour category)
@@ -782,6 +783,16 @@ function CashBoxesContent() {
                         <div className="text-[11px] text-gray-600">
                           {p.notes || 'ממתין להפקדה'}
                         </div>
+                        {(() => {
+                          const days = pendingDaysWaiting(p.transfer_date);
+                          const stale = isPendingStale(days);
+                          return (
+                            <div className={`text-[11px] ${stale ? 'text-red-700 font-bold' : 'text-gray-500'}`}>
+                              {stale ? '⚠ ' : ''}
+                              {pendingWaitingText(days)}
+                            </div>
+                          );
+                        })()}
                       </div>
                       <button
                         onClick={() => {
