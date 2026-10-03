@@ -40,7 +40,30 @@ type TourSummary = {
   tour_date: string;
   tour_type: string;
   totalPeople: number;
+  /** סוגי הסיור שלפיהם נטען קטלוג ההוצאות (בסיור פרטי: לפי מה שכתוב בהערות) */
+  catalogTypes: string[];
 };
+
+/**
+ * סיור פרטי לא מחזיק קטלוג הוצאות משלו. לכן מזהים מההערות מה הסיור היה
+ * ("קולינרי", "קלאסי+בלם"...) וטוענים את הקטלוג של אותו סיור, כולל כרטיס
+ * טיים אאוט בקולינרי. בקשת נופר 3.10.26: בפרטי קולינרי הייתה רק אפשרות "אחר".
+ */
+const PRIVATE_CATALOG_KEYWORDS: [string, string][] = [
+  ['קולינרי', 'קולינרי'],
+  ['טעימות', 'טעימות'],
+  ['בלם', 'בלם_1'],
+  ['סינטרה', 'סינטרה'],
+  ['אראבידה', 'אראבידה'],
+  ['אובידוש', 'אובידוש'],
+  ['דורו', 'דורו'],
+];
+
+function catalogTypesFor(tourType: string, notes: string | null): string[] {
+  if (tourType !== 'פרטי_1' && tourType !== 'פרטי_2') return [tourType];
+  const n = notes || '';
+  return PRIVATE_CATALOG_KEYWORDS.filter(([kw]) => n.includes(kw)).map(([, t]) => t);
+}
 
 function PostTourExpensesContent() {
   useAuthGuard();
@@ -67,7 +90,7 @@ function PostTourExpensesContent() {
   const [showSavedToast, setShowSavedToast] = useState(false);
 
   // ─── תת-קופת "כרטיס טיים אאוט" — רק בסיור קולינרי + רק על פריט קרוקט ───
-  const isCulinaryTour = tour?.tour_type === 'קולינרי';
+  const isCulinaryTour = !!tour?.catalogTypes.includes('קולינרי');
   const [paymentSource, setPaymentSource] = useState<PaymentSource>('expenses_box');
   const [cardBalance, setCardBalance] = useState(0);
 
@@ -88,7 +111,7 @@ function PostTourExpensesContent() {
       // טעינת פרטי הסיור
       const { data: t } = await supabase
         .from('tours')
-        .select('id, tour_date, tour_type, bookings(people)')
+        .select('id, tour_date, tour_type, notes, bookings(people)')
         .eq('id', tourId)
         .single();
       if (t) {
@@ -98,25 +121,27 @@ function PostTourExpensesContent() {
           tour_date: t.tour_date,
           tour_type: t.tour_type,
           totalPeople,
+          catalogTypes: catalogTypesFor(t.tour_type, (t as { notes?: string | null }).notes ?? null),
         });
         const allTours = [...(TOUR_TYPES[city || 'lisbon'] || []), ...(TOUR_TYPES.lisbon || []), ...(TOUR_TYPES.porto || [])];
         const found = allTours.find((x) => x.value === t.tour_type);
         setTourLabel(found?.label || t.tour_type);
       }
 
-      // טעינת קטלוג לסוג הסיור הספציפי
-      if (t) {
+      // טעינת קטלוג לסוג הסיור (בפרטי: לסוגים שזוהו מההערות)
+      const types = t ? catalogTypesFor(t.tour_type, (t as { notes?: string | null }).notes ?? null) : [];
+      if (types.length > 0) {
         const { data: cat } = await supabase
           .from('expense_catalog')
           .select('*')
           .eq('is_active', true)
-          .eq('tour_type', t.tour_type)
+          .in('tour_type', types)
           .order('sort_order');
         setCatalog((cat as ExpenseCatalogItem[]) || []);
       }
 
-      // ─── טעינת יתרת כרטיס טיים אאוט — רק רלוונטי לסיור קולינרי ───
-      if (t?.tour_type === 'קולינרי') {
+      // ─── טעינת יתרת כרטיס טיים אאוט — רק רלוונטי לסיור קולינרי (כולל פרטי) ───
+      if (t && types.includes('קולינרי')) {
         await loadCardBalance(id, t.tour_date);
       }
       setLoading(false);
@@ -132,7 +157,7 @@ function PostTourExpensesContent() {
       .from('transfers')
       .select('amount')
       .eq('guide_id', gid)
-      .eq('transfer_type', 'card_load')
+      .in('transfer_type', ['card_load', 'admin_topup_card'])
       .gte('transfer_date', SYSTEM_START_DATE)
       .lte('transfer_date', untilDate);
     const loadSum = (loadRes.data || []).reduce(
