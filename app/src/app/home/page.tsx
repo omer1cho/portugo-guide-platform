@@ -473,8 +473,17 @@ function HomeContent() {
       }
       // חודשים שלא אושרו (אין רשומה כלל) — אלה שיופיעו כבאנרים
       const openMonths = monthsToCheck.filter((m) => !ackSet.has(`${m.year}-${m.month}`));
-      // חודשים דחויים שעוד לא נספגו — אלה שיתווספו לבאנר הראשון
-      const deferredMonths = monthsToCheck.filter((m) => deferredSet.has(`${m.year}-${m.month}`));
+      // חודשים דחויים שעוד לא נספגו — אלה שיתווספו לבאנר הראשון.
+      // דחוי שאחריו כבר הוצאה קבלה אמיתית נכלל בה, ולא מצטרף שוב לקבלה הבאה
+      // (אותו היגיון כמו בקשפלו: כל קבלה אמיתית סופגת את הדחויים שלפניה).
+      // מקרה נופר 3.10.26: יוני נדחה ונכלל בקבלת יולי, אבל הופיע שוב בספטמבר.
+      const monthIndex = (y: number, mo: number) => y * 12 + mo;
+      const lastIssued = acks
+        .filter((a) => !a.is_deferred)
+        .reduce((mx, a) => Math.max(mx, monthIndex(a.year, a.month)), 0);
+      const deferredMonths = monthsToCheck.filter(
+        (m) => deferredSet.has(`${m.year}-${m.month}`) && monthIndex(m.year, m.month) > lastIssued,
+      );
 
       if (openMonths.length === 0 && deferredMonths.length === 0) {
         setPendingReceipts([]);
