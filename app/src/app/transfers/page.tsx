@@ -115,12 +115,20 @@ function TransfersContent() {
 
     setSaving(true);
 
+    // הפקדת סגירה של חודש שכבר נגמר (הגיעו מ-/close-month, למשל הפקדה ב-6.10 על סגירת ספטמבר):
+    // השורה שייכת לחודש שנסגר — אחרת הקופה של החודש שנסגר נשארת בפלוס והחודש הבא יורד למינוס.
+    // היום שבו הכסף נכנס לבנק נשמר ב-settled_at (כמו במעטפת ההמתנה), והקשפלו קורא משם.
+    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+    const monthEnd = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+    const isLateClosingDeposit = !!searchParams.get('prefill') && date > monthEnd;
+
     // שלב 1: יוצרים שורת העברה (בלי קישור לאסמכתא עדיין)
     const { data: inserted, error: insErr } = await supabase
       .from('transfers')
       .insert({
         guide_id: guideId,
-        transfer_date: date,
+        transfer_date: isLateClosingDeposit ? monthEnd : date,
+        ...(isLateClosingDeposit ? { settled_at: date } : {}),
         amount: amt,
         transfer_type: 'to_portugo',
         notes,
