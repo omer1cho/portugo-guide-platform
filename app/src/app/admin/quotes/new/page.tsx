@@ -79,6 +79,7 @@ export default function NewQuotePage() {
   // key → משתתפים נוספים במחיר מיוחד (כמות / מחיר לאדם / מי הם), טקסט גולמי מהשדות
   const [extras, setExtras] = useState<Record<string, ExtraDraft>>({});
   const [notes, setNotes] = useState('');
+  const [notesPlacement, setNotesPlacement] = useState('top');
   const [saving, setSaving] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -111,6 +112,7 @@ export default function NewQuotePage() {
     setCustomerName(sel.customerName || '');
     setRequestedDate(sel.requestedDate || '');
     setNotes(sel.notes || '');
+    setNotesPlacement(sel.notesPlacement || 'top');
     // עמודות → מצב כמות
     const cols = sel.columns || [];
     if (cols.length && cols.every((c) => c.type === 'band')) {
@@ -214,6 +216,15 @@ export default function NewQuotePage() {
     return `${base}/quote/${slugOrId}`;
   }
 
+  // מזהה המיקום של כל סיור: כרטיס בודד לפי card, שילוב לפי comboSlug (כך גם עמוד הלקוח מאתר אותו)
+  const placementKey = (it: Item) => 'tour:' + (it.sel.comboSlug || it.sel.card || it.key);
+  const placementTours = ITEMS.filter((it) => selectedKeys.has(it.key));
+  // אם הסיור שנבחר כמיקום הוסר מההצעה — ההערה חוזרת למעלה
+  const effectivePlacement =
+    notesPlacement.startsWith('tour:') && !placementTours.some((it) => placementKey(it) === notesPlacement)
+      ? 'top'
+      : notesPlacement;
+
   async function save() {
     setErr(null);
     setLink(null);
@@ -221,7 +232,7 @@ export default function NewQuotePage() {
     if (!customerName.trim()) { setErr('צריך למלא שם מקבל'); return; }
     if (selectedTours.length === 0) { setErr('צריך לבחור לפחות סיור אחד'); return; }
     setSaving(true);
-    const selection: QuoteSelection = { customerName: customerName.trim(), columns, tours: selectedTours, notes: notes.trim() || undefined, requestedDate: requestedDate.trim() || undefined };
+    const selection: QuoteSelection = { customerName: customerName.trim(), columns, tours: selectedTours, notes: notes.trim() || undefined, notesPlacement: notes.trim() ? effectivePlacement : undefined, requestedDate: requestedDate.trim() || undefined };
     try {
       if (editId) {
         // עדכון הצעה קיימת (אותו לינק)
@@ -414,12 +425,29 @@ export default function NewQuotePage() {
           </div>
 
           <div style={cardStyle}>
-            <label style={labelStyle}>הערות (אופציונלי)</label>
+            <label style={labelStyle}>הערה חשובה ללקוח (אופציונלי)</label>
             <textarea
               style={{ ...inputStyle, width: '100%', minHeight: 70, resize: 'vertical' }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
+            <div style={{ fontSize: 12, color: C.inkMute, marginTop: 4 }}>מוצגת בהצעה במסגרת עם הכותרת &quot;הערה חשובה&quot;</div>
+            {notes.trim() && (
+              <div style={{ marginTop: 12 }}>
+                <label style={labelStyle}>איפה להציג את ההערה?</label>
+                <select
+                  style={{ ...inputStyle, width: '100%' }}
+                  value={effectivePlacement}
+                  onChange={(e) => setNotesPlacement(e.target.value)}
+                >
+                  <option value="top">למעלה, מתחת לפתיחה</option>
+                  {placementTours.map((it) => (
+                    <option key={it.key} value={placementKey(it)}>מתחת לסיור: {it.label}</option>
+                  ))}
+                  <option value="bottom">בסוף, לפני התנאים</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <button

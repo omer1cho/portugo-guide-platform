@@ -281,6 +281,30 @@ export async function GET(
     );
   }
 
+  // ─── טרנספורם 1.7: "הערה חשובה" של עומר ללקוח, במיקום שבחרה בהכנת ההצעה ───
+  //     (למעלה / בסוף / מתחת לסיור מסוים). מתחת לסיור — הסקריפט מזיז אותה למקום.
+  const noteText = (sel.notes || '').trim();
+  const notePlacement = sel.notesPlacement || 'top';
+  let noteTarget: { dataTour?: string; dataTourName?: string } | null = null;
+  if (noteText) {
+    if (notePlacement.startsWith('tour:')) {
+      const key = notePlacement.slice(5);
+      const t = sel.tours.find((x) => (x.comboSlug || x.card) === key);
+      if (t) noteTarget = mapToCardSelector(t);
+    }
+    const noteHtml =
+      `<style>.quote-note{background:var(--band);border:1px solid var(--border);border-inline-start:4px solid var(--terra);` +
+      `border-radius:12px;padding:16px 20px;margin:0 0 28px;line-height:1.7;color:var(--ink)}` +
+      `.quote-note-title{display:block;font-weight:700;color:var(--forest);margin-bottom:4px}</style>` +
+      `<div class="quote-note" id="quote-note"><span class="quote-note-title">הערה חשובה</span>` +
+      `${htmlEscape(noteText).replace(/\r?\n/g, '<br>')}</div>`;
+    if (notePlacement === 'bottom' || noteTarget) {
+      html = html.replace('<section id="terms">', noteHtml + '\n  <section id="terms">');
+    } else {
+      html = html.replace('<nav class="toc"', noteHtml + '\n  <nav class="toc"');
+    }
+  }
+
   // ─── טרנספורם 2: שורת "כמות משתתפים" בהירו (תומך בטווח של שתי עמודות) ───
   const part = heroParticipants(sel.columns);
   if (part.amount) {
@@ -697,6 +721,23 @@ export async function GET(
   //      בוקר/צהריים של אותו סיור), ולעולם לא סיורים שמחוץ להצעה. גם בהצעת סיור
   //      בודד הסקציה נשארת, כדי שהלקוח תמיד יוכל להוסיף מלמטה את מה שבהצעה.
   if (typeof window.updateSummary === 'function') { window.updateSummary(); }
+
+  // 5.7) "הערה חשובה" מתחת לסיור שנבחר: מזיזים את התיבה אל מתחת לכרטיס,
+  //      ומצמידים אותה אליו (מקזזים את הרווח שבין הכרטיסים).
+  (function(){
+    var target = ${JSON.stringify(noteTarget)};
+    var note = document.getElementById('quote-note');
+    if (!target || !note) return;
+    var el = target.dataTour
+      ? document.querySelector('[data-tour="' + target.dataTour + '"]')
+      : document.querySelector('[data-tour-name="' + target.dataTourName + '"]');
+    if (!el) return;
+    var holder = el.closest('.card,.combo-card') || el;
+    holder.insertAdjacentElement('afterend', note);
+    var gap = parseFloat(getComputedStyle(holder.parentElement).rowGap) || 0;
+    note.style.marginTop = gap > 20 ? (-(gap - 16)) + 'px' : '16px';
+    note.style.marginBottom = '0';
+  })();
 
   // 6) חיווט שליחת תגובת הלקוח: דריסת submitQuote כך שתשלח באמת ל-API
   //    (במוקאפ הסטטי submitQuote רק מציג הודעת תודה ולא שולח כלום).

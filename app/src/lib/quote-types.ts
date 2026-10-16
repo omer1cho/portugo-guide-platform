@@ -34,7 +34,10 @@ export type QuoteSelection = {
   customerName: string;
   columns: QuoteColumn[];   // 1 או 2
   tours: QuoteTourSel[];
-  notes?: string;
+  notes?: string;           // "הערה חשובה" שמוצגת ללקוח בעמוד ההצעה
+  // איפה ההערה מוצגת: 'top' (מתחת לפתיחה, ברירת מחדל) · 'bottom' (לפני התנאים)
+  // · 'tour:<card או comboSlug>' (מתחת לכרטיס של אותו סיור). בקשת עומר 16.10.26.
+  notesPlacement?: string;
   requestedDate?: string;   // מועד מבוקש (טקסט חופשי) — מוצג בהירו, למשל "יוני 2026"
 };
 
