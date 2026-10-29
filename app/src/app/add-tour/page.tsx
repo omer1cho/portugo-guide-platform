@@ -12,6 +12,7 @@ import {
   TRAINING_LEAD_TOUR_OPTIONS,
   TRAINING_LEAD_TOUR_OPTIONS_BY_CITY,
   TOURS_WITH_EXPENSE_CATALOG,
+  PRIVATE_TOUR_TYPES,
   resolveTourCategory,
   type TrainingLeadKind,
   type TrainingLeadTour,
@@ -585,8 +586,9 @@ function AddTourContent() {
           }
         }
 
-        // אם הסיור הוא מסוג עם קטלוג הוצאות — נוביל את המדריך לרישום הוצאות
-        if (!isEditMode && TOURS_WITH_EXPENSE_CATALOG.has(tourType)) {
+        // אם הסיור הוא מסוג עם קטלוג הוצאות (או פרטי, שמשתמש בקטלוג של הסיור שהיה בפועל)
+        // — נוביל את המדריך לרישום הוצאות
+        if (!isEditMode && (TOURS_WITH_EXPENSE_CATALOG.has(tourType) || PRIVATE_TOUR_TYPES.has(tourType))) {
           router.push(`/post-tour-expenses?tourId=${tourId}`);
           return;
         }

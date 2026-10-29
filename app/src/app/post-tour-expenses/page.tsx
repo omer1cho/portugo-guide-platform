@@ -15,6 +15,8 @@ import {
   supabase,
   SYSTEM_START_DATE,
   TOUR_TYPES,
+  catalogTypesFor,
+  tourTypeLabel,
   type ExpenseCatalogItem,
 } from '@/lib/supabase';
 import { uploadExpenseReceipt } from '@/lib/storage';
@@ -43,27 +45,6 @@ type TourSummary = {
   /** סוגי הסיור שלפיהם נטען קטלוג ההוצאות (בסיור פרטי: לפי מה שכתוב בהערות) */
   catalogTypes: string[];
 };
-
-/**
- * סיור פרטי לא מחזיק קטלוג הוצאות משלו. לכן מזהים מההערות מה הסיור היה
- * ("קולינרי", "קלאסי+בלם"...) וטוענים את הקטלוג של אותו סיור, כולל כרטיס
- * טיים אאוט בקולינרי. בקשת נופר 3.10.26: בפרטי קולינרי הייתה רק אפשרות "אחר".
- */
-const PRIVATE_CATALOG_KEYWORDS: [string, string][] = [
-  ['קולינרי', 'קולינרי'],
-  ['טעימות', 'טעימות'],
-  ['בלם', 'בלם_1'],
-  ['סינטרה', 'סינטרה'],
-  ['אראבידה', 'אראבידה'],
-  ['אובידוש', 'אובידוש'],
-  ['דורו', 'דורו'],
-];
-
-function catalogTypesFor(tourType: string, notes: string | null): string[] {
-  if (tourType !== 'פרטי_1' && tourType !== 'פרטי_2') return [tourType];
-  const n = notes || '';
-  return PRIVATE_CATALOG_KEYWORDS.filter(([kw]) => n.includes(kw)).map(([, t]) => t);
-}
 
 function PostTourExpensesContent() {
   useAuthGuard();
@@ -507,6 +488,7 @@ function PostTourExpensesContent() {
               <option value="">-- בחר.י --</option>
               {catalog.map((item) => (
                 <option key={item.id} value={item.id}>
+                  {(tour?.catalogTypes.length || 0) > 1 ? `${tourTypeLabel(item.tour_type)} · ` : ''}
                   {item.item_name}
                   {item.calc_type === 'unit' && item.unit_price ? ` · ${item.unit_price}€/יחידה` : ''}
                   {item.calc_type === 'per_person' && item.unit_price ? ` · ${item.unit_price}€/אדם` : ''}

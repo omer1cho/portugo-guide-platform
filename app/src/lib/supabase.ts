@@ -200,6 +200,43 @@ export const TOUR_TYPES = {
   ],
 };
 
+/** סיורים פרטיים — אין להם קטלוג הוצאות משלהם, משתמשים בקטלוג של הסיור שהיה בפועל */
+export const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
+
+/**
+ * מילות מפתח בהערות של סיור פרטי → הקטלוג של אותו סיור.
+ * בקשת נופר 3.10.26: בפרטי קולינרי הייתה רק אפשרות "אחר".
+ */
+const PRIVATE_CATALOG_KEYWORDS: [string, string][] = [
+  ['קולינרי', 'קולינרי'],
+  ['טעימות', 'טעימות'],
+  ['בלם', 'בלם_1'],
+  ['סינטרה', 'סינטרה'],
+  ['אראבידה', 'אראבידה'],
+  ['אובידוש', 'אובידוש'],
+  ['דורו', 'דורו'],
+];
+
+/**
+ * לאילו סוגי סיור לטעון קטלוג הוצאות.
+ * סיור רגיל: הסוג שלו. סיור פרטי: מה שזוהה בהערות, ואם לא זוהה כלום
+ * (או שאין הערות) — כל הסיורים עם קטלוג באותה עיר, כדי שלא יישאר רק "אחר".
+ */
+export function catalogTypesFor(tourType: string, notes: string | null): string[] {
+  if (!PRIVATE_TOUR_TYPES.has(tourType)) return [tourType];
+  const n = notes || '';
+  const found = PRIVATE_CATALOG_KEYWORDS.filter(([kw]) => n.includes(kw)).map(([, t]) => t);
+  if (found.length > 0) return found;
+  const city = tourType === 'פרטי_2' ? 'porto' : 'lisbon';
+  return TOUR_TYPES[city].map((t) => t.value).filter((v) => TOURS_WITH_EXPENSE_CATALOG.has(v));
+}
+
+/** שם הסיור לתצוגה ("קולינרי", "עמק הדורו") לפי הערך הפנימי */
+export function tourTypeLabel(tourType: string): string {
+  const all = [...TOUR_TYPES.lisbon, ...TOUR_TYPES.porto];
+  return all.find((t) => t.value === tourType)?.label || tourType;
+}
+
 /**
  * סיור יהדות (ליסבון) — התאריך שבו הוא עובר ממחיר "על בסיס שביעות רצון"
  * למחיר קבוע של 25€ לאדם (20€ בחבילה). החלטת עומר, 27.8.26.

@@ -8,6 +8,9 @@ import {
   SYSTEM_START_DATE,
   TOUR_TYPES,
   TOURS_WITH_EXPENSE_CATALOG,
+  PRIVATE_TOUR_TYPES,
+  catalogTypesFor,
+  tourTypeLabel,
   type ExpenseCatalogItem,
 } from '@/lib/supabase';
 import { uploadExpenseReceipt } from '@/lib/storage';
@@ -260,9 +263,12 @@ function ExpensesContent() {
   }, [guideCity]);
 
   // הפריטים הזמינים לסיור הנבחר (מהקטלוג). "ללא סיור" => אין קטלוג, רק "אחר".
+  // סיור פרטי => כל הקטלוגים של העיר (כאן אין סיור ספציפי עם הערות לזהות ממנו)
+  const isPrivateTour = PRIVATE_TOUR_TYPES.has(tourType);
   const itemsForTour = useMemo(() => {
     if (!tourType || tourType === GENERAL_TOUR_VALUE) return [];
-    return catalog.filter((c) => c.tour_type === tourType);
+    const types = catalogTypesFor(tourType, null);
+    return catalog.filter((c) => types.includes(c.tour_type));
   }, [tourType, catalog]);
 
   const selectedCatalogItem = useMemo(() => {
@@ -566,7 +572,7 @@ function ExpensesContent() {
     .filter((e) => e.payment_source !== 'food_market_card')
     .reduce((s, e) => s + (e.amount || 0), 0);
   const total = totalFromCard + totalFromExpensesBox;
-  const tourHasCatalog = TOURS_WITH_EXPENSE_CATALOG.has(tourType);
+  const tourHasCatalog = TOURS_WITH_EXPENSE_CATALOG.has(tourType) || (isPrivateTour && itemsForTour.length > 0);
   // האם להציג בחירת מקור תשלום בטופס:
   //   מדריך קולינרי + סיור 'קולינרי' + הפריט הנבחר הוא קרוקט (Croqueteria
   //   Mercado Ribeira) — זה הפריט היחיד שמשלמים עליו עם כרטיס טיים אאוט.
@@ -575,7 +581,9 @@ function ExpensesContent() {
   const isCroquetteItem =
     selectedItemName.includes('קרוק') || selectedItemName.includes('croq');
   const showPaymentSourcePicker =
-    hasCulinaryHistory && tourType === 'קולינרי' && isCroquetteItem;
+    hasCulinaryHistory &&
+    (tourType === 'קולינרי' || (isPrivateTour && selectedCatalogItem?.tour_type === 'קולינרי')) &&
+    isCroquetteItem;
 
   return (
     <div className="min-h-screen pb-20 bg-gray-50">
@@ -690,6 +698,7 @@ function ExpensesContent() {
                   <option value="">-- בחר.י --</option>
                   {itemsForTour.map((item) => (
                     <option key={item.id} value={item.id}>
+                      {isPrivateTour ? `${tourTypeLabel(item.tour_type)} · ` : ''}
                       {item.item_name}
                       {item.calc_type === 'unit' && item.unit_price ? ` · ${item.unit_price}€/יחידה` : ''}
                       {item.calc_type === 'per_person' && item.unit_price ? ` · ${item.unit_price}€/אדם` : ''}
