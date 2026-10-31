@@ -47,6 +47,11 @@ import { TOUR_TYPES } from '@/lib/supabase';
 import { getCalendarEventsForDate } from '@/lib/calendar-events';
 import DateField from '@/components/DateField';
 
+type SyncAlert = {
+  feedEmpty: boolean;
+  blocked: { shift_date: string; shift_time: string; tour_type: string }[];
+};
+
 // סוגי סיור פרטיים — מוצגים אחרת בכרטיס (פוקוס על שם הלקוח/סוג, לא על "פרטי_1")
 const PRIVATE_TOUR_TYPES = new Set(['פרטי_1', 'פרטי_2']);
 
@@ -439,6 +444,25 @@ function ShiftsContent() {
   const [showGuidesPanel, setShowGuidesPanel] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [reloadCounter, setReloadCounter] = useState(0);
+  const [syncAlert, setSyncAlert] = useState<SyncAlert | null>(null);
+
+  // התראת סנכרון: האם בלם הסנכרון מהאתר עצר ביטולים של סיורים מפורסמים/משובצים
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return;
+        const res = await fetch('/api/shifts/sync-status', { headers: { Authorization: `Bearer ${token}` } });
+        const json = await res.json();
+        if (!cancelled && json.ok && (json.guardActive || json.feedEmpty)) setSyncAlert(json);
+      } catch {
+        // התראה בלבד — אם הבדיקה נכשלה לא מפריעים ללוח
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   function reload() { setReloadCounter((c) => c + 1); }
 
@@ -997,6 +1021,30 @@ function ShiftsContent() {
           {viewMode === 'month' ? 'חודש הבא ◀' : 'שבוע הבא ◀'}
         </button>
       </div>
+
+      {/* התראת סנכרון מהאתר */}
+      {syncAlert && (
+        <div style={{ background: '#fee2e2', color: '#991b1b', borderRadius: 8, padding: '10px 14px', fontSize: 13, lineHeight: 1.5 }}>
+          {syncAlert.feedEmpty ? (
+            <strong>⚠️ האתר לא מחזיר סיורים כרגע, אז העדכון מהאתר עצר. כדאי לבדוק שהאתר תקין.</strong>
+          ) : (
+            <>
+              <strong>⚠️ העדכון מהאתר עצר: {syncAlert.blocked.length} סיורים מפורסמים או משובצים נעלמו מהאתר.</strong>
+              <div>הם לא בוטלו, כדי שלא יתבטלו בטעות. צריך לבדוק אותם ולטפל ידנית בלוח.</div>
+              <details style={{ marginTop: 4 }}>
+                <summary style={{ cursor: 'pointer' }}>הצגת הסיורים</summary>
+                <div style={{ marginTop: 4 }}>
+                  {syncAlert.blocked.map((b) => (
+                    <div key={`${b.shift_date}_${b.shift_time}_${b.tour_type}`}>
+                      {b.shift_date.split('-').reverse().join('.')} · {b.shift_time.slice(0, 5)} · {[...TOUR_TYPES.lisbon, ...TOUR_TYPES.porto].find((t) => t.value === b.tour_type)?.label || b.tour_type}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Summary chips */}
       {!loading && shifts.length > 0 && (
