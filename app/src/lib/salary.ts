@@ -259,6 +259,15 @@ const MGMT_BONUS_SKIPPED_MONTHS: Record<string, string[]> = {
   'מאיה': ['2026-09'],
 };
 
+/**
+ * מאיזה חודש ('YYYY-MM') רכיב הניהול מפסיק להשתלם, עד להודעה חדשה.
+ * מאיה מאוקטובר 2026: הוראת עומר 2.11.26. חודשים קודמים לא זזים.
+ * כשהרכיב חוזר — למחוק את השורה (או להחליף ברשימת חודשים ב-SKIPPED למעלה).
+ */
+const MGMT_BONUS_STOPPED_FROM: Record<string, string> = {
+  'מאיה': '2026-10',
+};
+
 const PRIVATE_TABLES_V2_FROM = '2026-08-01';
 
 const PRIVATE_CLASSIC: Tier[] = [
@@ -612,7 +621,11 @@ export function calculateMonthlySalary(
   // חודשים שבהם הרכיב לא משולם למרות שהוא מוגדר אצל המדריכה. לפי חודש, כמו
   // הנסיעות למעלה, כדי שחודשים אחרים (סגורים או עתידיים) לא יזוזו.
   const monthKey = travelSampleDate.slice(0, 7);
-  const mgmtSkipped = !!guide && (MGMT_BONUS_SKIPPED_MONTHS[guide.name] || []).includes(monthKey);
+  const mgmtStoppedFrom = guide ? MGMT_BONUS_STOPPED_FROM[guide.name] : undefined;
+  // חודש בלי סיורים (monthKey ריק) הוא חודש נוכחי/עתידי — גם בו לא משלמים אחרי ההפסקה
+  const mgmtStopped = !!mgmtStoppedFrom && (!monthKey || monthKey >= mgmtStoppedFrom);
+  const mgmtSkipped =
+    mgmtStopped || (!!guide && (MGMT_BONUS_SKIPPED_MONTHS[guide.name] || []).includes(monthKey));
   const management = guide?.has_mgmt_bonus && !mgmtSkipped ? (guide.mgmt_bonus_amount || 0) : 0;
 
   const total_with_tips =
