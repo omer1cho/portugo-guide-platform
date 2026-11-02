@@ -341,6 +341,16 @@ function CloseMonthContent() {
   // The confirm button triggers immediate actions only: salary withdrawal + envelope refills.
   // The bank deposit to Portugo is a separate action because it can take a few days.
   const hasImmediateActions = needsSalaryWithdraw || needsExpensesRefill || needsChangeRefill;
+  // חודש שבו אין מה למשוך מהקופה אבל פורטוגו משלימה (ההעברה מתנהלת מחוץ למערכת).
+  // אין כאן פעולות לרשום, אז אישור עומר הוא מה שסוגר את החודש.
+  const noMoneyClose = !hasImmediateActions && needsFromPortugo;
+
+  const approvalStale =
+    closeRequest?.status === 'approved' &&
+    salary != null &&
+    Math.abs(Number(closeRequest.expected_total) - salary.cash_to_withdraw) > 1;
+  const gateApproved = closeRequest?.status === 'approved' && !approvalStale;
+  const closedByApproval = !alreadyConfirmed && noMoneyClose && gateApproved;
 
   // תאריך ההעברה לפעולות סגירת חודש: היום האחרון של החודש שנסגר אם הוא בעבר,
   // אחרת היום (סגירה של החודש הנוכחי לפני שהוא הסתיים). זה מבטיח שהמשיכות
@@ -672,7 +682,7 @@ function CloseMonthContent() {
               </div>
 
               {/* Step-by-step */}
-              {!alreadyConfirmed && (
+              {!alreadyConfirmed && !closedByApproval && (
                 <div className="mt-3 bg-amber-50 rounded-lg p-3 space-y-2 text-sm">
                   {mainBox < 0.01 && !needsFromPortugo ? (
                     <div className="text-amber-900">אין פעולות לביצוע החודש.</div>
@@ -765,12 +775,9 @@ function CloseMonthContent() {
               )}
 
               {/* Confirm-done button — עובר דרך שער האישור של עומר */}
-              {!alreadyConfirmed && hasImmediateActions && (() => {
-                const approvalStale =
-                  closeRequest?.status === 'approved' &&
-                  salary != null &&
-                  Math.abs(Number(closeRequest.expected_total) - salary.cash_to_withdraw) > 1;
-                const gateApproved = closeRequest?.status === 'approved' && !approvalStale;
+              {!alreadyConfirmed && !closedByApproval && (hasImmediateActions || noMoneyClose) && (() => {
+                // בלי פעולות לרשום: אדמין או שער לא זמין — אין מה להציג
+                if (noMoneyClose && (!gateAvailable || isAdminUser)) return null;
 
                 // שער לא זמין (טבלה חסרה) / אדמין / אישור בתוקף — הכפתור האמיתי
                 if (!gateAvailable || isAdminUser || gateApproved) {
@@ -867,8 +874,20 @@ function CloseMonthContent() {
                 </div>
               )}
 
+              {/* נסגר באישור עומר — חודש בלי משיכה מהקופה, פורטוגו משלימה */}
+              {closedByApproval && (
+                <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                  <div className="text-green-900 font-bold">✓ עומר אישרה, החודש סגור.</div>
+                  <div className="text-green-900 mt-1">
+                    פורטוגו תעביר לך{' '}
+                    <span className="font-bold">{fromPortugo.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>{' '}
+                    בהעברה נפרדת 💚
+                  </div>
+                </div>
+              )}
+
               {/* תזכורת הוצאת קבלה — אחרי סגירת חודש, רק אם יש סכום לקבלה */}
-              {alreadyConfirmed && (salary?.receipt_amount || 0) > 0 && (
+              {(alreadyConfirmed || closedByApproval) && (salary?.receipt_amount || 0) > 0 && (
                 receiptIssued ? (
                   <div className="mt-3 bg-green-50 border border-green-300 rounded-lg p-3 text-sm">
                     <div className="flex items-start gap-2">
