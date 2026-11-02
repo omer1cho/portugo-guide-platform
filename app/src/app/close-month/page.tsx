@@ -7,6 +7,7 @@ import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
 import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
 import { useAuthGuard } from '@/lib/auth';
 import { uploadMonthlyReceipt } from '@/lib/storage';
+import { insertNoWithdrawalCloseMarker } from '@/lib/month-policy';
 import PhotoPicker from '@/components/PhotoPicker';
 import DateField from '@/components/DateField';
 
@@ -19,6 +20,7 @@ type CashState = {
   changeBalance: number;
   expensesBalance: number;
   salaryWithdrawn: number;
+  salaryClosed: boolean; // יש שורת salary_withdrawal (גם 0 — סגירה באישור בלי משיכה)
 };
 
 function CloseMonthContent() {
@@ -33,7 +35,7 @@ function CloseMonthContent() {
   const [guide, setGuide] = useState<Pick<Guide, 'id' | 'name' | 'travel_type' | 'travel_monthly_amount' | 'travel_daily_amount' | 'has_mgmt_bonus' | 'mgmt_bonus_amount' | 'has_vat' | 'classic_transfer_per_person' | 'target_change_balance' | 'target_expenses_balance'> | null>(null);
   const [salary, setSalary] = useState<SalaryBreakdown | null>(null);
   const [externalActivities, setExternalActivities] = useState<{ description: string; amount: number }[]>([]);
-  const [cash, setCash] = useState<CashState>({ mainBalance: 0, changeBalance: 0, expensesBalance: 0, salaryWithdrawn: 0 });
+  const [cash, setCash] = useState<CashState>({ mainBalance: 0, changeBalance: 0, expensesBalance: 0, salaryWithdrawn: 0, salaryClosed: false });
   const [confirming, setConfirming] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmError, setConfirmError] = useState('');
@@ -110,6 +112,7 @@ function CloseMonthContent() {
           year,
           month: month + 1,
           expected_total: salary.cash_to_withdraw,
+          closes_without_withdrawal: noMoneyClose,
         }),
       });
       if (!res.ok) throw new Error('הבקשה נכשלה');
@@ -207,13 +210,14 @@ function CloseMonthContent() {
     let cashRefill = 0;
     let expensesRefill = 0;
     let salaryWithdrawn = 0;
+    let salaryClosed = false;
     let adminTopupChange = 0;
     let adminTopupExpenses = 0;
     (trRes.data || []).forEach((t: { amount: number; transfer_type: string }) => {
       const amt = t.amount || 0;
       if (t.transfer_type === 'cash_refill') cashRefill += amt;
       else if (t.transfer_type === 'expenses_refill') expensesRefill += amt;
-      else if (t.transfer_type === 'salary_withdrawal') salaryWithdrawn += amt;
+      else if (t.transfer_type === 'salary_withdrawal') { salaryWithdrawn += amt; salaryClosed = true; }
       else if (t.transfer_type === 'admin_topup_change') adminTopupChange += amt;
       else if (t.transfer_type === 'admin_topup_expenses') adminTopupExpenses += amt;
       // העברות פנימיות לכרטיס טיים אאוט לא משפיעות על הקופה הראשית.
@@ -247,6 +251,7 @@ function CloseMonthContent() {
       changeBalance: openingChange + cumChangeRefill + cumAdminTopupChange - cumChangeGiven,
       expensesBalance: openingExpenses + cumExpensesRefill + cumAdminTopupExpenses - cumExpenses,
       salaryWithdrawn,
+      salaryClosed,
     });
 
     // האם המדריך כבר הוציא קבלה אמיתית לחודש זה (לא דחויה)?
@@ -337,20 +342,33 @@ function CloseMonthContent() {
   const needsChangeRefill = changeRefill > 0.01;
   const needsFromPortugo = fromPortugo > 0.01;
   const needsSalaryWithdraw = takeFromBox > 0.01;
-  const alreadyConfirmed = cash.salaryWithdrawn > 0.01;
+  const alreadyConfirmed = cash.salaryWithdrawn > 0.01 || cash.salaryClosed;
   // The confirm button triggers immediate actions only: salary withdrawal + envelope refills.
   // The bank deposit to Portugo is a separate action because it can take a few days.
   const hasImmediateActions = needsSalaryWithdraw || needsExpensesRefill || needsChangeRefill;
   // חודש שבו אין מה למשוך מהקופה אבל פורטוגו משלימה (ההעברה מתנהלת מחוץ למערכת).
   // אין כאן פעולות לרשום, אז אישור עומר הוא מה שסוגר את החודש.
-  const noMoneyClose = !hasImmediateActions && needsFromPortugo;
+  const noMoneyClose = !hasImmediateActions && needsFromPortugo && cash.salaryWithdrawn <= 0.01;
 
   const approvalStale =
     closeRequest?.status === 'approved' &&
     salary != null &&
     Math.abs(Number(closeRequest.expected_total) - salary.cash_to_withdraw) > 1;
   const gateApproved = closeRequest?.status === 'approved' && !approvalStale;
-  const closedByApproval = !alreadyConfirmed && noMoneyClose && gateApproved;
+  const closedByApproval = noMoneyClose && gateApproved;
+
+  // גיבוי: בדרך כלל האישור עצמו (בשרת) רושם את סימון הסגירה. אם זה לא קרה
+  // (בקשה ישנה, או שהסימון נכשל) — המסך משלים אותו כשהמדריך.ה נכנס.ת.
+  const markerAttempted = React.useRef(false);
+  useEffect(() => {
+    if (!closedByApproval || cash.salaryClosed || isAdminUser || markerAttempted.current) return;
+    const id = localStorage.getItem('portugo_guide_id');
+    if (!id) return;
+    markerAttempted.current = true;
+    insertNoWithdrawalCloseMarker(supabase, id, year, month + 1).then((r) => {
+      if (r.ok) loadData();
+    });
+  }, [closedByApproval, cash.salaryClosed, isAdminUser, year, month, loadData]);
 
   // תאריך ההעברה לפעולות סגירת חודש: היום האחרון של החודש שנסגר אם הוא בעבר,
   // אחרת היום (סגירה של החודש הנוכחי לפני שהוא הסתיים). זה מבטיח שהמשיכות
@@ -853,7 +871,7 @@ function CloseMonthContent() {
               })()}
 
               {/* After confirm: show what's left to do (deposit or celebration) */}
-              {alreadyConfirmed && (
+              {alreadyConfirmed && !closedByApproval && (
                 <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
                   <div className="text-green-900">✓ משיכת משכורת וחיזוקי מעטפות נרשמו.</div>
                   {needsDeposit ? (

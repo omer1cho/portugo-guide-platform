@@ -437,7 +437,8 @@ export async function loadGuideMonthDetail(
 
   // ─── שלב 9: סטטוס + has_data ────────────────────────────────────
   const has_data = tours.length > 0 || acts.length > 0 || trsInMonth.length > 0 || expsInMonth.length > 0;
-  const is_closed = actual.salary_withdrawn > 0.01;
+  // סגור = יש שורת salary_withdrawal (גם בסכום 0 — סגירה באישור בלי משיכה)
+  const is_closed = closed_at !== null;
 
   return {
     guide,

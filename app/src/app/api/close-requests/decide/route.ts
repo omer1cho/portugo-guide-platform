@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
+import { insertNoWithdrawalCloseMarker } from '@/lib/month-policy';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: error?.message || 'request not found or already decided' }, { status: 400 });
   }
 
+  // חודש בלי משיכה מהקופה: האישור הוא הסגירה — רושמים סימון סגירה
+  const closesNow = status === 'approved' && updated.closes_without_withdrawal === true;
+  if (closesNow) {
+    const marker = await insertNoWithdrawalCloseMarker(supabase, updated.guide_id, updated.year, updated.month);
+    if (!marker.ok) console.error('[close-requests/decide] close marker error:', marker.error);
+  }
+
   // מייל למדריך.ה — best effort
   const { data: guide } = await supabase.from('guides').select('name, email').eq('id', updated.guide_id).single();
   const gmailUser = process.env.GMAIL_USER;
@@ -73,7 +81,9 @@ export async function POST(req: NextRequest) {
         html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.8;">
           <p>היי ${guide.name},</p>
           ${approved
-            ? `<p>עומר אישרה את סגירת <strong>${monthLabel}</strong>. אפשר להיכנס לאפליקציה ולהשלים את הסגירה.</p>`
+            ? closesNow
+              ? `<p>עומר אישרה את סגירת <strong>${monthLabel}</strong>, והחודש סגור. פורטוגו תעביר לך את ההשלמה בהעברה נפרדת.</p>`
+              : `<p>עומר אישרה את סגירת <strong>${monthLabel}</strong>. אפשר להיכנס לאפליקציה ולהשלים את הסגירה.</p>`
             : `<p>עומר ביקשה להמתין רגע עם סגירת <strong>${monthLabel}</strong>.</p>`}
           ${adminNote ? `<p>הערה מעומר: "${adminNote}"</p>` : ''}
           <p><a href="https://portugo-guide-platform.vercel.app/close-month">למסך סגירת החודש</a></p>

@@ -22,7 +22,7 @@ const OMER_EMAIL = 'info.portugo@gmail.com';
 const MONTH_NAMES = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
 
 export async function POST(req: NextRequest) {
-  let body: { guide_id?: unknown; year?: unknown; month?: unknown; expected_total?: unknown };
+  let body: { guide_id?: unknown; year?: unknown; month?: unknown; expected_total?: unknown; closes_without_withdrawal?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
   const year = Number(body.year);
   const month = Number(body.month); // 1-12
   const expectedTotal = Number(body.expected_total);
+  // חודש בלי משיכה מהקופה (פורטוגו משלימה) — האישור עצמו יסגור את החודש
+  const closesWithoutWithdrawal = body.closes_without_withdrawal === true;
 
   if (!guideId || !Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12 || !Number.isFinite(expectedTotal)) {
     return NextResponse.json({ ok: false }, { status: 400 });
@@ -62,11 +64,16 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (existing) return NextResponse.json({ ok: true, request: existing, duplicate: true });
 
-  const { data: created, error } = await supabase
+  const baseRow = { guide_id: guideId, year, month, expected_total: expectedTotal };
+  let { data: created, error } = await supabase
     .from('close_requests')
-    .insert({ guide_id: guideId, year, month, expected_total: expectedTotal })
+    .insert(closesWithoutWithdrawal ? { ...baseRow, closes_without_withdrawal: true } : baseRow)
     .select('*')
     .single();
+  // העמודה עוד לא נוספה במסד — שומרים בלי הסימון (מסך המדריך.ה ישלים את הסגירה)
+  if (error && closesWithoutWithdrawal && /closes_without_withdrawal/.test(error.message)) {
+    ({ data: created, error } = await supabase.from('close_requests').insert(baseRow).select('*').single());
+  }
   if (error || !created) {
     return NextResponse.json({ ok: false, error: error?.message }, { status: 500 });
   }
@@ -88,7 +95,9 @@ export async function POST(req: NextRequest) {
         subject: `בקשת סגירת חודש: ${guide.name} — ${monthLabel}`,
         html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7;">
           <p><strong>${guide.name}</strong> מבקש.ת לסגור את <strong>${monthLabel}</strong>.</p>
-          <p>משכורת צפויה למשיכה: <strong>${expectedTotal.toLocaleString('he-IL', { minimumFractionDigits: 2 })}€</strong></p>
+          ${closesWithoutWithdrawal
+            ? `<p>אין משיכה מהקופה החודש. פורטוגו משלימה: <strong>${expectedTotal.toLocaleString('he-IL', { minimumFractionDigits: 2 })}€</strong> (העברה מחוץ למערכת). האישור יסגור את החודש.</p>`
+            : `<p>משכורת צפויה למשיכה: <strong>${expectedTotal.toLocaleString('he-IL', { minimumFractionDigits: 2 })}€</strong></p>`}
           <p><a href="${link}">לפרטי החודש המלאים באדמין</a></p>
           <p>האישור עצמו נעשה בכרטיס "בקשות סגירת חודש" בדשבורד האדמין.</p>
         </div>`,

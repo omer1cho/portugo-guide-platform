@@ -112,6 +112,33 @@ export async function checkSalaryClosed(
   return (data?.length ?? 0) > 0;
 }
 
+/**
+ * סוגר חודש שאין בו משיכה מהקופה (פורטוגו משלימה למדריך.ה בהעברה מחוץ למערכת).
+ * כל המערכת מזהה "חודש סגור" לפי שורת salary_withdrawal, אז רושמים שורה כזו
+ * בסכום 0 — סימון סגירה בלבד, לא משנה אף קופה. לא כותב אם כבר יש שורה.
+ * month: 1-12.
+ */
+export async function insertNoWithdrawalCloseMarker(
+  supabase: SupabaseClient,
+  guideId: string,
+  year: number,
+  month: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const already = await checkSalaryClosed(supabase, guideId, year, month - 1);
+  if (already) return { ok: true };
+  const lastDay = new Date(year, month, 0).getDate();
+  const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase.from('transfers').insert({
+    guide_id: guideId,
+    transfer_date: lastDayStr < todayStr ? lastDayStr : todayStr,
+    amount: 0,
+    transfer_type: 'salary_withdrawal',
+    notes: 'סגירה באישור עומר (אין משיכה מהקופה, פורטוגו משלימה)',
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 /** פורמט YYYY-MM להעברה בלינק. משמש כדי ש-/add-tour וכו' יידעו לאיזה חודש החזרה. */
 export function formatYearMonthParam(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
