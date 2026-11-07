@@ -12,6 +12,7 @@ import {
   type SalaryTour,
   type SalaryActivity,
   type PerTourSalary,
+  RECEIPT_EXEMPT_GUIDES,
 } from '@/lib/salary';
 import { useAuthGuard, logout } from '@/lib/auth';
 import AdminGuideSwitcher from '@/components/AdminGuideSwitcher';
@@ -442,6 +443,7 @@ function HomeContent() {
     async function loadPendingReceipts() {
       const id = localStorage.getItem('portugo_guide_id');
       if (!id) return;
+      if (RECEIPT_EXEMPT_GUIDES.has(localStorage.getItem('portugo_guide_name') || '')) return;
 
       // ננסה עם is_deferred. fallback אם המיגרציה עוד לא רצה.
       type AckRow = { year: number; month: number; is_deferred?: boolean };

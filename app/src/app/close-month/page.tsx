@@ -4,7 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase, type Guide, SYSTEM_START_DATE } from '@/lib/supabase';
-import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity } from '@/lib/salary';
+import { calculateMonthlySalary, type SalaryBreakdown, type SalaryTour, type SalaryActivity, RECEIPT_EXEMPT_GUIDES } from '@/lib/salary';
 import { useAuthGuard } from '@/lib/auth';
 import { uploadMonthlyReceipt } from '@/lib/storage';
 import { insertNoWithdrawalCloseMarker } from '@/lib/month-policy';
@@ -905,7 +905,7 @@ function CloseMonthContent() {
               )}
 
               {/* תזכורת הוצאת קבלה — אחרי סגירת חודש, רק אם יש סכום לקבלה */}
-              {(alreadyConfirmed || closedByApproval) && (salary?.receipt_amount || 0) > 0 && (
+              {(alreadyConfirmed || closedByApproval) && (salary?.receipt_amount || 0) > 0 && !RECEIPT_EXEMPT_GUIDES.has(guide?.name || '') && (
                 receiptIssued ? (
                   <div className="mt-3 bg-green-50 border border-green-300 rounded-lg p-3 text-sm">
                     <div className="flex items-start gap-2">
