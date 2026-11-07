@@ -123,24 +123,24 @@ function PostTourExpensesContent() {
 
       // ─── טעינת יתרת כרטיס טיים אאוט — רק רלוונטי לסיור קולינרי (כולל פרטי) ───
       if (t && types.includes('קולינרי')) {
-        await loadCardBalance(id, t.tour_date);
+        await loadCardBalance(id);
       }
       setLoading(false);
     })();
   }, [router, tourId]);
 
   /**
-   * טוען יתרת תת-קופת "כרטיס טיים אאוט" עד התאריך של הסיור.
+   * טוען יתרת תת-קופת "כרטיס טיים אאוט" (יתרה עדכנית, לא נכון לתאריך הסיור:
+   * הזנה בדיעבד לא נחסמת בגלל טעינה שנרשמה אחרי הסיור).
    * נופל ל-fallback אם המיגרציה עוד לא רצה.
    */
-  async function loadCardBalance(gid: string, untilDate: string) {
+  async function loadCardBalance(gid: string) {
     const loadRes = await supabase
       .from('transfers')
       .select('amount')
       .eq('guide_id', gid)
       .in('transfer_type', ['card_load', 'admin_topup_card'])
-      .gte('transfer_date', SYSTEM_START_DATE)
-      .lte('transfer_date', untilDate);
+      .gte('transfer_date', SYSTEM_START_DATE);
     const loadSum = (loadRes.data || []).reduce(
       (s: number, t: { amount: number }) => s + (t.amount || 0),
       0,
@@ -152,8 +152,7 @@ function PostTourExpensesContent() {
       .select('amount')
       .eq('guide_id', gid)
       .eq('payment_source', 'food_market_card')
-      .gte('expense_date', SYSTEM_START_DATE)
-      .lte('expense_date', untilDate);
+      .gte('expense_date', SYSTEM_START_DATE);
     if (!expRes.error) {
       expSum = (expRes.data || []).reduce(
         (s: number, e: { amount: number }) => s + (e.amount || 0),

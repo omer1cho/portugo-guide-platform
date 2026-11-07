@@ -140,23 +140,22 @@ function ExpensesContent() {
     const isCulinary =
       Array.isArray(guideRow?.qualified_tours) &&
       guideRow.qualified_tours.includes('קולינרי');
-    setHasCulinaryHistory(isCulinary);
 
     // ─ יתרה: סוכמים כל ההטענות (פנימיות + אדמין) ומורידים expenses מהכרטיס ─
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
+    // יתרה עדכנית (בלי חיתוך לפי חודש): הזנה בדיעבד לחודש קודם לא אמורה להיחסם
+    // בגלל שהטעינה של הכרטיס נרשמה במערכת אחרי תאריך ההוצאה.
     const cardLoadRes = await supabase
       .from('transfers')
       .select('amount')
       .eq('guide_id', id)
       .in('transfer_type', ['card_load', 'admin_topup_card'])
-      .gte('transfer_date', SYSTEM_START_DATE)
-      .lte('transfer_date', end);
+      .gte('transfer_date', SYSTEM_START_DATE);
     const cardLoadSum = (cardLoadRes.data || []).reduce(
       (s: number, t: { amount: number }) => s + (t.amount || 0),
       0,
     );
+    // מי שיש לו.ה כרטיס טעון נחשב.ת מדריך.ת קולינרי גם אם qualified_tours לא עודכן
+    setHasCulinaryHistory(isCulinary || (cardLoadRes.data || []).length > 0);
 
     let cardExpSum = 0;
     const cardExpRes = await supabase
@@ -164,8 +163,7 @@ function ExpensesContent() {
       .select('amount')
       .eq('guide_id', id)
       .eq('payment_source', 'food_market_card')
-      .gte('expense_date', SYSTEM_START_DATE)
-      .lte('expense_date', end);
+      .gte('expense_date', SYSTEM_START_DATE);
     if (!cardExpRes.error) {
       cardExpSum = (cardExpRes.data || []).reduce(
         (s: number, e: { amount: number }) => s + (e.amount || 0),
