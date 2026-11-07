@@ -264,15 +264,24 @@ const MGMT_BONUS_SKIPPED_MONTHS: Record<string, string[]> = {
  * מאיה מאוקטובר 2026: הוראת עומר 2.11.26. חודשים קודמים לא זזים.
  * כשהרכיב חוזר — למחוק את השורה (או להחליף ברשימת חודשים ב-SKIPPED למעלה).
  */
+const MGMT_BONUS_STOPPED_FROM: Record<string, string> = {
+  'מאיה': '2026-10',
+};
+
+/**
+ * רכיב ניהול חד-פעמי לחודש מסוים ('YYYY-MM' → סכום). גובר על SKIPPED/STOPPED.
+ * מאיה אוקטובר 2026: 50€ חד-פעמי, הוראת עומר 7.11.26.
+ */
+const MGMT_BONUS_ONE_OFF: Record<string, Record<string, number>> = {
+  'מאיה': { '2026-10': 50 },
+};
+
 /**
  * מדריכים שלא מופיעים במשימת "לא הוציאו קבלה" באדמין (הוראת עומר 7.11.26).
  * רק אצל האדמין: התזכורת אצל המדריך עצמו נשארת כמו שהיא.
  */
 export const RECEIPT_TASK_HIDDEN_GUIDES = new Set(['דניאל', 'עומר הבן']);
 
-const MGMT_BONUS_STOPPED_FROM: Record<string, string> = {
-  'מאיה': '2026-10',
-};
 
 const PRIVATE_TABLES_V2_FROM = '2026-08-01';
 
@@ -632,7 +641,10 @@ export function calculateMonthlySalary(
   const mgmtStopped = !!mgmtStoppedFrom && (!monthKey || monthKey >= mgmtStoppedFrom);
   const mgmtSkipped =
     mgmtStopped || (!!guide && (MGMT_BONUS_SKIPPED_MONTHS[guide.name] || []).includes(monthKey));
-  const management = guide?.has_mgmt_bonus && !mgmtSkipped ? (guide.mgmt_bonus_amount || 0) : 0;
+  const mgmtOneOff = guide ? MGMT_BONUS_ONE_OFF[guide.name]?.[monthKey] : undefined;
+  const management = mgmtOneOff !== undefined
+    ? mgmtOneOff
+    : guide?.has_mgmt_bonus && !mgmtSkipped ? (guide.mgmt_bonus_amount || 0) : 0;
 
   const total_with_tips =
     classic_income +
