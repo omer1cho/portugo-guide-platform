@@ -14,7 +14,7 @@ import {
   type SalaryBreakdown,
   type SalaryTour,
   type SalaryActivity,
-  RECEIPT_EXEMPT_GUIDES,
+  RECEIPT_TASK_HIDDEN_GUIDES,
 } from '@/lib/salary';
 
 export type GuideStatus = 'empty' | 'open' | 'closed' | 'awaiting_deposit';
@@ -497,8 +497,8 @@ export async function loadOutstandingMonthlyReceipts(options: {
     for (const g of snap.guides) {
       // יש משכורת לקבלה > 0 (אם לא — המדריך לא עבד החודש, לא רלוונטי)
       if (g.salary.receipt_amount <= 0) continue;
-      // פטור מקבלות
-      if (RECEIPT_EXEMPT_GUIDES.has(g.guide.name)) continue;
+      // הוסרו ממשימת הקבלות של האדמין
+      if (RECEIPT_TASK_HIDDEN_GUIDES.has(g.guide.name)) continue;
       // כבר הוציא/אושר — לא רלוונטי
       if (g.receipt_ack !== null && g.receipt_ack.acknowledged_at !== null) continue;
       outstanding.push({
